@@ -4,4 +4,6 @@ __pycache__
 .idea/*
 .vscode
 *.log
+dist/*
+build/*
 
