@@ -12,6 +12,3 @@ The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs
 * Gomez Coronel Andres (HPE)
 * Lambrecht Max (HPE)
 
-
-## Community
-Join #py-spiffe channel at the [SPIFFE Slack](https://spiffe.slack.com/) for any questions about the library.

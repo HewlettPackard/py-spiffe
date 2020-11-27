@@ -5,5 +5,10 @@ __pycache__
 .vscode
 *.log
 dist/*
+docs/_build/*
 build/*
+.tox/
+*.egg-info/
+*.egg
+.eggs/
 

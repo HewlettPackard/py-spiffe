@@ -23,7 +23,8 @@ setup(
     author='HPE',
     author_email="security@spiffe.io",
     license='Apache License Version 2.0',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(where="src", exclude=['tests']),
+    package_dir={"": "src"},
     install_requires=[],
     python_requires='>=3.6',
 )

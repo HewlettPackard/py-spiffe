@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: build test
+.PHONY: build test docs
 
 PYTHON=3.6
 PIPENV_CMD=pipenv
@@ -20,6 +20,11 @@ env:
 	PIPENV_VENV_IN_PROJECT=1 $(PIPENV_CMD) install --python $(PYTHON);)
 
 
+## Removes the virtual environment if it exist.
+rm_env:
+	$(PIPENV_CMD) --rm
+
+
 ## Installs dev requirements.
 dev: env
 	$(PIPENV_CMD) install --dev && \
@@ -29,12 +34,13 @@ dev: env
 ## Runs unit tests.
 test:
 	@echo "Running unit tests."
-	#$(PIPENV_CMD) run pytest tests
+	$(PIPENV_CMD) run tox
 
-## Removes the virtual environment if it exist.
-rm_env:
-	$(PIPENV_CMD) --rm
 
+## Generates docs.
+docs:
+	@echo "Generates docs."
+	cd docs && $(PIPENV_CMD) run make html
 
 #------------------------------------------------------------------------
 # Document file
