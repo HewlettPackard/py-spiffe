@@ -8,8 +8,9 @@ ROOT_DIR=$(PWD)
 
 NAME = py-spiffe
 VERSION = 0.0.1
+AUTHOR=HPE
 
-## Creates the distributable packages
+## Creates the distributable packages.
 build:
 	$(PIPENV_CMD) run python setup.py sdist bdist_wheel
 
@@ -42,6 +43,18 @@ docs:
 	@echo "Generates docs."
 	cd docs && $(PIPENV_CMD) run make html
 
+
+## Generates pb files from ./proto/workload.proto.
+pb_generate:
+	@echo "Generates pb files."
+	$(PIPENV_CMD) run python -m grpc_tools.protoc \
+		--proto_path=./proto \
+		--mypy_out=./proto \
+		--proto_path=. \
+		--python_out=./proto \
+		--grpc_python_out=./proto ./proto/workload.proto
+
+
 #------------------------------------------------------------------------
 # Document file
 #------------------------------------------------------------------------
@@ -51,12 +64,11 @@ GREEN := $(shell tput -Txterm setaf 2)
 RESET := $(shell tput -Txterm sgr0)
 
 TARGET_MAX_CHAR_NUM=20
-Author=Spiffe.io
 
 ## shows help.
 help:
 	@echo "--------------------------------------------------------------------------------"
-	@echo "Author  : ${GREEN}$(Author)${RESET}"
+	@echo "Author  : ${GREEN}$(AUTHOR)${RESET}"
 	@echo "Project : ${GREEN}$(NAME)${RESET}"
 	@echo "Version : ${GREEN}$(VERSION)${RESET}"
 	@echo "--------------------------------------------------------------------------------"
