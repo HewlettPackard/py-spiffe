@@ -1,0 +1,2 @@
+class JwtBundle(object):
+    pass

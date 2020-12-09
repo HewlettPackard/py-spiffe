@@ -14,7 +14,7 @@ except FileNotFoundError:
     long_description = DESCRIPTION
 
 setup(
-    name='py-spiffe',
+    name='pyspiffe',
     version='0.0.1',
     description=DESCRIPTION,
     long_description=long_description,
@@ -23,7 +23,7 @@ setup(
     author='HPE',
     author_email="security@spiffe.io",
     license='Apache License Version 2.0',
-    packages=find_packages(where="src", exclude=['tests']),
+    packages=find_packages(where="src", exclude=['test']),
     package_dir={"": "src"},
     install_requires=[],
     python_requires='>=3.6',
