@@ -11,4 +11,4 @@ build/*
 *.egg-info/
 *.egg
 .eggs/
-
+.python-version
