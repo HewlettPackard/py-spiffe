@@ -1,0 +1,1 @@
+SPIFFE_SCHEME = 'spiffe'

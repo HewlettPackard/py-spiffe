@@ -1,11 +1,60 @@
+from urllib.parse import urlparse
+from typing import Tuple, Any
+
+from pyspiffe.spiffe_id import SPIFFE_SCHEME
+
+EMPTY_DOMAIN_ERROR = 'Trust domain cannot be empty'
+SCHEME_SUFFIX = '://'
+
+
 class TrustDomain(object):
     """
     Represents the name of a SPIFFE trust domain (e.g. 'domain.test').
 
-    :param trust_domain: The name of the Trust Domain
+    Args:
+        name(str): The name of the Trust Domain
+
+    Raises:
+        ValueError: if the name of the trust domain is empty, has a port, or contains an invalid scheme.
+
     """
 
-    name: str
+    def __init__(self, name: str):
+        self.__set_name(name)
 
-    def __init__(self, trust_domain: str):
-        self.name = trust_domain
+    def __str__(self) -> str:
+        return self.__name
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, TrustDomain):
+            return self.__name == other.name()
+        return False
+
+    def name(self) -> str:
+        return self.__name
+
+    def __set_name(self, name: str):
+        if name == '' or name is None:
+            raise ValueError(EMPTY_DOMAIN_ERROR)
+
+        name = self.normalize(name)
+        uri = urlparse(name)
+        self.validate_uri(uri)
+        self.__name = uri.hostname.lower().strip()
+
+    @staticmethod
+    def normalize(name: str) -> str:
+        if SCHEME_SUFFIX not in name:
+            name = SPIFFE_SCHEME + SCHEME_SUFFIX + name
+        return name
+
+    @staticmethod
+    def validate_uri(uri: Tuple):
+        if not uri.scheme == SPIFFE_SCHEME:
+            raise ValueError(
+                'Trust domain: invalid scheme: expected {}'.format(SPIFFE_SCHEME)
+            )
+        if uri.hostname is None:
+            raise ValueError(EMPTY_DOMAIN_ERROR)
+        if uri.port is not None:
+            raise ValueError('Trust domain: port is not allowed')
