@@ -1,6 +1,6 @@
 from typing import Mapping
 from .x509_bundle import X509Bundle
-from src.pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
 
 class X509BundleSet(object):

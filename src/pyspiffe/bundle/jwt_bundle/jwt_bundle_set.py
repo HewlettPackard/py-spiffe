@@ -1,6 +1,6 @@
 from typing import Mapping
 from .jwt_bundle import JwtBundle
-from src.pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
 
 class JwtBundleSet(object):

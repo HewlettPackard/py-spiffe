@@ -1,87 +1,69 @@
 from abc import ABC, abstractmethod
+from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
+from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
+from pyspiffe.svid.x509_svid import X509Svid
+from pyspiffe.svid.jwt_svid import JwtSvid
 
 class WorkloadApiClient(ABC):
     """
     Abstract class definition for a SPIFFE Workload API Client.
     """
 
-    @abstractmethod
-    def fetch_x509_context(self):
-        """
-        Fetches an X.509 context on a one-shot blocking call.
 
-        Fetch an instance of an X509Context containing the X.509
-        materials fetched from the Workload API,
+    @abstractmethod
+    def fetch_x590_svid(self) -> X509Svid:
+        """
+        Fetches a SPIFFE X.509-SVID
 
         Returns:
-
-        X509Context (?? type): The X.509 context.
+            X509Svid: Instance of X509Svid object
         """
+
 
     @abstractmethod
-    def watch_x509_context(self, watcher):
+    def fetch_x509_bundles(self) -> X509BundleSet:
         """
-        Watches for X.509 context updates.
-
-        A new Stream to the Workload API is opened for each call to
-        this method, so that the client starts getting updates
-        immediately after the Stream is ready and doesn't have to wait
-        until the Workload API dispatches the next update based on the
-        SVIDs TTL.
-
-        Parameters:
-
-        watcher (?? type): Watcher callback object.
-        """
-
-    @abstractmethod
-    def fetch_jwt_svid(self, audiences, subject=None):
-        """
-        Fetches a SPIFFE JWT-SVID on one-shot blocking call.
-
-        Parameters:
-
-        audiences (set of String): Set of audiences for the JWT.
-        subject (String) [Optional]: SPIFFE ID Subject for the JWT.
+        Fetches X.509 bundles, keyed by trust domain.
 
         Returns:
-
-        JwtSvid: Instance of JwtSvid object
+            X509BundleSet: Set of X509Bundle objects
         """
 
     @abstractmethod
-    def fetch_jwt_bundles(self):
+    def fetch_jwt_svid(self, audiences, subject=None) -> JwtSvid:
+        """
+        Fetches a SPIFFE JWT-SVID
+
+        Args:
+            audiences (set of str): Set of audiences for the JWT.
+            subject (str, optional): SPIFFE ID Subject for the JWT.
+
+        Returns:
+            JwtSvid: Instance of JwtSvid object
+        """
+
+
+    @abstractmethod
+    def fetch_jwt_bundles(self) -> JwtBundleSet:
         """
         Fetches the JWT bundles for JWT-SVID validation, keyed by trust
         domain.
 
         Returns:
-
-        JwtBundleSet: Set of JwtBundle objects
+            JwtBundleSet: Set of JwtBundle objects
         """
 
+
     @abstractmethod
-    def validate_jwt_svid(self, token, audience):
+    def validate_jwt_svid(self, token, audience) -> JwtSvid:
         """
         Validates the JWT-SVID token. The parsed and validated JWT-SVID is
         returned.
 
-        Parameters:
-
-        token (String): JWT to validate.
-        audience (String): Audience to validate against.
+        Args:
+            token (str): JWT to validate.
+            audience (str): Audience to validate against.
 
         Returns:
-
-        JwtSvid: If the token and audience could be validated.
-        """
-
-    @abstractmethod
-    def watch_jwt_bundles(self, watcher):
-        """
-        Watches for JWT bundles updates.
-
-        Parameters:
-
-        watcher (??): Watcher callback object.
+            JwtSvid: If the token and audience could be validated.
         """
