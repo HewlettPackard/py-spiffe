@@ -72,3 +72,19 @@ To remove the virtual environment
 make rm_env
 ```
 
+### Troubleshooting
+Ubuntu 20.04 users might experience issues when creating the environment (running `make env`) due to an older version of `setuptools` installed on the virtual environment.
+To work around this issue, update the version of `pipenv` to `2020.11.4` or newer.
+```
+pip install --upgrade --user pipenv
+```
+
+## Contributing
+1. Fork it (https://github.com/HewlettPackard/py-spiffe/fork)
+2. Create your feature branch (git checkout -b feature/fooBar)
+3. Commit your changes (git commit -m 'Add some fooBar' --signoff)
+4. Push to the branch (git push origin feature/fooBar)
+5. Create a new Pull Request
+
+### Code style guide
+The project follows the Google-style (https://google.github.io/styleguide/pyguide.html)
