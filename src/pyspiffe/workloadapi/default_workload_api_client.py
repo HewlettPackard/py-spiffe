@@ -1,6 +1,5 @@
 import os
 
-from pyspiffe.internal.defaults import Defaults
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
@@ -38,7 +37,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             self.spiffe_socket_path=spiffe_socket_path
 
 
-    def fetch_x590_svid(self) -> X509Svid:
+    def fetch_x509_svid(self) -> X509Svid:
         """
         Fetches a SPIFFE X.509-SVID
 

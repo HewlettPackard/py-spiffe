@@ -11,7 +11,7 @@ class WorkloadApiClient(ABC):
 
 
     @abstractmethod
-    def fetch_x590_svid(self) -> X509Svid:
+    def fetch_x509_svid(self) -> X509Svid:
         """
         Fetches a SPIFFE X.509-SVID
 
