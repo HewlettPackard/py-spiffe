@@ -2,7 +2,6 @@
 
 .PHONY: build test docs
 
-PYTHON=3.6
 PIPENV_CMD=pipenv
 ROOT_DIR=$(PWD)
 
@@ -18,7 +17,7 @@ build:
 env:
 	$(PIPENV_CMD) --venv || \
 	(echo "Creating virtual environment .venv"; \
-	PIPENV_VENV_IN_PROJECT=1 $(PIPENV_CMD) install --python $(PYTHON);)
+	PIPENV_VENV_IN_PROJECT=1 $(PIPENV_CMD) sync;)
 
 
 ## Removes the virtual environment if it exist.
@@ -28,7 +27,7 @@ rm_env:
 
 ## Installs dev requirements.
 dev: env
-	$(PIPENV_CMD) install --dev && \
+	$(PIPENV_CMD) sync --dev && \
 	$(PIPENV_CMD) run pre-commit install
 
 
