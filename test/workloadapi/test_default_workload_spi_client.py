@@ -15,10 +15,12 @@ def test_instantiate_default_with_var():
   os.environ['SPIFFE_ENDPOINT_SOCKET'] = '/tmp/agent.sock'
   wlapi = DefaultWorkloadApiClient()
   del os.environ['SPIFFE_ENDPOINT_SOCKET']
+  assert wlapi.spiffe_socket_path == "/tmp/agent.sock"
 
 # Pass socket path
 def test_instantiate_socket_path():
   wlapi = DefaultWorkloadApiClient(spiffe_socket_path="/tmp/agent.sock")
+  assert wlapi.spiffe_socket_path == "/tmp/agent.sock"
 
 # TODO: Implement
 def test_fetch_x509_svid():
