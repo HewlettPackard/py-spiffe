@@ -4,11 +4,11 @@ from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
+
 class WorkloadApiClient(ABC):
     """
     Abstract class definition for a SPIFFE Workload API Client.
     """
-
 
     @abstractmethod
     def fetch_x509_svid(self) -> X509Svid:
@@ -18,7 +18,6 @@ class WorkloadApiClient(ABC):
         Returns:
             X509Svid: Instance of X509Svid object
         """
-
 
     @abstractmethod
     def fetch_x509_bundles(self) -> X509BundleSet:
@@ -42,7 +41,6 @@ class WorkloadApiClient(ABC):
             JwtSvid: Instance of JwtSvid object
         """
 
-
     @abstractmethod
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """
@@ -52,7 +50,6 @@ class WorkloadApiClient(ABC):
         Returns:
             JwtBundleSet: Set of JwtBundle objects
         """
-
 
     @abstractmethod
     def validate_jwt_svid(self, token, audience) -> JwtSvid:

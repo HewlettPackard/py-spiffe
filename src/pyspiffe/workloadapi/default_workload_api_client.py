@@ -6,6 +6,7 @@ from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
+
 class DefaultWorkloadApiClient(WorkloadApiClient):
     """
     Default implementation for a SPIFFE Workload API Client.
@@ -30,12 +31,12 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         if spiffe_socket_path == None:
             try:
-                self.spiffe_socket_path=os.environ['SPIFFE_ENDPOINT_SOCKET']
+                self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
             except KeyError as err:
-                raise RuntimeError('SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient')
+                raise RuntimeError(
+                    'SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient')
         else:
-            self.spiffe_socket_path=spiffe_socket_path
-
+            self.spiffe_socket_path = spiffe_socket_path
 
     def fetch_x509_svid(self) -> X509Svid:
         """
@@ -47,7 +48,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         pass
 
-
     def fetch_x509_bundles(self) -> X509BundleSet:
         """
         Fetches X.509 bundles, keyed by trust domain.
@@ -57,7 +57,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """
 
         pass
-
 
     def fetch_jwt_svid(self, audiences, subject=None) -> JwtSvid:
         """
@@ -73,7 +72,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         pass
 
-
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """
         Fetches the JWT bundles for JWT-SVID validation, keyed by trust
@@ -84,7 +82,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """
 
         pass
-
 
     def validate_jwt_svid(self, token, audience) -> JwtSvid:
         """
