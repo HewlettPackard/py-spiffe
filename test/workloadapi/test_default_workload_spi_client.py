@@ -10,7 +10,7 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 
 def test_instantiate_default_without_var():
     with pytest.raises(RuntimeError):
-        wlapi = DefaultWorkloadApiClient()
+        DefaultWorkloadApiClient()
 
 # With SPIFFE_ENDPOINT_SOCKET, and no path passed, succeeds
 
@@ -45,7 +45,7 @@ def test_fetch_jx509_bundles():
 # TODO: Implement
 
 
-def test_fetch_jwt_svid():
+def test_fetch_jwt_svid_aud():
     wlapi = get_client()
     audiences = ["foo", "bar"]
     wlapi.fetch_jwt_svid(audiences=audiences)
@@ -53,7 +53,7 @@ def test_fetch_jwt_svid():
 # TODO: Implement
 
 
-def test_fetch_jwt_svid():
+def test_fetch_jwt_svid_aud_sub():
     wlapi = get_client()
     audiences = ["foo", "bar"]
     wlapi.fetch_jwt_svid(audiences=audiences, subject="spiffe://TODO")

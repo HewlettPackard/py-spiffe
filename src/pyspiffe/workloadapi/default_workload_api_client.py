@@ -29,10 +29,10 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                 SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist
         """
 
-        if spiffe_socket_path == None:
+        if spiffe_socket_path is None:
             try:
                 self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
-            except KeyError as err:
+            except KeyError:
                 raise RuntimeError(
                     'SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient')
         else:
