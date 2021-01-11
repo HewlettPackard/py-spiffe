@@ -120,6 +120,9 @@ class SpiffeId(object):
     def trust_domain(self):
         return self.__trust_domain
 
+    def is_member_of(self, trust_domain: TrustDomain):
+        return self.__trust_domain == trust_domain
+
     @classmethod
     def parse_and_validate_uri(cls, spiffe_id: str):
         if len(spiffe_id) > SPIFFE_ID_MAXIMUM_LENGTH:

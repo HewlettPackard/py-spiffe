@@ -170,3 +170,15 @@ def test_maximum_length():
 
     assert spiffe_id.trust_domain() == TrustDomain('example.org')
     assert spiffe_id.path() == '/' + path
+
+
+def test_is_member_of():
+    spiffe_id = SpiffeId.parse("spiffe://domain.test/path/element")
+    trust_domain = TrustDomain("domain.test")
+    assert spiffe_id.is_member_of(trust_domain)
+
+
+def test_is_not_member_of():
+    spiffe_id = SpiffeId.parse("spiffe://domain.test/path/element")
+    trust_domain = TrustDomain("other.test")
+    assert not spiffe_id.is_member_of(trust_domain)
