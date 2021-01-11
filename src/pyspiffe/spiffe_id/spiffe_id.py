@@ -15,7 +15,7 @@ class SpiffeId(object):
     """
 
     @classmethod
-    def parse(cls, spiffe_id: str):
+    def parse(cls, spiffe_id: str) -> 'SpiffeId':
         """Parses a SPIFFE ID from a string into a SpiffeId type instance.
 
         Args:
@@ -46,7 +46,7 @@ class SpiffeId(object):
         return result
 
     @classmethod
-    def of(cls, trust_domain: TrustDomain, path_segments=None):
+    def of(cls, trust_domain: TrustDomain, path_segments=None) -> 'SpiffeId':
         """Creates SpiffeId type instance from a Trust Domain and zero or more paths.
 
         Args:
@@ -114,17 +114,17 @@ class SpiffeId(object):
     def __set_trust_domain(self, trust_domain: TrustDomain):
         self.__trust_domain = trust_domain
 
-    def path(self):
+    def path(self) -> str:
         return self.__path
 
-    def trust_domain(self):
+    def trust_domain(self) -> TrustDomain:
         return self.__trust_domain
 
-    def is_member_of(self, trust_domain: TrustDomain):
+    def is_member_of(self, trust_domain: TrustDomain) -> bool:
         return self.__trust_domain == trust_domain
 
     @classmethod
-    def parse_and_validate_uri(cls, spiffe_id: str):
+    def parse_and_validate_uri(cls, spiffe_id: str) -> dict:
         if len(spiffe_id) > SPIFFE_ID_MAXIMUM_LENGTH:
             raise ValueError(
                 'SPIFFE ID: maximum length is {} bytes.'.format(
@@ -161,7 +161,7 @@ class SpiffeId(object):
         return uri
 
     @staticmethod
-    def normalize_path(path: str):
+    def normalize_path(path: str) -> str:
         path = path.strip()
         if path and not path.startswith('/'):
             return '/' + path

@@ -41,7 +41,7 @@ class TrustDomain(object):
     def name(self) -> str:
         return self.__name
 
-    def as_str_id(self):
+    def as_str_id(self) -> str:
         return '{}://{}'.format(SPIFFE_SCHEME, self.__name)
 
     def __set_name(self, name: str):
