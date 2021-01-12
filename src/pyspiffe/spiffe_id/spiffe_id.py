@@ -73,13 +73,13 @@ class SpiffeId(object):
         if trust_domain is None:
             raise ValueError('SPIFFE ID: trust domain cannot be empty.')
 
-        result = SpiffeId()
-        if isinstance(trust_domain, TrustDomain):
-            result.__set_trust_domain(trust_domain)
-        else:
+        if not isinstance(trust_domain, TrustDomain):
             raise ValueError(
                 'SPIFFE ID: trust_domain argument must be a TrustDomain instance.'
             )
+
+        result = SpiffeId()
+        result.__set_trust_domain(trust_domain)
 
         if path_segments is not None:
             result.__set_path(path_segments)
@@ -87,15 +87,15 @@ class SpiffeId(object):
         cls.parse_and_validate_uri(str(result))
         return result
 
-    def __eq__(self, other: Any):
-        if isinstance(other, self.__class__):
-            return (
-                self.__trust_domain == other.__trust_domain
-                and self.__path == other.path()
-            )
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            self.__trust_domain == other.__trust_domain and self.__path == other.path()
+        )
 
-    def __str__(self):
-        if self.__path is not None:
+    def __str__(self) -> str:
+        if self.__path:
             return '{}://{}{}'.format(
                 SPIFFE_SCHEME, self.__trust_domain.name(), self.__path
             )
@@ -135,19 +135,19 @@ class SpiffeId(object):
         uri = parse(spiffe_id.strip(), rule='URI')
 
         scheme = uri.get('scheme')
-        if not scheme.lower() == SPIFFE_SCHEME:
+        if scheme.lower() != SPIFFE_SCHEME:
             raise ValueError('SPIFFE ID: invalid scheme: expected spiffe.')
 
         query = uri.get('query')
-        if query is not None and not query == '':
+        if query:
             raise ValueError('SPIFFE ID: query is not allowed.')
 
         fragment = uri.get('fragment')
-        if fragment is not None and not fragment == '':
+        if fragment:
             raise ValueError('SPIFFE ID: fragment is not allowed.')
 
         authority = uri.get('authority')
-        if authority == '' or authority is None:
+        if not authority:
             raise ValueError('SPIFFE ID: trust domain cannot be empty.')
 
         # has user@info:

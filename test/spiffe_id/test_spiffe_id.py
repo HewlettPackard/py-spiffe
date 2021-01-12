@@ -156,29 +156,29 @@ def test_of_empty_trust_domain():
 
 
 def test_exceeds_maximum_length():
-    path = "a" * 2028
+    path = 'a' * 2028
 
     with pytest.raises(ValueError) as exception:
-        SpiffeId.parse("spiffe://example.org/{}".format(path))
+        SpiffeId.parse('spiffe://example.org/{}'.format(path))
 
     assert str(exception.value) == 'SPIFFE ID: maximum length is 2048 bytes.'
 
 
 def test_maximum_length():
-    path = "a" * 2027
-    spiffe_id = SpiffeId.parse("spiffe://example.org/{}".format(path))
+    path = 'a' * 2027
+    spiffe_id = SpiffeId.parse('spiffe://example.org/{}'.format(path))
 
     assert spiffe_id.trust_domain() == TrustDomain('example.org')
     assert spiffe_id.path() == '/' + path
 
 
 def test_is_member_of():
-    spiffe_id = SpiffeId.parse("spiffe://domain.test/path/element")
-    trust_domain = TrustDomain("domain.test")
+    spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
+    trust_domain = TrustDomain('domain.test')
     assert spiffe_id.is_member_of(trust_domain)
 
 
 def test_is_not_member_of():
-    spiffe_id = SpiffeId.parse("spiffe://domain.test/path/element")
-    trust_domain = TrustDomain("other.test")
+    spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
+    trust_domain = TrustDomain('other.test')
     assert not spiffe_id.is_member_of(trust_domain)
