@@ -42,7 +42,7 @@ pyenv install 3.9.x
 
 Clone the repository
 ```
-Follow through the steps in [Contributing](#Contributing) session.
+Follow through the steps in [Contributing](#Contributing) section.
 ```
 
 cd to the py-spiffe directory
