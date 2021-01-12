@@ -31,6 +31,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         if spiffe_socket_path is None:
             try:
+                TODO: Replace this with ConfigSetter once checked in
                 self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
             except KeyError:
                 raise RuntimeError(
