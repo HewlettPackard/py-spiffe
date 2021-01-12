@@ -12,6 +12,13 @@ The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs
 * Gomez Coronel Andres (HPE)
 * Lambrecht Max (HPE)
 
+## Contributing
+1. Fork it (https://github.com/HewlettPackard/py-spiffe/fork)
+2. Clone your forked repository (git clone git@github.com:<your_github_account>/py-spiffe.git)
+3. Create your feature branch (git checkout -b feature/fooBar)
+4. Commit your changes (git commit -m 'Add some fooBar' --signoff)
+5. Push to the branch (git push origin feature/fooBar)
+6. Create a new Pull Request
 
 ## Development setup
 
@@ -35,7 +42,7 @@ pyenv install 3.9.x
 
 Clone the repository
 ```
-git clone git@github.com:HewlettPackard/py-spiffe.git
+Follow though steps in Contributing session.
 ```
 
 cd to the py-spiffe directory
@@ -78,13 +85,6 @@ To work around this issue, update the version of `pipenv` to `2020.11.4` or newe
 ```
 pip install --upgrade --user pipenv
 ```
-
-## Contributing
-1. Fork it (https://github.com/HewlettPackard/py-spiffe/fork)
-2. Create your feature branch (git checkout -b feature/fooBar)
-3. Commit your changes (git commit -m 'Add some fooBar' --signoff)
-4. Push to the branch (git push origin feature/fooBar)
-5. Create a new Pull Request
 
 ### Code style guide
 The project follows the Google-style (https://google.github.io/styleguide/pyguide.html)
