@@ -99,19 +99,18 @@ class SpiffeId(object):
             return '{}://{}{}'.format(
                 SPIFFE_SCHEME, self.__trust_domain.name(), self.__path
             )
-        else:
-            return '{}://{}'.format(SPIFFE_SCHEME, self.__trust_domain.name())
+        return '{}://{}'.format(SPIFFE_SCHEME, self.__trust_domain.name())
 
     # path_segments can be an array of path segments or a single string representing a path
-    def __set_path(self, path: Any):
+    def __set_path(self, path: Any) -> None:
         if isinstance(path, list):
             self.__path = ''
             for s in path:
                 self.__path += self.normalize_path(s)
-        else:
-            self.__path = self.normalize_path(path)
+            return
+        self.__path = self.normalize_path(path)
 
-    def __set_trust_domain(self, trust_domain: TrustDomain):
+    def __set_trust_domain(self, trust_domain: TrustDomain) -> None:
         self.__trust_domain = trust_domain
 
     def path(self) -> str:

@@ -44,7 +44,7 @@ class TrustDomain(object):
     def as_str_id(self) -> str:
         return '{}://{}'.format(SPIFFE_SCHEME, self.__name)
 
-    def __set_name(self, name: str):
+    def __set_name(self, name: str) -> None:
         if not name:
             raise ValueError(EMPTY_DOMAIN_ERROR)
 
@@ -67,7 +67,7 @@ class TrustDomain(object):
         return name
 
     @staticmethod
-    def validate_uri(uri: Tuple):
+    def validate_uri(uri: Tuple) -> None:
         if uri.scheme != SPIFFE_SCHEME:
             raise ValueError(
                 'Trust domain: invalid scheme: expected {}.'.format(SPIFFE_SCHEME)
