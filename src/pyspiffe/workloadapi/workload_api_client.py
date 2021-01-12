@@ -29,7 +29,7 @@ class WorkloadApiClient(ABC):
         """
 
     @abstractmethod
-    def fetch_jwt_svid(self, audiences, subject=None) -> JwtSvid:
+    def fetch_jwt_svid(self, audiences: str, subject: str = None) -> JwtSvid:
         """
         Fetches a SPIFFE JWT-SVID
 
@@ -52,7 +52,7 @@ class WorkloadApiClient(ABC):
         """
 
     @abstractmethod
-    def validate_jwt_svid(self, token, audience) -> JwtSvid:
+    def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """
         Validates the JWT-SVID token. The parsed and validated JWT-SVID is
         returned.

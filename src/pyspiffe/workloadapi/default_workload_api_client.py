@@ -12,7 +12,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     Default implementation for a SPIFFE Workload API Client.
     """
 
-    def __init__(self, spiffe_socket_path=None):
+    def __init__(self, spiffe_socket_path: str = None):
         """
         Create a new Workload API Client.
 
@@ -31,7 +31,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         if spiffe_socket_path is None:
             try:
-                TODO: Replace this with ConfigSetter once checked in
+                # TODO: Replace this with ConfigSetter once checked in
                 self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
             except KeyError:
                 raise RuntimeError(
@@ -59,7 +59,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         pass
 
-    def fetch_jwt_svid(self, audiences, subject=None) -> JwtSvid:
+    def fetch_jwt_svid(self, audiences: str, subject: str = None) -> JwtSvid:
         """
         Fetches a SPIFFE JWT-SVID
 
@@ -84,7 +84,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         pass
 
-    def validate_jwt_svid(self, token, audience) -> JwtSvid:
+    def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """
         Validates the JWT-SVID token. The parsed and validated JWT-SVID is
         returned.
