@@ -45,7 +45,7 @@ class TrustDomain(object):
         return '{}://{}'.format(SPIFFE_SCHEME, self.__name)
 
     def __set_name(self, name: str):
-        if name == '' or name is None:
+        if not name:
             raise ValueError(EMPTY_DOMAIN_ERROR)
 
         if len(name) > TRUST_DOMAIN_MAXIMUM_LENGTH:
@@ -68,11 +68,11 @@ class TrustDomain(object):
 
     @staticmethod
     def validate_uri(uri: Tuple):
-        if not uri.scheme == SPIFFE_SCHEME:
+        if uri.scheme != SPIFFE_SCHEME:
             raise ValueError(
                 'Trust domain: invalid scheme: expected {}.'.format(SPIFFE_SCHEME)
             )
-        if uri.hostname is None:
+        if not uri.hostname:
             raise ValueError(EMPTY_DOMAIN_ERROR)
-        if uri.port is not None:
+        if uri.port:
             raise ValueError('Trust domain: port is not allowed.')
