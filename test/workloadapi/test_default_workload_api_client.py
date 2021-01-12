@@ -19,14 +19,14 @@ def test_instantiate_default_with_var():
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = '/tmp/agent.sock'
     wlapi = DefaultWorkloadApiClient()
     del os.environ['SPIFFE_ENDPOINT_SOCKET']
-    assert wlapi.spiffe_socket_path == "/tmp/agent.sock"
+    assert wlapi.spiffe_socket_path == '/tmp/agent.sock'
 
 # Pass socket path
 
 
 def test_instantiate_socket_path():
-    wlapi = DefaultWorkloadApiClient(spiffe_socket_path="/tmp/agent.sock")
-    assert wlapi.spiffe_socket_path == "/tmp/agent.sock"
+    wlapi = DefaultWorkloadApiClient(spiffe_socket_path='/tmp/agent.sock')
+    assert wlapi.spiffe_socket_path == '/tmp/agent.sock'
 
 # TODO: Implement
 
@@ -47,7 +47,7 @@ def test_fetch_jx509_bundles():
 
 def test_fetch_jwt_svid_aud():
     wlapi = get_client()
-    audiences = ["foo", "bar"]
+    audiences = ['foo', 'bar']
     wlapi.fetch_jwt_svid(audiences=audiences)
 
 # TODO: Implement
@@ -55,8 +55,8 @@ def test_fetch_jwt_svid_aud():
 
 def test_fetch_jwt_svid_aud_sub():
     wlapi = get_client()
-    audiences = ["foo", "bar"]
-    wlapi.fetch_jwt_svid(audiences=audiences, subject="spiffe://TODO")
+    audiences = ['foo', 'bar']
+    wlapi.fetch_jwt_svid(audiences=audiences, subject='spiffe://TODO')
 
 # TODO: Implement
 
@@ -70,12 +70,12 @@ def test_fetch_jwt_bundles():
 
 def test_validate_jwt_svid():
     wlapi = get_client()
-    token = "TODO"
-    audiences = "foo"
+    token = 'TODO'
+    audiences = 'foo'
     wlapi.validate_jwt_svid(token=token, audience=audiences)
 
 
 # Utility functions
 
 def get_client():
-    return DefaultWorkloadApiClient(spiffe_socket_path="/tmp/agent.sock")
+    return DefaultWorkloadApiClient(spiffe_socket_path='/tmp/agent.sock')
