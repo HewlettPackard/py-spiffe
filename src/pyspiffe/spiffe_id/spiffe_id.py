@@ -122,8 +122,8 @@ class SpiffeId(object):
     def is_member_of(self, trust_domain: TrustDomain) -> bool:
         return self.__trust_domain == trust_domain
 
-    @classmethod
-    def parse_and_validate_uri(cls, spiffe_id: str) -> dict:
+    @staticmethod
+    def parse_and_validate_uri(spiffe_id: str) -> dict:
         if len(spiffe_id) > SPIFFE_ID_MAXIMUM_LENGTH:
             raise ValueError(
                 'SPIFFE ID: maximum length is {} bytes.'.format(
@@ -151,7 +151,7 @@ class SpiffeId(object):
 
         # has user@info:
         if '@' in authority:
-            raise ValueError('SPIFFE ID: user info is not allowed.')
+            raise ValueError('SPIFFE ID: userinfo is not allowed.')
 
         # has domain:port
         if ':' in authority:

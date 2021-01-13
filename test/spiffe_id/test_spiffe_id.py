@@ -100,7 +100,7 @@ def test_parse_spiffe_id_valid_uri(spiffe_id_str, expected_trust_domain, expecte
         ('spiffe://domain.test:8080/path/element', 'SPIFFE ID: port is not allowed.'),
         (
             'spiffe://user:password@test.org/path/element',
-            'SPIFFE ID: user info is not allowed.',
+            'SPIFFE ID: userinfo is not allowed.',
         ),
         ('spiffe:path/element', 'SPIFFE ID: trust domain cannot be empty.'),
         ('spiffe:/path/element', 'SPIFFE ID: trust domain cannot be empty.'),
