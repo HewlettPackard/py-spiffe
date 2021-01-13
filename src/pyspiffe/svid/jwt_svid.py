@@ -1,27 +1,18 @@
-from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.exceptions import JwtSvidError
-import datetime
-from calendar import timegm
-import jwt
+from src.pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from src.pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 
-EMPTY_TOKEN_ERROR = 'Token cannot be empty.'
-INVALID_INPUT_ERROR = 'Invalid input {}.'
-MISSING_X_ERROR = 'Token is missing {}.'
-AUDIENCE_NOT_MATCH_ERROR = 'Audience does not match payload[aud] in Token.'
-TOKEN_EXPIRED_ERROR = 'Token has expired.'
+import jwt
 
 
 class JwtSvid(object):
     """
-    Represents a SPIFFE JWT SVID as defined in the SPIFFE standard.
-    See <a href="https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md">https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md</a>.
+    Represents a SPIFFE JWT SVID.
+    TODO: check pep8 sobre como nomear métodos e fazer comentários
+    conversar com Max L sobre esse Bundle source
     """
 
-    _required_claims = ['aud', 'exp', 'sub']
-
     def __init__(
-        self, spiffeId: SpiffeId, audience: [], expiry: datetime, claims: {}, token: str
+        self, spiffeId: SpiffeId, audience: [], expiry: str, claims: {}, token: str
     ):
         self.spiffeId = spiffeId
         self.audience = audience
