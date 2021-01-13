@@ -8,10 +8,10 @@ Initial work in progress to create a python library for SPIFFE.
 The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs.google.com/document/d/1IByE9Ge1MTyWD7rL9o99-1c5Fn83p1ra3eApARY9X-I/edit#heading=h.70d940e8vk81
 
 ## Initial contributors
-* Churichi Maximiliano (HPE)
+* Andres Gomez Coronel (HPE)
 * Glaucimar Aguiar (HPE)
-* Gomez Coronel Andres (HPE)
-* Lambrecht Max (HPE)
+* Maximiliano Churichi (HPE)
+* Max Lambrecht (HPE)
 * Scott Emmons (HPE)
 
 
