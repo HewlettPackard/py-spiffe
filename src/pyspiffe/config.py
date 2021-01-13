@@ -28,9 +28,6 @@ class ConfigSetter:
             self._config[SPIFFE_ENDPOINT_SOCKET] = endpoint_socket
 
 
-ENDPOINT_VALID_SCHEMES = ('unix', 'tcp')
-
-
 class SpiffeEndpointSocket:
     @staticmethod
     def validate(socket: str):
