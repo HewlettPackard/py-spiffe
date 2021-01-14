@@ -8,10 +8,20 @@ Initial work in progress to create a python library for SPIFFE.
 The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs.google.com/document/d/1IByE9Ge1MTyWD7rL9o99-1c5Fn83p1ra3eApARY9X-I/edit#heading=h.70d940e8vk81
 
 ## Initial contributors
+* Andres Gomez Coronel (HPE)
 * Glaucimar Aguiar (HPE)
-* Gomez Coronel Andres (HPE)
-* Lambrecht Max (HPE)
+* Maximiliano Churichi (HPE)
+* Max Lambrecht (HPE)
+* Scott Emmons (HPE)
 
+
+## Contributing
+1. Fork it (https://github.com/HewlettPackard/py-spiffe/fork)
+2. Clone your forked repository (git clone git@github.com:<your_github_account>/py-spiffe.git)
+3. Create your feature branch (git checkout -b feature/fooBar)
+4. Commit your changes (git commit -m 'Add some fooBar' --signoff)
+5. Push to the branch (git push origin feature/fooBar)
+6. Create a new Pull Request
 
 ## Development setup
 
@@ -23,8 +33,7 @@ For basic development you will need:
 * Pyenv (https://github.com/pyenv/pyenv)
 
 ### Setup the environment
-
-Use `pyenv` to install the different version of Python.
+1. Use `pyenv` to install the different version of Python.
 Python 3.6 is required for development and the other versions are required for testing.
 ```
 pyenv install 3.6.x
@@ -33,40 +42,36 @@ pyenv install 3.8.x
 pyenv install 3.9.x
 ```
 
-Clone the repository
-```
-git clone git@github.com:HewlettPackard/py-spiffe.git
-```
-
-cd to the py-spiffe directory
+2. Clone the repository
+Follow steps 1 and 2 from the [Contributing](#contributing) section.  
+  
+3. cd to the py-spiffe directory
 ```
 cd py-spiffe
 ```
 
-Use the installed versions to define the specific versions for development and testing
+4. Use the installed versions to define the specific versions for development and testing
 ```
 pyenv local 3.6.12 3.7.0 3.8.0 3.9.0
 ```
 
-Create the virtual environment
+5. Create the virtual environment
 ```
 make env
 ```
 `.venv` directory is created using `pipenv` on the root directory of the repo.
 
-
-Then install all the `dev` dependencies
+6. Install all the `dev` dependencies
 ```
 make dev
-```
+``` 
 
-Run the tests
+7. Run the tests
 ```
 make test
 ```
 
 ### Clean up your dev environment
-
 To remove the virtual environment
 ```
 make rm_env
@@ -78,13 +83,6 @@ To work around this issue, update the version of `pipenv` to `2020.11.4` or newe
 ```
 pip install --upgrade --user pipenv
 ```
-
-## Contributing
-1. Fork it (https://github.com/HewlettPackard/py-spiffe/fork)
-2. Create your feature branch (git checkout -b feature/fooBar)
-3. Commit your changes (git commit -m 'Add some fooBar' --signoff)
-4. Push to the branch (git push origin feature/fooBar)
-5. Create a new Pull Request
 
 ### Code style guide
 The project follows the Google-style (https://google.github.io/styleguide/pyguide.html)
