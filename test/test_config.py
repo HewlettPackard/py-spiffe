@@ -49,63 +49,63 @@ def test_path_scheme_is_valid_tcp():
     [
         (
             'invalid-socket',
-            'SPIFFE endpoint socket: scheme must be set',
+            'SPIFFE endpoint socket: scheme must be set.',
         ),
         (
             'http://example.org',
-            'SPIFFE endpoint socket: unsupported scheme',
+            'SPIFFE endpoint socket: unsupported scheme.',
         ),
         (
             'spiffe://example.org',
-            'SPIFFE endpoint socket: unsupported scheme',
+            'SPIFFE endpoint socket: unsupported scheme.',
         ),
         (
             'unix://authority/path/to/socket',
-            'SPIFFE endpoint socket: authority is not allowed',
+            'SPIFFE endpoint socket: authority is not allowed.',
         ),
         (
             'unix://authority:8000/path/to/socket',
-            'SPIFFE endpoint socket: authority is not allowed',
+            'SPIFFE endpoint socket: authority is not allowed.',
         ),
         (
             'unix:///path/to/socket?query=true',
-            'SPIFFE endpoint socket: query is not allowed',
+            'SPIFFE endpoint socket: query is not allowed.',
         ),
         (
             'unix:///path/to/socket?#fragment',
-            'SPIFFE endpoint socket: fragment is not allowed',
+            'SPIFFE endpoint socket: fragment is not allowed.',
         ),
         (
             'unix://user:@/path/to/socket',
-            'SPIFFE endpoint socket: username is not allowed',
+            'SPIFFE endpoint socket: username is not allowed.',
         ),
         (
             'unix://:pass@/path/to/socket',
-            'SPIFFE endpoint socket: password is not allowed',
+            'SPIFFE endpoint socket: password is not allowed.',
         ),
         (
             'tcp://localhost:8000',
-            'SPIFFE endpoint socket: host must be an IP address',
+            'SPIFFE endpoint socket: host must be an IP address.',
         ),
         (
             'tcp://127.0.0.1:8000/path',
-            'SPIFFE endpoint socket: path is not allowed',
+            'SPIFFE endpoint socket: path is not allowed.',
         ),
         (
             'tcp://127.0.0.1?query=true',
-            'SPIFFE endpoint socket: query is not allowed',
+            'SPIFFE endpoint socket: query is not allowed.',
         ),
         (
             'tcp://127.0.0.1?#fragment',
-            'SPIFFE endpoint socket: fragment is not allowed',
+            'SPIFFE endpoint socket: fragment is not allowed.',
         ),
         (
             'tcp://user:@192.168.0.100',
-            'SPIFFE endpoint socket: username is not allowed',
+            'SPIFFE endpoint socket: username is not allowed.',
         ),
         (
             'tcp://:pass@192.168.0.100',
-            'SPIFFE endpoint socket: password is not allowed',
+            'SPIFFE endpoint socket: password is not allowed.',
         ),
     ],
 )
