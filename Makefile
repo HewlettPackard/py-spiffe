@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: build test docs
+.PHONY: build test docs lint flake8 black mypy format
 
 PIPENV_CMD=pipenv
 ROOT_DIR=$(PWD)
@@ -32,9 +32,19 @@ dev: env
 
 
 ## Runs unit tests.
-test:
+test: lint
 	@echo "Running unit tests."
 	$(PIPENV_CMD) run tox
+
+
+## Lint source files.
+lint: black flake8 mypy
+
+
+## Reformat source files with black.
+format:
+	@echo "Running black to format source files."
+	$(PIPENV_CMD) run black --config pyproject.toml src test
 
 
 ## Generates docs.
@@ -52,6 +62,25 @@ pb_generate:
 		--proto_path=. \
 		--python_out=./proto \
 		--grpc_python_out=./proto ./proto/workload.proto
+
+
+#------------------------------------------------------------------------
+# Internal targets
+#------------------------------------------------------------------------
+
+# Targets that aren't normally manually run, so not in the generated help
+
+black:
+	@echo "Running black (check only)."
+	$(PIPENV_CMD) run black --config pyproject.toml --check --diff --color src test
+
+flake8:
+	@echo "Running flake8."
+	$(PIPENV_CMD) run flake8 --config tox.ini src test
+
+mypy:
+	@echo "Running mypy."
+	$(PIPENV_CMD) run mypy -m src
 
 
 #------------------------------------------------------------------------
