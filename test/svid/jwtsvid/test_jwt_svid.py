@@ -261,23 +261,6 @@ def test_valid_parse_insecure(test_input_token, test_input_audience, expected):
 """
     parse_and_validate tests
 
+    TBD
+
 """
-
-
-@pytest.mark.parametrize(
-    'test_input_token, test_input_bundle, test_input_audience, expected',
-    [
-        ('', None, [], EMPTY_TOKEN_ERROR),
-        ('', None, None, EMPTY_TOKEN_ERROR),
-        (None, None, [], EMPTY_TOKEN_ERROR),
-        (None, None, None, EMPTY_TOKEN_ERROR),
-    ],
-)
-def test_invalid_parse_and_validate(
-    test_input_token, test_input_bundle, test_input_audience, expected
-):
-    with pytest.raises(ValueError) as exception:
-        result = JwtSvid.parse_and_validate(
-            test_input_token, test_input_bundle, test_input_audience
-        )
-    assert str(exception.value) == expected
