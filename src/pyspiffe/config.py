@@ -81,13 +81,10 @@ class ConfigSetter:
         cls, socket: ParseResult, components: List[Tuple[str, str]]
     ) -> None:
         for component, description in components:
-            try:
-                attr = getattr(socket, component)
-                if attr is not None and attr != '':
-                    raise ValueError(
-                        'SPIFFE endpoint socket: {} is not allowed.'.format(
-                            description or component
-                        )
+            has_component = component in dir(socket) and getattr(socket, component)
+            if has_component:
+                raise ValueError(
+                    'SPIFFE endpoint socket: {} is not allowed.'.format(
+                        description or component
                     )
-            except AttributeError:
-                pass
+                )
