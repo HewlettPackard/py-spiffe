@@ -213,6 +213,18 @@ def test_valid_input_validate_claims(test_input_payload, test_input_audience):
         ('', None, EMPTY_TOKEN_ERROR),
         (None, [], EMPTY_TOKEN_ERROR),
         (None, None, EMPTY_TOKEN_ERROR),
+    ],
+)
+def test_invalid_input_parse_insecure(test_input_token, test_input_audience, expected):
+    with pytest.raises(ValueError) as exception:
+        JwtSvid.parse_insecure(test_input_token, test_input_audience)
+
+    assert str(exception.value) == expected
+
+
+@pytest.mark.parametrize(
+    'test_input_token,test_input_audience, expected',
+    [
         (
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjJ9.DZhQWvCRCY96yXJzRUMiSnB6mlMUQW4il0UQ4LXAKlU",
             [],

@@ -31,7 +31,7 @@ class JwtSvid(object):
         self.token = token
 
     """
-    Parses and validates JWT-SVID token and returns an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
+    Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
     and expiry from 'exp' claim. The JWT-SVID signature is not verified.
     
     Ags:
@@ -46,8 +46,8 @@ class JwtSvid(object):
 
     @classmethod
     def parse_insecure(cls, token: str, audience: []) -> 'JwtSvid':
-        if token is None or token == '':
-            raise JwtSvidError(EMPTY_TOKEN_ERROR)
+        if not token:
+            raise ValueError(EMPTY_TOKEN_ERROR)
 
         claims = jwt.decode(token, options={'verify_signature': False})
         cls._validate_claims(claims, audience)
