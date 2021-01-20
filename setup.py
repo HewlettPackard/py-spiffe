@@ -21,7 +21,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/spiffe/py-spiffe',
     author='HPE',
-    author_email=security@spiffe.io,
+    author_email='security@spiffe.io',
     license='Apache License Version 2.0',
     packages=find_packages(where='src', exclude=['test']),
     package_dir={'': 'src'},

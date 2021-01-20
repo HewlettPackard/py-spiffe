@@ -1,8 +1,8 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8a35d130c6f7cddfed8831aecd73bb17eb8dac2981542c7b833c46a5bfecb0be"
-        },
+        "sha256": "8a35d130c6f7cddfed8831aecd73bb17eb8dac2981542c7b833c46a5bfecb0be"
+
         "pipfile-spec": 6,
         "requires": {
             "python_version": "3.6"
@@ -228,6 +228,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.20"
+        },
+        "pyjwt": {
+            "hashes": [
+                "sha256:5c2ff2eb27d7e342dfc3cafcc16412781f06db2690fbef81922b0172598f085b",
+                "sha256:7a2b271c6dac2fda9e0c33d176c4253faba2c6c6b3a99c7f28a32c3c97522779"
+            ],
+            "index": "pypi",
+            "version": "==2.0.0"
         },
         "python-json-logger": {
             "hashes": [
