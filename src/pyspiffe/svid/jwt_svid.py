@@ -33,19 +33,12 @@ class JwtSvid(object):
         self.token = token
 
     """
-        Raises valueerror in case exp is not an interger
-    """
-
-    """
-    Parses and validates JWT-SVID token and returns an instance of a {@link JwtSvid}. The JWT-SVID signature is not verified.
+    Parses and validates JWT-SVID token and returns an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
+    and expiry from 'exp' claim. The JWT-SVID signature is not verified.
     
-    Args:
+    Ags:
         token(str): a token as a string that is parsed and validated
-        audience(List): audience as a list of strings used to validate the 'aud' claim
-    
-    Returns:
-        an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
-        from 'exp' claim.
+        param audience(List): audience as a list of strings used to validate the 'aud' claim
     
     Raises:
         JwtSvidError:   when the token expired or the expiration claim is missing, or 
@@ -66,6 +59,7 @@ class JwtSvid(object):
         return result
 
     """ 
+    **WIP**
     Parses and validates a JWT-SVID token and returns an instance of {@link JwtSvid}.
     
     The JWT-SVID signature is verified using the JWT bundle source.
@@ -119,8 +113,7 @@ class JwtSvid(object):
 
         return result
 
-    """If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed."""
-
+    # If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
     @classmethod
     def _validate_exp(cls, expiration_date: str) -> None:
         expiration_date = int(expiration_date)
@@ -128,13 +121,11 @@ class JwtSvid(object):
         if expiration_date < utctime:
             raise JwtSvidError(SIGNATURE_EXPIRED_ERROR)
 
-    """
-        Verifies if any item specified by audience is present in audience_clains. 
-
-        Raises:
-            JwtSvidError: in case none of the items specified by audience is present in audience_claims.
-    """
-
+    ###
+    ### Verifies if any item specified by audience is present in audience_clains.
+    ### Raises:
+    ###     JwtSvidError: in case none of the items specified by audience is present in audience_claims.
+    ###
     @classmethod
     def _validate_aud(cls, audience_claims: [], audience: []) -> None:
         if not audience_claims and not audience:
@@ -149,13 +140,12 @@ class JwtSvid(object):
         except Exception:
             raise JwtSvidError(AUDIENCE_NOT_MATCH_ERROR)
 
-    """
-        Validates payload for required claims (aud, exp, sub), signature expiration and audience.
-
-        Raises:
-            JwtSvidError: in case a required claim is not present in payload, token is expired or aud claimm does not match audience parameter.
-    """
-
+    ###
+    ### Validates payload for required claims (aud, exp, sub), signature expiration and audience.
+    ###
+    ### Raises:
+    ###     JwtSvidError: in case a required claim is not present in payload, token is expired or aud claimm does not match audience parameter.
+    ###
     @classmethod
     def _validate_claims(cls, payload: {}, audience: []) -> None:
         try:
