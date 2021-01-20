@@ -2,6 +2,11 @@ from src.pyspiffe.exceptions import JwtBundleNotFoundError
 
 
 class JwtBundle(object):
+    """
+    Represents a JWT Bundle .
+
+    """
+
     def __init__(self):
         self.jwt_authorities = {}
 

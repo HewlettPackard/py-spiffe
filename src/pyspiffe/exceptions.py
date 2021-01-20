@@ -4,7 +4,3 @@ class PySpiffeError(Exception):
 
 class JwtSvidError(PySpiffeError):
     pass
-
-
-class JwtBundleNotFoundError(PySpiffeError):
-    pass
