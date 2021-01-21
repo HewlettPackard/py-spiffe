@@ -35,7 +35,8 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                 self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
             except KeyError:
                 raise RuntimeError(
-                    'SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient')
+                    'SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient'
+                )
         else:
             self.spiffe_socket_path = spiffe_socket_path
 
