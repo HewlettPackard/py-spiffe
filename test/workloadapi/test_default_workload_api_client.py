@@ -9,6 +9,7 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 
 
 def test_instantiate_default_without_var():
+    del os.environ['SPIFFE_ENDPOINT_SOCKET']
     with pytest.raises(RuntimeError):
         DefaultWorkloadApiClient()
 
