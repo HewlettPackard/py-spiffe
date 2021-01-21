@@ -11,45 +11,44 @@ def restore_env_vars():
     os.environ.update(env_vars)
 
 
-def test_create():
-    setter = ConfigSetter()
+def test_socket_must_be_set():
+    with pytest.raises(ValueError) as exception:
+        ConfigSetter()
 
-    assert setter is not None
-
-
-def test_default_values():
-    setter = ConfigSetter()
-
-    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] is None
+    assert str(exception.value) == 'SPIFFE endpoint socket: socket must be set.'
 
 
-def test_read_value_from_environment_variables():
+def test_pass_socket_as_parameter():
+    fake_socket = 'unix:///path/to/endpoint.sock'
+    setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
+
+    assert setter.get_config().spiffe_endpoint_socket == fake_socket
+
+
+def test_read_socket_from_environment_variables():
     fake_socket = 'unix:///path/to/endpoint.sock'
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
     setter = ConfigSetter()
     del os.environ['SPIFFE_ENDPOINT_SOCKET']
 
-    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] == fake_socket
+    assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
-# Path Validation tests
 def test_path_scheme_is_valid_unix():
     fake_socket = 'unix:///path/to/endpoint.sock'
-    os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
-    setter = ConfigSetter()
+    setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
 
-    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] == fake_socket
+    assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
 def test_path_scheme_is_valid_tcp():
     fake_socket = 'tcp://127.0.0.1:8000'
-    os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
-    setter = ConfigSetter()
+    setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
 
-    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] == fake_socket
+    assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
 @pytest.mark.parametrize(
@@ -119,7 +118,6 @@ def test_path_scheme_is_valid_tcp():
 )
 def test_invalid_endpoint_socket(test_input, expected):
     with pytest.raises(ValueError) as exception:
-        os.environ['SPIFFE_ENDPOINT_SOCKET'] = test_input
-        ConfigSetter()
+        ConfigSetter(spiffe_endpoint_socket=test_input)
 
     assert str(exception.value) == expected
