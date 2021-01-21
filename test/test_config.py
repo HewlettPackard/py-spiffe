@@ -3,16 +3,24 @@ from pyspiffe.config import ConfigSetter
 import os
 
 
+@pytest.fixture(autouse=True)
+def restore_env_vars():
+    env_vars = os.environ.copy()
+    yield
+    os.environ.clear()
+    os.environ.update(env_vars)
+
+
 def test_create():
     setter = ConfigSetter()
 
-    assert setter != None
+    assert setter is not None
 
 
 def test_default_values():
     setter = ConfigSetter()
 
-    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] == None
+    assert setter.get_config()['SPIFFE_ENDPOINT_SOCKET'] is None
 
 
 def test_read_value_from_environment_variables():
