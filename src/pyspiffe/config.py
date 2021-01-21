@@ -71,7 +71,7 @@ class ConfigSetter:
     def _validate_tcp_socket(cls, socket: ParseResult) -> None:
         try:
             ipaddress.ip_address(socket.hostname)
-        except:
+        except ValueError:
             raise ValueError('SPIFFE endpoint socket: host must be an IP address.')
 
         cls._validate_forbidden_components(socket, cls.TCP_FORBIDDEN_SOCKET_COMPONENTS)
