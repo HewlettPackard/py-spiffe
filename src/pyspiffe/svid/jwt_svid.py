@@ -10,7 +10,7 @@ EMPTY_TOKEN_ERROR = 'Token cannot be empty.'
 INVALID_INPUT_ERROR = 'Invalid input {}.'
 MISSING_X_ERROR = 'Token is missing {}.'
 AUDIENCE_NOT_MATCH_ERROR = 'Audience does not match payload[aud] in Token.'
-SIGNATURE_EXPIRED_ERROR = 'Token signature has expired.'
+TOKEN_EXPIRED_ERROR = 'Token has expired.'
 
 
 class JwtSvid(object):
@@ -34,14 +34,19 @@ class JwtSvid(object):
     Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
     and expiry from 'exp' claim. The JWT-SVID signature is not verified.
     
-    Ags:
+    Args:
         token(str): a token as a string that is parsed and validated
         param audience(List): audience as a list of strings used to validate the 'aud' claim
+     
+    Returns:
+        an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
+        from 'exp' claim.
     
     Raises:
         JwtSvidError:   when the token expired or the expiration claim is missing, or 
                         when the 'aud' has an audience that is not in the audience provided as parameter
         ValueError:     when the token is blank or cannot be parsed
+
     """
 
     @classmethod
@@ -69,7 +74,7 @@ class JwtSvid(object):
         audience:            a list of strings used to validate the 'aud' claim
     
     Returns:
-        an instance of {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
+        an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
     
     Raises:
@@ -117,7 +122,7 @@ class JwtSvid(object):
         expiration_date = int(expiration_date)
         utctime = timegm(datetime.datetime.utcnow().utctimetuple())
         if expiration_date < utctime:
-            raise JwtSvidError(SIGNATURE_EXPIRED_ERROR)
+            raise JwtSvidError(TOKEN_EXPIRED_ERROR)
 
     ###
     ### Verifies if any item specified by audience is present in audience_clains.
@@ -125,15 +130,15 @@ class JwtSvid(object):
     ###     JwtSvidError: in case none of the items specified by audience is present in audience_claims.
     ###
     @classmethod
-    def _validate_aud(cls, audience_claims: [], audience: []) -> None:
-        if not audience_claims and not audience:
+    def _validate_aud(cls, audience_claim: [], expected_audience: []) -> None:
+        if not audience_claim and not expected_audience:
             raise ValueError(
                 INVALID_INPUT_ERROR.format(
                     'audience_claims and audience cannot be empty'
                 )
             )
         try:
-            if not any(aud in audience_claims for aud in audience):
+            if not any(aud in audience_claim for aud in expected_audience):
                 raise JwtSvidError(AUDIENCE_NOT_MATCH_ERROR)
         except Exception:
             raise JwtSvidError(AUDIENCE_NOT_MATCH_ERROR)
