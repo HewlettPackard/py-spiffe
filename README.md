@@ -1,5 +1,7 @@
 # py-spiffe Library
 
+[![Build Status](https://travis-ci.com/HewlettPackard/py-spiffe.svg?branch=master)](https://travis-ci.com/HewlettPackard/py-spiffe)
+
 ## Overview
 Initial work in progress to create a python library for SPIFFE.
 
