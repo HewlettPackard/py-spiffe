@@ -2,15 +2,15 @@ import pytest
 import datetime
 from calendar import timegm
 
-from src.pyspiffe.svid.jwt_svid import (
+from pyspiffe.svid.jwt_svid import (
     JwtSvid,
     EMPTY_TOKEN_ERROR,
     INVALID_INPUT_ERROR,
     MISSING_X_ERROR,
     AUDIENCE_NOT_MATCH_ERROR,
-    SIGNATURE_EXPIRED_ERROR,
+    TOKEN_EXPIRED_ERROR,
 )
-from src.pyspiffe.exceptions import JwtSvidError
+from pyspiffe.exceptions import JwtSvidError
 
 
 """
@@ -90,7 +90,7 @@ def test_valid_validate_aud(test_input_aud_claim, test_input_audience):
     ],
 )
 def test_invalid_input_validate_exp(test_input_exp):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError):
         JwtSvid._validate_exp(test_input_exp)
     assert True
 
@@ -104,7 +104,7 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(hours=24)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
         (
             timegm(
@@ -112,7 +112,7 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(hours=1)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
         (
             timegm(
@@ -120,9 +120,9 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
-        ("1611075778", SIGNATURE_EXPIRED_ERROR),
+        ("1611075778", TOKEN_EXPIRED_ERROR),
     ],
 )
 def test_expired_input_validate_exp(test_input_exp, expected):
@@ -243,7 +243,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
         (
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjIsImF1ZCI6InNwaXJlIiwiZXhwIjoiMTU0NTE4NTQ5NiJ9.HQ6F_uvq597L1TunY6RSe0OpOAF-r2vAVGIFDQrde1c",
             ["spire"],
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),  # expired token
     ],
 )

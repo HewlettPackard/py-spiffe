@@ -1,12 +1,9 @@
-
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.exceptions import JwtSvidError
-
 import datetime
 from calendar import timegm
 import jwt
-from jwt import exceptions
 
 EMPTY_TOKEN_ERROR = 'Token cannot be empty.'
 INVALID_INPUT_ERROR = 'Invalid input {}.'
@@ -33,19 +30,19 @@ class JwtSvid(object):
         self.token = token
 
     """
-    Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
+    Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
     and expiry from 'exp' claim. The JWT-SVID signature is not verified.
-    
+
     Args:
         token(str): a token as a string that is parsed and validated
         param audience(List): audience as a list of strings used to validate the 'aud' claim
-     
+
     Returns:
         an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
-    
+
     Raises:
-        JwtSvidError:   when the token expired or the expiration claim is missing, or 
+        JwtSvidError:   when the token expired or the expiration claim is missing, or
                         when the 'aud' has an audience that is not in the audience provided as parameter
         ValueError:     when the token is blank or cannot be parsed
 
@@ -63,10 +60,10 @@ class JwtSvid(object):
 
         return result
 
-    """ 
-    **WIP**
+    """
+    WIP
     Parses and validates a JWT-SVID token and returns an instance of {@link JwtSvid}.
-    
+
     The JWT-SVID signature is verified using the JWT bundle source.
 
     Args:
@@ -74,11 +71,11 @@ class JwtSvid(object):
         jwt_bundle_source:   an implementation of a {@link JwtBundle} that provides the JWT authorities to
                                 verify the signature
         audience:            a list of strings used to validate the 'aud' claim
-    
+
     Returns:
         an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
-    
+
     Raises:
         JwtSvidError:           when the token expired or the expiration claim is missing,
                                 when the algorithm is not supported, when the header 'kid' is missing,
