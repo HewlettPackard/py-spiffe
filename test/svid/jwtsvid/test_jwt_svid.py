@@ -244,7 +244,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjIsImF1ZCI6InNwaXJlIiwiZXhwIjoiMTU0NTE4NTQ5NiJ9.HQ6F_uvq597L1TunY6RSe0OpOAF-r2vAVGIFDQrde1c",
             ["spire"],
             SIGNATURE_EXPIRED_ERROR,
-        ),
+        ),  # expired token
     ],
 )
 def test_invalid_parse_insecure(test_input_token, test_input_audience, expected):
