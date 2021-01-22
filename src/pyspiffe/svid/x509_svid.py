@@ -1,6 +1,6 @@
 from typing import Mapping, Set
 from datetime import datetime
-from src.pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 
 
 class X509Svid(object):
