@@ -8,23 +8,36 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
-    del os.environ['SPIFFE_ENDPOINT_SOCKET']
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         DefaultWorkloadApiClient()
 
 
 # With SPIFFE_ENDPOINT_SOCKET, and no path passed, succeeds
 def test_instantiate_default_with_var():
-    os.environ['SPIFFE_ENDPOINT_SOCKET'] = '/tmp/agent.sock'
+    os.environ['SPIFFE_ENDPOINT_SOCKET'] = 'unix:///tmp/agent.sock'
     wlapi = DefaultWorkloadApiClient()
     del os.environ['SPIFFE_ENDPOINT_SOCKET']
-    assert wlapi.spiffe_socket_path == '/tmp/agent.sock'
+    assert wlapi.get_config().spiffe_endpoint_socket == 'unix:///tmp/agent.sock'
 
 
 # Pass socket path
 def test_instantiate_socket_path():
-    wlapi = DefaultWorkloadApiClient(spiffe_socket_path='/tmp/agent.sock')
-    assert wlapi.spiffe_socket_path == '/tmp/agent.sock'
+    wlapi = DefaultWorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')
+    assert wlapi.get_config().spiffe_endpoint_socket == 'unix:///tmp/agent.sock'
+
+
+# With bad SPIFFE_ENDPOINT_SOCKET, and no path passed, throws exception
+def test_instantiate_default_with_bad_var():
+    os.environ['SPIFFE_ENDPOINT_SOCKET'] = '/invalid'
+    with pytest.raises(ValueError):
+        DefaultWorkloadApiClient()
+    del os.environ['SPIFFE_ENDPOINT_SOCKET']
+
+
+# With bad socket path passed
+def test_instantiate_bad_socket_path():
+    with pytest.raises(ValueError):
+        DefaultWorkloadApiClient(spiffe_socket='/invalid')
 
 
 # TODO: Implement
@@ -69,4 +82,4 @@ def test_validate_jwt_svid():
 
 # Utility functions
 def get_client():
-    return DefaultWorkloadApiClient(spiffe_socket_path='/tmp/agent.sock')
+    return DefaultWorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')

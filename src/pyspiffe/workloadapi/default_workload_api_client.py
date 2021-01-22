@@ -1,10 +1,10 @@
-import os
-
-from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
+from pyspiffe.config import ConfigSetter, Config
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
+
+from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 
 
 class DefaultWorkloadApiClient(WorkloadApiClient):
@@ -12,12 +12,12 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     Default implementation for a SPIFFE Workload API Client.
     """
 
-    def __init__(self, spiffe_socket_path: str = None):
+    def __init__(self, spiffe_socket: str = None):
         """
         Create a new Workload API Client.
 
         Args:
-            spiffe_socket_path (str, optional): Path to Workload API UDS. If
+            spiffe_socket (str, optional): Path to Workload API UDS. If
                 not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
                 must be set.
 
@@ -25,20 +25,26 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             DefaultWorkloadApiClient: New Workload API Client object.
 
         Raises:
-            RuntimeError if spiffe_socket_path is not provided and
+            ValueError if spiffe_socket_path is invalid or not provided and
                 SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist
         """
 
-        if spiffe_socket_path is None:
-            try:
-                # TODO: Replace this with ConfigSetter once checked in
-                self.spiffe_socket_path = os.environ['SPIFFE_ENDPOINT_SOCKET']
-            except KeyError:
-                raise RuntimeError(
-                    'SPIFFE_ENDPOINT_SOCKET environment variable not specified to DefaultWorkloadApiClient'
-                )
-        else:
-            self.spiffe_socket_path = spiffe_socket_path
+        try:
+            self._config = ConfigSetter(
+                spiffe_endpoint_socket=spiffe_socket
+            ).get_config()
+        except ValueError:
+            raise ValueError('SPIFFE socket path invalid in DefaultWorkloadApiClient')
+
+    def get_config(self) -> Config:
+        """
+        Return the configuration for this WorkloadApiClient
+
+        Returns:
+            Config: pyspiffe.config.Config object
+        """
+
+        return self._config
 
     def fetch_x509_svid(self) -> X509Svid:
         """
