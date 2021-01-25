@@ -79,7 +79,7 @@ To remove the virtual environment
 make rm_env
 ```
 
-8. Regenerate the protobuf code
+### Regenerate the protobuf code
 
 In case the protobuf definition `workload.proto` should change, regenerate the python code running:
 
