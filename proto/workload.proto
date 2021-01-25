@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-option java_package = "io.spiffe.workloadapi.grpc";
-
 import "google/protobuf/struct.proto";
 
 message X509SVIDRequest {  }
