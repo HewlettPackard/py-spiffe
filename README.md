@@ -79,6 +79,20 @@ To remove the virtual environment
 make rm_env
 ```
 
+8. Regenerate the protobuf code
+
+In case the protobuf definition `workload.proto` should change, regenerate the python code running:
+
+```
+make pb_generate
+```
+
+Then amend in `workload_pb2_grpc.py` the import line replacing it by:
+
+```
+from . import workload_pb2 as workload__pb2
+```
+
 ### Troubleshooting
 Ubuntu 20.04 users might experience issues when creating the environment (running `make env`) due to an older version of `setuptools` installed on the virtual environment.
 To work around this issue, update the version of `pipenv` to `2020.11.4` or newer.
