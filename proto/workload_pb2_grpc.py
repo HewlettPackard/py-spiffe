@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from . import workload_pb2 as workload__pb2
+import workload_pb2 as workload__pb2
 
 
 class SpiffeWorkloadAPIStub(object):
