@@ -30,7 +30,15 @@ def test_read_socket_from_environment_variables():
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
     setter = ConfigSetter()
-    del os.environ['SPIFFE_ENDPOINT_SOCKET']
+
+    assert setter.get_config().spiffe_endpoint_socket == fake_socket
+
+
+def test_socket_parameter_preponderance_over_environment_variable():
+    fake_socket = 'unix:///path/to/endpoint.sock'
+    os.environ['SPIFFE_ENDPOINT_SOCKET'] = 'env_var_socket'
+
+    setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
 
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
