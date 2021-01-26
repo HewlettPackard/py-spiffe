@@ -25,6 +25,6 @@ setup(
     license='Apache License Version 2.0',
     packages=find_packages(where='src', exclude=['test']),
     package_dir={'': 'src'},
-    install_requires=['rfc3987', 'pyjwt'],
+    install_requires=['rfc3987', 'pyjwt', 'cryptography'],
     python_requires='>=3.6',
 )

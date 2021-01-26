@@ -1,16 +1,24 @@
 import pytest
 import datetime
 from calendar import timegm
+import jwt
 
-from src.pyspiffe.svid.jwt_svid import (
+from pyspiffe.svid.jwt_svid import (
     JwtSvid,
     EMPTY_TOKEN_ERROR,
     INVALID_INPUT_ERROR,
     MISSING_X_ERROR,
     AUDIENCE_NOT_MATCH_ERROR,
-    SIGNATURE_EXPIRED_ERROR,
+    TOKEN_EXPIRED_ERROR,
+    UNSUPPORTED_VALUE_ERROR,
 )
-from src.pyspiffe.exceptions import JwtSvidError
+from pyspiffe.svid.exceptions import (
+    TokenExpiredError,
+    JwtSvidError,
+    InvalidClaimError,
+    UnsupportedAlgorithmError,
+    UnsupportedTypeError,
+)
 
 
 """
@@ -24,12 +32,17 @@ from src.pyspiffe.exceptions import JwtSvidError
         (
             None,
             None,
-            INVALID_INPUT_ERROR.format('audience_claims and audience cannot be empty'),
+            INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
         ),
         (
             [],
             [],
-            INVALID_INPUT_ERROR.format('audience_claims and audience cannot be empty'),
+            INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
+        ),
+        (
+            ['None'],
+            None,
+            INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
         ),
     ],
 )
@@ -45,17 +58,28 @@ def test_invalid_input_validate_aud(
 @pytest.mark.parametrize(
     'test_input_aud_claim,test_input_audience, expected',
     [
-        (None, ['None'], AUDIENCE_NOT_MATCH_ERROR),
-        (['None'], None, AUDIENCE_NOT_MATCH_ERROR),
-        ([], ['something'], AUDIENCE_NOT_MATCH_ERROR),
-        (['something'], [], AUDIENCE_NOT_MATCH_ERROR),
+        (None, ['None'], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
+        (
+            [],
+            ['something'],
+            INVALID_INPUT_ERROR.format('audience_claim cannot be empty'),
+        ),
+        ([''], [''], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
+        ([''], ['test'], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
+        (
+            ['', '', ''],
+            ['test'],
+            INVALID_INPUT_ERROR.format('audience_claim cannot be empty'),
+        ),
         (['something'], [''], AUDIENCE_NOT_MATCH_ERROR),
         (['something'], ['nothing'], AUDIENCE_NOT_MATCH_ERROR),
         (['something'], ['something else', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
+        (['something'], ['something', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
+        (['something', 'else'], ['else', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
     ],
 )
 def test_invalid_validate_aud(test_input_aud_claim, test_input_audience, expected):
-    with pytest.raises(JwtSvidError) as exception:
+    with pytest.raises(InvalidClaimError) as exception:
         JwtSvid._validate_aud(test_input_aud_claim, test_input_audience)
 
     assert str(exception.value) == expected
@@ -64,11 +88,10 @@ def test_invalid_validate_aud(test_input_aud_claim, test_input_audience, expecte
 @pytest.mark.parametrize(
     'test_input_aud_claim,test_input_audience',
     [
-        ([''], ['']),
         (['something'], ['something']),
         (['something', 'else'], ['else']),
-        (['something', 'else', 'nothing'], ['nothing', 'unforgiven']),
-        (['something', 'else', 'matters'], ['something else', 'matters']),
+        (['something', 'else', 'unforgiven', 'nothing'], ['nothing', 'unforgiven']),
+        (['something else', 'else', 'matters'], ['something else', 'matters']),
     ],
 )
 def test_valid_validate_aud(test_input_aud_claim, test_input_audience):
@@ -90,7 +113,7 @@ def test_valid_validate_aud(test_input_aud_claim, test_input_audience):
     ],
 )
 def test_invalid_input_validate_exp(test_input_exp):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError):
         JwtSvid._validate_exp(test_input_exp)
     assert True
 
@@ -104,7 +127,7 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(hours=24)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
         (
             timegm(
@@ -112,7 +135,7 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(hours=1)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
         (
             timegm(
@@ -120,13 +143,13 @@ def test_invalid_input_validate_exp(test_input_exp):
                     datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
                 ).utctimetuple()
             ),
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),
-        ("1611075778", SIGNATURE_EXPIRED_ERROR),
+        ("1611075778", TOKEN_EXPIRED_ERROR),
     ],
 )
 def test_expired_input_validate_exp(test_input_exp, expected):
-    with pytest.raises(JwtSvidError) as exception:
+    with pytest.raises(TokenExpiredError) as exception:
         JwtSvid._validate_exp(test_input_exp)
     assert str(exception.value) == expected
 
@@ -202,6 +225,78 @@ def test_valid_input_validate_claims(test_input_payload, test_input_audience):
 
 
 """
+    _validate_header tests
+"""
+
+
+@pytest.mark.parametrize(
+    'test_input_header, expected',
+    [
+        # ({''}, INVALID_INPUT_ERROR.format('header cannot be empty or alg must be specified')),
+        (
+            None,
+            INVALID_INPUT_ERROR.format(
+                'header cannot be empty or alg must be specified'
+            ),
+        ),
+        (
+            {'alg': ''},
+            INVALID_INPUT_ERROR.format(
+                'header cannot be empty or alg must be specified'
+            ),
+        ),
+    ],
+)
+def test_invalid_input_validate_header(test_input_header, expected):
+    with pytest.raises(ValueError) as exception:
+        JwtSvid._validate_header(test_input_header)
+
+    assert str(exception.value) == expected
+
+
+@pytest.mark.parametrize(
+    'test_input_header, expected',
+    [
+        ({'alg': 'eee'}, UNSUPPORTED_VALUE_ERROR.format('eee')),
+        ({'alg': 'RS256 RS384'}, UNSUPPORTED_VALUE_ERROR.format('RS256 RS384')),
+    ],
+)
+def test_invalid_algorithm_validate_header(test_input_header, expected):
+    with pytest.raises(UnsupportedAlgorithmError) as exception:
+        JwtSvid._validate_header(test_input_header)
+
+    assert str(exception.value) == expected
+
+
+@pytest.mark.parametrize(
+    'test_input_header, expected',
+    [
+        ({'alg': 'RS256', 'typ': 'xxx'}, UNSUPPORTED_VALUE_ERROR.format('xxx')),
+    ],
+)
+def test_invalid_type_validate_header(test_input_header, expected):
+    with pytest.raises(UnsupportedTypeError) as exception:
+        JwtSvid._validate_header(test_input_header)
+
+    assert str(exception.value) == expected
+
+
+@pytest.mark.parametrize(
+    'test_input_header',
+    [
+        ({'alg': 'RS256', 'typ': 'JOSE'}),
+        ({'alg': 'PS512', 'typ': 'JWT'}),
+        ({'alg': 'ES384', 'typ': ''}),
+        ({'alg': 'PS256'}),
+    ],
+)
+def test_invalid_type_validate_header(test_input_header):
+    JwtSvid._validate_header(test_input_header)
+
+    assert True
+
+
+"""
     parse_insecure tests
 """
 
@@ -226,24 +321,65 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
     'test_input_token,test_input_audience, expected',
     [
         (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjJ9.DZhQWvCRCY96yXJzRUMiSnB6mlMUQW4il0UQ4LXAKlU",
-            [],
+            jwt.encode(
+                {
+                    'sub': 'spiffeid://somewhere.over.the',
+                    'exp': timegm(
+                        (
+                            datetime.datetime.utcnow() + datetime.timedelta(hours=72)
+                        ).utctimetuple()
+                    ),
+                },
+                'secret',
+                headers={'alg': 'RS256', 'typ': 'JOSE'},
+            ),
+            ["spire"],
             MISSING_X_ERROR.format('aud'),
         ),  # no aud
         (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjIsImF1ZCI6InNwaXJlIn0.hL6rIVn5dFuQ4KKWxZ7yag7Gi68m174RqaU04720PZU",
+            jwt.encode(
+                {
+                    'aud': ['spire'],
+                    'sub': 'spiffeid://somwhere.over.the',
+                },
+                'secret',
+                headers={'alg': 'ES384', 'typ': 'JWT'},
+            ),
             ["spire"],
             MISSING_X_ERROR.format('exp'),
         ),  # no exp
         (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiR2xhdSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjM5MDIyLCJhdWQiOlsic3BpcmUiXX0.Cc6vnXybg_7DTYpObYkCNIuJqzROlRj3jVe0g4qO-W4",
+            jwt.encode(
+                {
+                    'aud': ['spire'],
+                    'exp': timegm(
+                        (
+                            datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+                        ).utctimetuple()
+                    ),
+                },
+                'secret',
+                headers={'alg': 'RS512', 'typ': 'JWT'},
+            ),
             ["spire"],
             MISSING_X_ERROR.format('sub'),
         ),  # no sub
         (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmVJRDovL3Rlcy5kb21haW4vIiwibmFtZSI6IkdsYXVjaW1hciBBZ3VpYXIiLCJpYXQiOjE1MTYyMzkwMjIsImF1ZCI6InNwaXJlIiwiZXhwIjoiMTU0NTE4NTQ5NiJ9.HQ6F_uvq597L1TunY6RSe0OpOAF-r2vAVGIFDQrde1c",
+            jwt.encode(
+                {
+                    'aud': ['spire'],
+                    'sub': 'spiffeid://somwhere.over.the',
+                    'exp': timegm(
+                        (
+                            datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+                        ).utctimetuple()
+                    ),
+                },
+                'secret',
+                headers={'alg': 'PS512', 'typ': 'JOSE'},
+            ),
             ["spire"],
-            SIGNATURE_EXPIRED_ERROR,
+            TOKEN_EXPIRED_ERROR,
         ),  # expired token
     ],
 )
@@ -258,9 +394,38 @@ def test_invalid_parse_insecure(test_input_token, test_input_audience, expected)
     'test_input_token,test_input_audience, expected',
     [
         (
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzcGlmZmU6Ly90ZXN0Lm9yZy8iLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6NDcyMTUwNTQzNywiYXVkIjpbInNwaXJlIl19.cvoi48geyYPAP88RQbBXyEXoRX09II5xAR0XKULWDwQ",
-            ["spire"],
-            "spiffe://test.org/",
+            jwt.encode(
+                {
+                    'aud': ['spire'],
+                    'sub': 'spiffe://test.org/',
+                    'exp': timegm(
+                        (
+                            datetime.datetime.utcnow() + datetime.timedelta(hours=100)
+                        ).utctimetuple()
+                    ),
+                },
+                'secret',
+                headers={'alg': 'RS256', 'typ': 'JWT'},
+            ),
+            ['spire'],
+            'spiffe://test.org/',
+        ),
+        (
+            jwt.encode(
+                {
+                    'aud': ['spire', 'test', 'valid'],
+                    'sub': 'spiffe://test.orgcom.br/',
+                    'exp': timegm(
+                        (
+                            datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                        ).utctimetuple()
+                    ),
+                },
+                'secret key',
+                headers={'alg': 'PS384', 'typ': 'JOSE'},
+            ),
+            ['spire', 'test'],
+            "spiffe://test.orgcom.br/",
         ),
     ],
 )

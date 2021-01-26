@@ -1,4 +1,4 @@
-from src.pyspiffe.exceptions import JwtBundleNotFoundError
+from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleNotFoundError
 
 
 class JwtBundle(object):
