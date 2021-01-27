@@ -1,21 +1,39 @@
 from pyspiffe.exceptions import PySpiffeError
 
+INVALID_VALUE_ERROR = '{} is not supported.'
+
 
 class JwtSvidError(PySpiffeError):
-    pass
+    def __init__(self, text: str):
+        self.text = text
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class InvalidClaimError(JwtSvidError):
-    pass
+    _text = 'Invalid claim value: {}.'
+
+    def __init__(self, complement_text: str):
+        super().__init__(self._text.format(complement_text))
 
 
 class TokenExpiredError(JwtSvidError):
-    pass
+    _text = 'Token has expired.'
+
+    def __init__(self):
+        super().__init__(self._text)
 
 
-class UnsupportedAlgorithmError(JwtSvidError):
-    pass
+class InvalidAlgorithmError(JwtSvidError):
+    _text = INVALID_VALUE_ERROR
+
+    def __init__(self, complement_text: str):
+        super().__init__(self._text.format(complement_text))
 
 
-class UnsupportedTypeError(JwtSvidError):
-    pass
+class InvalidTypeError(JwtSvidError):
+    _text = INVALID_VALUE_ERROR
+
+    def __init__(self, complement_text: str):
+        super().__init__(self._text.format(complement_text))

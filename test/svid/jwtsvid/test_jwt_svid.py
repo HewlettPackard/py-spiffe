@@ -5,19 +5,15 @@ import jwt
 
 from pyspiffe.svid.jwt_svid import (
     JwtSvid,
-    EMPTY_TOKEN_ERROR,
     INVALID_INPUT_ERROR,
-    MISSING_X_ERROR,
     AUDIENCE_NOT_MATCH_ERROR,
-    TOKEN_EXPIRED_ERROR,
-    UNSUPPORTED_VALUE_ERROR,
 )
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     JwtSvidError,
     InvalidClaimError,
-    UnsupportedAlgorithmError,
-    UnsupportedTypeError,
+    InvalidAlgorithmError,
+    InvalidTypeError,
 )
 
 
@@ -58,24 +54,48 @@ def test_invalid_input_validate_aud(
 @pytest.mark.parametrize(
     'test_input_aud_claim,test_input_audience, expected',
     [
-        (None, ['None'], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
+        (
+            None,
+            ['None'],
+            InvalidClaimError._text.format('audience_claim cannot be empty'),
+        ),
         (
             [],
             ['something'],
-            INVALID_INPUT_ERROR.format('audience_claim cannot be empty'),
+            InvalidClaimError._text.format('audience_claim cannot be empty'),
         ),
-        ([''], [''], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
-        ([''], ['test'], INVALID_INPUT_ERROR.format('audience_claim cannot be empty')),
+        ([''], [''], InvalidClaimError._text.format('audience_claim cannot be empty')),
+        (
+            [''],
+            ['test'],
+            InvalidClaimError._text.format('audience_claim cannot be empty'),
+        ),
         (
             ['', '', ''],
             ['test'],
-            INVALID_INPUT_ERROR.format('audience_claim cannot be empty'),
+            InvalidClaimError._text.format('audience_claim cannot be empty'),
         ),
-        (['something'], [''], AUDIENCE_NOT_MATCH_ERROR),
-        (['something'], ['nothing'], AUDIENCE_NOT_MATCH_ERROR),
-        (['something'], ['something else', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
-        (['something'], ['something', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
-        (['something', 'else'], ['else', 'matters'], AUDIENCE_NOT_MATCH_ERROR),
+        (['something'], [''], InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR)),
+        (
+            ['something'],
+            ['nothing'],
+            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+        ),
+        (
+            ['something'],
+            ['something else', 'matters'],
+            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+        ),
+        (
+            ['something'],
+            ['something', 'matters'],
+            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+        ),
+        (
+            ['something', 'else'],
+            ['else', 'matters'],
+            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+        ),
     ],
 )
 def test_invalid_validate_aud(test_input_aud_claim, test_input_audience, expected):
@@ -119,39 +139,36 @@ def test_invalid_input_validate_exp(test_input_exp):
 
 
 @pytest.mark.parametrize(
-    'test_input_exp, expected',
+    'test_input_exp',
     [
         (
             timegm(
                 (
                     datetime.datetime.utcnow() - datetime.timedelta(hours=24)
                 ).utctimetuple()
-            ),
-            TOKEN_EXPIRED_ERROR,
+            )
         ),
         (
             timegm(
                 (
                     datetime.datetime.utcnow() - datetime.timedelta(hours=1)
                 ).utctimetuple()
-            ),
-            TOKEN_EXPIRED_ERROR,
+            )
         ),
         (
             timegm(
                 (
                     datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
                 ).utctimetuple()
-            ),
-            TOKEN_EXPIRED_ERROR,
+            )
         ),
-        ("1611075778", TOKEN_EXPIRED_ERROR),
+        ("1611075778"),
     ],
 )
-def test_expired_input_validate_exp(test_input_exp, expected):
+def test_expired_input_validate_exp(test_input_exp):
     with pytest.raises(TokenExpiredError) as exception:
         JwtSvid._validate_exp(test_input_exp)
-    assert str(exception.value) == expected
+    assert str(exception.value) == TokenExpiredError._text
 
 
 @pytest.mark.parametrize(
@@ -186,17 +203,21 @@ def test_valid_input_validate_exp(test_input_exp):
 @pytest.mark.parametrize(
     'test_input_payload, test_input_audience, expected',
     [
-        ({'aud': 'ttt', 'exp': 'ttt'}, [], MISSING_X_ERROR.format('sub')),
-        ({'sub': 'ttt', 'exp': 'ttt'}, [], MISSING_X_ERROR.format('aud')),
-        ({'sub': 'ttt', 'aud': 'ttt'}, [], MISSING_X_ERROR.format('exp')),
-        ({'sub': 'ttt', 'aud': 'ttt', 'exp': ''}, [], MISSING_X_ERROR.format('exp')),
-        ({}, [], MISSING_X_ERROR.format('aud')),
+        ({'aud': 'ttt', 'exp': 'ttt'}, [], InvalidClaimError._text.format('sub')),
+        ({'sub': 'ttt', 'exp': 'ttt'}, [], InvalidClaimError._text.format('aud')),
+        ({'sub': 'ttt', 'aud': 'ttt'}, [], InvalidClaimError._text.format('exp')),
+        (
+            {'sub': 'ttt', 'aud': 'ttt', 'exp': ''},
+            [],
+            InvalidClaimError._text.format('exp'),
+        ),
+        ({}, [], InvalidClaimError._text.format('aud')),
     ],
 )
 def test_invalid_input_validate_claims(
     test_input_payload, test_input_audience, expected
 ):
-    with pytest.raises(JwtSvidError) as exception:
+    with pytest.raises(InvalidClaimError) as exception:
         JwtSvid._validate_claims(test_input_payload, test_input_audience)
 
     assert str(exception.value) == expected
@@ -232,18 +253,9 @@ def test_valid_input_validate_claims(test_input_payload, test_input_audience):
 @pytest.mark.parametrize(
     'test_input_header, expected',
     [
-        # ({''}, INVALID_INPUT_ERROR.format('header cannot be empty or alg must be specified')),
         (
             None,
-            INVALID_INPUT_ERROR.format(
-                'header cannot be empty or alg must be specified'
-            ),
-        ),
-        (
-            {'alg': ''},
-            INVALID_INPUT_ERROR.format(
-                'header cannot be empty or alg must be specified'
-            ),
+            INVALID_INPUT_ERROR.format('header cannot be empty'),
         ),
     ],
 )
@@ -257,12 +269,13 @@ def test_invalid_input_validate_header(test_input_header, expected):
 @pytest.mark.parametrize(
     'test_input_header, expected',
     [
-        ({'alg': 'eee'}, UNSUPPORTED_VALUE_ERROR.format('eee')),
-        ({'alg': 'RS256 RS384'}, UNSUPPORTED_VALUE_ERROR.format('RS256 RS384')),
+        ({'alg': 'eee'}, InvalidAlgorithmError._text.format('eee')),
+        ({'alg': 'RS256 RS384'}, InvalidAlgorithmError._text.format('RS256 RS384')),
+        ({'alg': ''}, InvalidAlgorithmError._text.format('')),
     ],
 )
 def test_invalid_algorithm_validate_header(test_input_header, expected):
-    with pytest.raises(UnsupportedAlgorithmError) as exception:
+    with pytest.raises(InvalidAlgorithmError) as exception:
         JwtSvid._validate_header(test_input_header)
 
     assert str(exception.value) == expected
@@ -271,11 +284,11 @@ def test_invalid_algorithm_validate_header(test_input_header, expected):
 @pytest.mark.parametrize(
     'test_input_header, expected',
     [
-        ({'alg': 'RS256', 'typ': 'xxx'}, UNSUPPORTED_VALUE_ERROR.format('xxx')),
+        ({'alg': 'RS256', 'typ': 'xxx'}, InvalidTypeError._text.format('xxx')),
     ],
 )
 def test_invalid_type_validate_header(test_input_header, expected):
-    with pytest.raises(UnsupportedTypeError) as exception:
+    with pytest.raises(InvalidTypeError) as exception:
         JwtSvid._validate_header(test_input_header)
 
     assert str(exception.value) == expected
@@ -290,7 +303,7 @@ def test_invalid_type_validate_header(test_input_header, expected):
         ({'alg': 'PS256'}),
     ],
 )
-def test_invalid_type_validate_header(test_input_header):
+def test_valid_validate_header(test_input_header):
     JwtSvid._validate_header(test_input_header)
 
     assert True
@@ -304,10 +317,10 @@ def test_invalid_type_validate_header(test_input_header):
 @pytest.mark.parametrize(
     'test_input_token,test_input_audience, expected',
     [
-        ('', [], EMPTY_TOKEN_ERROR),
-        ('', None, EMPTY_TOKEN_ERROR),
-        (None, [], EMPTY_TOKEN_ERROR),
-        (None, None, EMPTY_TOKEN_ERROR),
+        ('', [], INVALID_INPUT_ERROR.format('token cannot be empty')),
+        ('', None, INVALID_INPUT_ERROR.format('token cannot be empty')),
+        (None, [], INVALID_INPUT_ERROR.format('token cannot be empty')),
+        (None, None, INVALID_INPUT_ERROR.format('token cannot be empty')),
     ],
 )
 def test_invalid_input_parse_insecure(test_input_token, test_input_audience, expected):
@@ -334,7 +347,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS256', 'typ': 'JOSE'},
             ),
             ["spire"],
-            MISSING_X_ERROR.format('aud'),
+            InvalidClaimError._text.format('aud'),
         ),  # no aud
         (
             jwt.encode(
@@ -346,7 +359,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'ES384', 'typ': 'JWT'},
             ),
             ["spire"],
-            MISSING_X_ERROR.format('exp'),
+            InvalidClaimError._text.format('exp'),
         ),  # no exp
         (
             jwt.encode(
@@ -362,7 +375,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS512', 'typ': 'JWT'},
             ),
             ["spire"],
-            MISSING_X_ERROR.format('sub'),
+            InvalidClaimError._text.format('sub'),
         ),  # no sub
         (
             jwt.encode(
@@ -379,7 +392,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'PS512', 'typ': 'JOSE'},
             ),
             ["spire"],
-            TOKEN_EXPIRED_ERROR,
+            TokenExpiredError._text,
         ),  # expired token
     ],
 )
