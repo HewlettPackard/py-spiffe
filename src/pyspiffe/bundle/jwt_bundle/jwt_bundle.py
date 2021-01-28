@@ -7,11 +7,11 @@ class JwtBundle(object):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.jwt_authorities = {}
 
     """
-        Searches for the authority for the specified key_id and returns it.
+        Returns the authority for the specified key_id.
         Raises
             JwtBundleNotFoundError  when no authority is found for the given key_id.
     """
