@@ -41,7 +41,7 @@ class JwtSvidValidator(object):
         header ({}): token header.
 
     Returns:
-        None
+        None.
 
     Raises:
         ValueError: in case header is not specified.
@@ -66,7 +66,7 @@ class JwtSvidValidator(object):
 
     Args:
         payload ({}): token playload.
-        expected_audience([]]): audience as a list of strings used to validate the 'aud' claim.
+        expected_audience(List): audience as a list of strings used to validate the 'aud' claim.
 
     Returns:
         None

@@ -100,7 +100,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
         ),  # expired token
     ],
 )
-def test_invalid_parse_insecure(test_input_token, test_input_audience, expected):
+def test_invalid_token_parse_insecure(test_input_token, test_input_audience, expected):
     with pytest.raises(JwtSvidError) as exception:
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
