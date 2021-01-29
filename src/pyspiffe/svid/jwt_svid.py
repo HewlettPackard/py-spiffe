@@ -31,9 +31,9 @@ class JwtSvid(object):
         self.token = token
 
     """
-    Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', 
+    Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
     and expiry from 'exp' claim. The JWT-SVID signature is not verified.
-    
+
     Args:
         token(str): a token as a string that is parsed and validated.
         param audience(List): audience as a list of strings used to validate the 'aud' claim.
@@ -41,7 +41,7 @@ class JwtSvid(object):
     Returns:
         an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
-    
+
     Raises:
         ValueError: when the token is blank or cannot be parsed, in case header is not specified,
         InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
@@ -79,7 +79,7 @@ class JwtSvid(object):
     Returns:
         an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
-    
+
     Raises:
         JwtSvidError:   when the token expired or the expiration claim is missing,
                         when the algorithm is not supported, when the header 'kid' is missing,
