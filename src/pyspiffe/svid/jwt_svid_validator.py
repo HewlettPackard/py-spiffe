@@ -35,7 +35,7 @@ class JwtSvidValidator(object):
         pass
 
     """
-    Validates token header by verifing if header specifies supported algortihms and token type.
+    Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
 
     Args:
         header ({}): token header.
@@ -62,7 +62,7 @@ class JwtSvidValidator(object):
             pass
 
     """
-    Validates payload for required claims (aud, exp, sub) - signature expiration and audience.
+    Validates payload for required claims (aud, exp, sub).
 
     Args:
         payload ({}): token playload.

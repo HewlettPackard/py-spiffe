@@ -12,6 +12,13 @@ class JwtSvid(object):
     """
     Represents a SPIFFE JWT SVID as defined in the SPIFFE standard.
     See <a href="https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md">https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md</a>.
+
+    Attributes:
+        spiffeId (SpiffeId): token spiffeId.
+        audience (List): audience claim.
+        expiry (datetime): date and time in UTC specifing expiry date.
+        claims (Dictionary): key-value pairs with all the claims present in the token.
+        token (str): encoded token.
     """
 
     def __init__(
@@ -36,8 +43,7 @@ class JwtSvid(object):
         from 'exp' claim.
     
     Raises:
-        ValueError:     when the token is blank or cannot be parsed,
-                        in case header is not specified,
+        ValueError: when the token is blank or cannot be parsed, in case header is not specified,
         InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
         InvalidTypeError: in case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
         InvalidClaimError: in case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
@@ -66,26 +72,23 @@ class JwtSvid(object):
     The JWT-SVID signature is verified using the JWT bundle source.
 
     Args:
-        token:               a token as a string that is parsed and validated
-        jwt_bundle_source:   an implementation of a {@link JwtBundle} that provides the JWT authorities to
-                                verify the signature
-        audience:            a list of strings used to validate the 'aud' claim
-    
+        token (str): a token as a string that is parsed and validated.
+        jwt_bundle (JwtBundle): an implementation of a {@link JwtBundle} that provides the JWT authorities to verify the signature.
+        audience (List): a list of strings used to validate the 'aud' claim.
+
     Returns:
         an instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
         from 'exp' claim.
     
     Raises:
-        JwtSvidError:           when the token expired or the expiration claim is missing,
-                                when the algorithm is not supported, when the header 'kid' is missing,
-                                when the signature cannot be verified, or
-                                when the 'aud' claim has an audience that is not in the audience list
-                                provided as parameter
-        ValueError:             when the token is blank or cannot be parsed
+        JwtSvidError:   when the token expired or the expiration claim is missing,
+                        when the algorithm is not supported, when the header 'kid' is missing,
+                        when the signature cannot be verified, or
+                        when the 'aud' claim has an audience that is not in the audience list provided as parameter.
+        ValueError:     when the token is blank or cannot be parsed.
         BundleNotFoundError:    if the bundle for the trust domain of the spiffe id from the 'sub'
-                                cannot be found the jwt_bundle_source
-        AuthorityNotFoundError: if the authority cannot be found in the bundle using the value from
-                                the 'kid' header
+                                cannot be found the jwt_bundle_source.
+        AuthorityNotFoundError: if the authority cannot be found in the bundle using the value from the 'kid' header.
     """
 
     @classmethod
