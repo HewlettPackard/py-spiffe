@@ -3,10 +3,8 @@ import datetime
 from calendar import timegm
 import jwt
 
-from pyspiffe.svid.jwt_svid import (
-    JwtSvid,
-    INVALID_INPUT_ERROR,
-)
+from pyspiffe.svid import INVALID_INPUT_ERROR
+from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     JwtSvidError,
@@ -51,7 +49,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS256', 'typ': 'JOSE'},
             ),
             ["spire"],
-            InvalidClaimError._text.format('aud'),
+            str(InvalidClaimError('aud')),
         ),  # no aud
         (
             jwt.encode(
@@ -63,7 +61,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'ES384', 'typ': 'JWT'},
             ),
             ["spire"],
-            InvalidClaimError._text.format('exp'),
+            str(InvalidClaimError('exp')),
         ),  # no exp
         (
             jwt.encode(
@@ -79,7 +77,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS512', 'typ': 'JWT'},
             ),
             ["spire"],
-            InvalidClaimError._text.format('sub'),
+            str(InvalidClaimError('sub')),
         ),  # no sub
         (
             jwt.encode(
@@ -96,7 +94,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
                 headers={'alg': 'PS512', 'typ': 'JOSE'},
             ),
             ["spire"],
-            TokenExpiredError._text,
+            str(TokenExpiredError()),
         ),  # expired token
     ],
 )

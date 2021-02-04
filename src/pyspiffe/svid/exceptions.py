@@ -6,36 +6,41 @@ INVALID_VALUE_ERROR = '{} is not supported.'
 class JwtSvidError(PySpiffeError):
     """Top level exception for JwtSvid module.
 
-    Args:
-        text (str): message describing the error.
-
     Attributes:
-        text (str): message describing the error. This is the message to be returned when __str__ is called.
+        message: message describing the error.
 
     """
 
-    def __init__(self, text: str) -> None:
-        self.text = text
+    def __init__(self, message: str) -> None:
+        """Creates an instance of JwtSvidError.
+
+        Args:
+            message: message describing the error.
+        """
+
+        self.message = message
 
     def __str__(self) -> str:
-        return self.text
+        return self.message
 
 
 class InvalidClaimError(JwtSvidError):
-    """Raised when an erronic value is found in the JWT token claims (e.g  missing required claims, invalid claims values, etc).
-
-    Args:
-        complement_text (str): complementary text to be appended to the default error message.
+    """Raised when an invalid value is found in the JWT token claims (e.g  missing required claims, invalid claims values, etc).
 
     Attributes:
-        _text (str): error message describing the encountered error.
+        _MESSAGE: error message describing the encountered error.
 
     """
 
-    _text = 'Invalid claim value: {}.'
+    _MESSAGE = 'Invalid claim value: {}.'
 
-    def __init__(self, complement_text: str) -> None:
-        super().__init__(self._text.format(complement_text))
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instace of InvalidClaimError adding the provided additional_information to the error mesage.
+
+        Args:
+            additional_information: contains additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
 
 
 class TokenExpiredError(JwtSvidError):

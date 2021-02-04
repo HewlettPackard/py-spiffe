@@ -72,7 +72,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             ['even more things'],
-            InvalidClaimError._text.format('aud'),
+            str(InvalidClaimError('aud')),
         ),
         (
             {
@@ -85,7 +85,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             ['even more things'],
-            InvalidClaimError._text.format('aud'),
+            str(InvalidClaimError('aud')),
         ),
         (
             {
@@ -98,7 +98,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             [''],
-            InvalidClaimError._text.format('audience_claim cannot be empty'),
+            str(InvalidClaimError('audience_claim cannot be empty')),
         ),
         (
             {
@@ -111,7 +111,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             ['test'],
-            InvalidClaimError._text.format('audience_claim cannot be empty'),
+            str(InvalidClaimError('audience_claim cannot be empty')),
         ),
         (
             {
@@ -124,7 +124,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             [''],
-            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+            str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
         ),
         (
             {
@@ -137,7 +137,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             ['something', 'matters'],
-            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+            str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
         ),
         (
             {
@@ -150,7 +150,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                 'sub': 'spiffeid://somwhere.over.the',
             },
             ['else', 'matters'],
-            InvalidClaimError._text.format(AUDIENCE_NOT_MATCH_ERROR),
+            str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
         ),
     ],
 )
@@ -219,15 +219,15 @@ def test_token_expired_validate_claim(test_input_claim, test_input_audience):
 @pytest.mark.parametrize(
     'test_input_claim, test_input_audience, expected',
     [
-        ({'aud': 'ttt', 'exp': 'ttt'}, [], InvalidClaimError._text.format('sub')),
-        ({'sub': 'ttt', 'exp': 'ttt'}, ['ttt'], InvalidClaimError._text.format('aud')),
-        ({'sub': 'ttt', 'aud': 'ttt'}, ['ttt'], InvalidClaimError._text.format('exp')),
+        ({'aud': 'ttt', 'exp': 'ttt'}, [], str(InvalidClaimError('sub'))),
+        ({'sub': 'ttt', 'exp': 'ttt'}, ['ttt'], str(InvalidClaimError('aud'))),
+        ({'sub': 'ttt', 'aud': 'ttt'}, ['ttt'], str(InvalidClaimError('exp'))),
         (
             {'sub': 'ttt', 'aud': 'ttt', 'exp': ''},
             [],
-            InvalidClaimError._text.format('exp'),
+            str(InvalidClaimError('exp')),
         ),
-        ({}, [], InvalidClaimError._text.format('aud')),
+        ({}, [], str(InvalidClaimError('aud'))),
     ],
 )
 def test_missing_required_claim_validate_claims(
@@ -313,9 +313,9 @@ def test_invalid_input_validate_header(test_input_header, expected):
 @pytest.mark.parametrize(
     'test_input_header, expected',
     [
-        ({'alg': 'eee'}, InvalidAlgorithmError._text.format('eee')),
-        ({'alg': 'RS256 RS384'}, InvalidAlgorithmError._text.format('RS256 RS384')),
-        ({'alg': ''}, InvalidAlgorithmError._text.format('')),
+        ({'alg': 'eee'}, str(InvalidAlgorithmError('eee'))),
+        ({'alg': 'RS256 RS384'}, str(InvalidAlgorithmError('RS256 RS384'))),
+        ({'alg': ''}, str(InvalidAlgorithmError(''))),
     ],
 )
 def test_invalid_algorithm_validate_header(test_input_header, expected):
@@ -328,7 +328,7 @@ def test_invalid_algorithm_validate_header(test_input_header, expected):
 @pytest.mark.parametrize(
     'test_input_header, expected',
     [
-        ({'alg': 'RS256', 'typ': 'xxx'}, InvalidTypeError._text.format('xxx')),
+        ({'alg': 'RS256', 'typ': 'xxx'}, str(InvalidTypeError('xxx'))),
     ],
 )
 def test_invalid_type_validate_header(test_input_header, expected):

@@ -1,6 +1,8 @@
 import datetime
 from calendar import timegm
 
+from pyspiffe.svid import INVALID_INPUT_ERROR
+
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     InvalidClaimError,
@@ -9,16 +11,16 @@ from pyspiffe.svid.exceptions import (
 )
 
 AUDIENCE_NOT_MATCH_ERROR = 'audience does not match expected value'
-INVALID_INPUT_ERROR = 'Invalid input: {}.'
 
 
 class JwtSvidValidator(object):
     """Performs validations on a given token checking compliance to SPIFFE specification.
-    See <a href="https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md">https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md</a>.
+    See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md>`
+
     """
 
-    _required_claims = ['aud', 'exp', 'sub']
-    _supported_algorithms = [
+    _REQUIRED_CLAIMS = ['aud', 'exp', 'sub']
+    _SUPPORTED_ALGORITHMS = [
         'RS256',
         'RS384',
         'RS512',
@@ -29,57 +31,53 @@ class JwtSvidValidator(object):
         'PS384',
         'PS512',
     ]
-    _supported_types = ['JWT', 'JOSE']
+    _SUPPORTED_TYPES = ['JWT', 'JOSE']
 
     def __init__(self) -> None:
         pass
 
-    """
-    Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
-
-    Args:
-        header ({}): token header.
-
-    Returns:
-        None.
-
-    Raises:
-        ValueError: in case header is not specified.
-        InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
-        InvalidTypeError: in case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
-    """
-
     def validate_header(self, header: {}) -> None:
+        """Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
+
+        Args:
+            header: token header.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: in case header is not specified.
+            InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
+            InvalidTypeError: in case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
+        """
         if not header:
             raise ValueError(INVALID_INPUT_ERROR.format('header cannot be empty'))
 
-        if header['alg'] not in self._supported_algorithms:
+        if header['alg'] not in self._SUPPORTED_ALGORITHMS:
             raise InvalidAlgorithmError(header['alg'])
         try:
-            if header['typ'] and header['typ'] not in self._supported_types:
+            if header['typ'] and header['typ'] not in self._SUPPORTED_TYPES:
                 raise InvalidTypeError(header['typ'])
         except KeyError:
             pass
 
-    """
-    Validates payload for required claims (aud, exp, sub).
-
-    Args:
-        payload ({}): token playload.
-        expected_audience(List): audience as a list of strings used to validate the 'aud' claim.
-
-    Returns:
-        None
-
-    Raises:
-        InvalidClaimError: in case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
-        TokenExpiredError: in case token is expired.
-        ValueError: in case expected_audience is empty.
-    """
-
     def validate_claims(self, payload: {}, expected_audience: []) -> None:
+        """Validates payload for required claims (aud, exp, sub).
+
+        Args:
+            payload: token playload.
+            expected_audience: audience as a list of strings used to validate the 'aud' claim.
+
+        Returns:
+            None
+
+        Raises:
+            InvalidClaimError: in case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
+            TokenExpiredError: in case token is expired.
+            ValueError: in case expected_audience is empty.
+        """
         try:
-            for claim in self._required_claims:
+            for claim in self._REQUIRED_CLAIMS:
                 if not payload[claim]:
                     raise InvalidClaimError(claim)
             self._validate_exp(payload['exp'])
@@ -87,25 +85,32 @@ class JwtSvidValidator(object):
         except KeyError as key_error:
             raise InvalidClaimError(key_error.args[0])
 
-    ###
-    ### Verifies token expiration.
-    ### Note: If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
-    ### Raises:
-    ###     TokenExpiredError: in case token is expired.
-    ###
     def _validate_exp(self, expiration_date: str) -> None:
+        """Verifies expiration.
+        Note: If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
+
+        Args:
+            expiration_date: date to check if it is expired.
+
+        Raises:
+            TokenExpiredError: in case it is expired.
+        """
         expiration_date = int(expiration_date)
         utctime = timegm(datetime.datetime.utcnow().utctimetuple())
         if expiration_date < utctime:
             raise TokenExpiredError()
 
-    ###
-    ### Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
-    ### Raises:
-    ###     InvalidClaimError: in expected_audience is not a subset of audience_claim.
-    ###     ValueError: in case expected_audience is empty.
-    ###
     def _validate_aud(self, audience_claim: [], expected_audience: []) -> None:
+        """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
+
+        Args:
+            audience_claim: list of token's audience claim to be validated.
+            expected_audience: list of the claims expected to be present in the token's audience claim.
+
+        Raises:
+            InvalidClaimError: in expected_audience is not a subset of audience_claim.
+            ValueError: in case expected_audience is empty.
+        """
         if not expected_audience:
             raise ValueError(
                 INVALID_INPUT_ERROR.format('expected_audience cannot be empty')
