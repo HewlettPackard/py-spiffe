@@ -1,4 +1,5 @@
 import datetime
+from typing import List, Dict
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -36,7 +37,7 @@ class JwtSvidValidator(object):
     def __init__(self) -> None:
         pass
 
-    def validate_header(self, header: {}) -> None:
+    def validate_header(self, header: Dict) -> None:
         """Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
 
         Args:
@@ -61,7 +62,7 @@ class JwtSvidValidator(object):
         except KeyError:
             pass
 
-    def validate_claims(self, payload: {}, expected_audience: []) -> None:
+    def validate_claims(self, payload: Dict, expected_audience: List) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
@@ -100,7 +101,7 @@ class JwtSvidValidator(object):
         if expiration_date < utctime:
             raise TokenExpiredError()
 
-    def _validate_aud(self, audience_claim: [], expected_audience: []) -> None:
+    def _validate_aud(self, audience_claim: List, expected_audience: List) -> None:
         """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
 
         Args:

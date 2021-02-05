@@ -213,7 +213,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
 def test_token_expired_validate_claim(test_input_claim, test_input_audience):
     with pytest.raises(TokenExpiredError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
-    assert str(exception.value) == TokenExpiredError._text
+    assert str(exception.value) == str(TokenExpiredError())
 
 
 @pytest.mark.parametrize(

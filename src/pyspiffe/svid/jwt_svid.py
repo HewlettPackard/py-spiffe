@@ -1,5 +1,6 @@
 import jwt
 import datetime
+from typing import List, Dict
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
@@ -14,12 +15,17 @@ class JwtSvid(object):
         spiffeId (SpiffeId): SPIFFE ID as present in the 'sub' claim.
         audience (List): audience claim.
         expiry (datetime): date and time in UTC specifing expiry date.
-        claims (Dictionary): key-value pairs with all the claims present in the token.
+        claims (Dict): key-value pairs with all the claims present in the token.
         token (str): encoded token.
     """
 
     def __init__(
-        self, spiffeId: SpiffeId, audience: [], expiry: datetime, claims: {}, token: str
+        self,
+        spiffeId: SpiffeId,
+        audience: List,
+        expiry: datetime,
+        claims: Dict,
+        token: str,
     ) -> None:
         """Creates a JwtSvid instance.
 
@@ -37,7 +43,7 @@ class JwtSvid(object):
         self.token = token
 
     @classmethod
-    def parse_insecure(cls, token: str, expected_audience: []) -> 'JwtSvid':
+    def parse_insecure(cls, token: str, expected_audience: List) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
         and expiry from 'exp' claim. The JWT-SVID signature is not verified.
 
@@ -71,7 +77,7 @@ class JwtSvid(object):
 
     @classmethod
     def parse_and_validate(
-        cls, token: str, jwt_bundle: JwtBundle, audience: []
+        cls, token: str, jwt_bundle: JwtBundle, audience: List
     ) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
 

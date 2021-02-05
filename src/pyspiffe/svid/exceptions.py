@@ -25,12 +25,7 @@ class JwtSvidError(PySpiffeError):
 
 
 class InvalidClaimError(JwtSvidError):
-    """Raised when an invalid value is found in the JWT token claims (e.g  missing required claims, invalid claims values, etc).
-
-    Attributes:
-        _MESSAGE: error message describing the encountered error.
-
-    """
+    """Error raised when an invalid value is found in the JWT token claims (e.g  missing required claims, invalid claims values, etc)."""
 
     _MESSAGE = 'Invalid claim value: {}.'
 
@@ -44,48 +39,45 @@ class InvalidClaimError(JwtSvidError):
 
 
 class TokenExpiredError(JwtSvidError):
-    """Raised when the JWT token is expired.
+    """Raised when the JWT token is expired."""
 
-    Attributes:
-        _text (str): error message describing the encountered error.
-
-    """
-
-    _text = 'Token has expired.'
+    _MESSAGE = 'Token has expired.'
 
     def __init__(self) -> None:
-        super().__init__(self._text)
+        """Creates an instance of TokenExpiredError
+
+        Args:
+            aadditional_information: additional information about the error.
+
+        """
+        super().__init__(self._MESSAGE)
 
 
 class InvalidAlgorithmError(JwtSvidError):
-    """Raised when an invalid value is found in the JWT token's algorithm field.
+    """Error raised when an invalid value is found in the JWT token's algorithm field."""
 
-    Args:
-        complement_text (str): complementary text to be appended to the default error message.
+    _MESSAGE = INVALID_VALUE_ERROR
 
-    Attributes:
-        _text (str): message describing the encountered error.
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of InvalidAlgorithmError
 
-    """
+        Args:
+            aadditional_information: additional information about the error.
 
-    _text = INVALID_VALUE_ERROR
-
-    def __init__(self, complement_text: str) -> None:
-        super().__init__(self._text.format(complement_text))
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
 
 
 class InvalidTypeError(JwtSvidError):
-    """Raised when an invalid value is found in the JWT token's type field.
+    """Error raised when an invalid value is found in the JWT token's type field."""
 
-    Args:
-        complement_text (str): complementary text to be appended to the default error message.
+    _MESSAGE = INVALID_VALUE_ERROR
 
-    Attributes:
-        _text (str): message describing the encountered error.
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of InvalidTypeError
 
-    """
+        Args:
+            additional_information: additional information about the error.
 
-    _text = INVALID_VALUE_ERROR
-
-    def __init__(self, complement_text: str) -> None:
-        super().__init__(self._text.format(complement_text))
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
