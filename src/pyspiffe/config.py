@@ -4,7 +4,7 @@
 import os
 import ipaddress
 from urllib.parse import ParseResult, urlparse
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, cast
 
 
 _SPIFFE_ENDPOINT_SOCKET = 'SPIFFE_ENDPOINT_SOCKET'
@@ -29,7 +29,7 @@ class Config:
 class ConfigSetter:
     """Loads and validates configuration variables."""
 
-    _FORBIDDEN_SOCKET_COMPONENTS = [
+    _FORBIDDEN_SOCKET_COMPONENTS: List[Tuple[str, Optional[str]]] = [
         ('fragment', None),
         ('username', None),
         ('password', None),
@@ -60,16 +60,14 @@ class ConfigSetter:
 
         self._validate()
         self._config = Config(
-            spiffe_endpoint_socket=self._raw_config[_SPIFFE_ENDPOINT_SOCKET]
+            spiffe_endpoint_socket=cast(str, self._raw_config[_SPIFFE_ENDPOINT_SOCKET])
         )
 
     def get_config(self) -> Config:
         return self._config
 
     def _apply_default_config(self) -> None:
-        self._raw_config = {
-            _SPIFFE_ENDPOINT_SOCKET: None,
-        }
+        self._raw_config: Dict[str, Optional[str]] = {_SPIFFE_ENDPOINT_SOCKET: None}
 
     def _apply_environment_variables(self) -> None:
         endpoint_socket = os.environ.get(_SPIFFE_ENDPOINT_SOCKET)

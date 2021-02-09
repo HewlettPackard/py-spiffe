@@ -80,7 +80,7 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-	$(PIPENV_CMD) run mypy -m src
+	$(PIPENV_CMD) run mypy --ignore-missing-imports src
 
 
 #------------------------------------------------------------------------
