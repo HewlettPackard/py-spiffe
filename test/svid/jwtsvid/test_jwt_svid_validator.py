@@ -295,12 +295,17 @@ def test_valid_input_validate_claims(test_input_claim, test_input_audience):
     [
         (
             None,
-            INVALID_INPUT_ERROR.format('header cannot be empty'),
+            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
         ),
         (
             '',
-            INVALID_INPUT_ERROR.format('header cannot be empty'),
+            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
         ),
+        (
+            {'tttt': 'eee'},
+            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
+        ),
+        ({'alg': ''}, INVALID_INPUT_ERROR.format('header alg cannot be empty')),
     ],
 )
 def test_invalid_input_validate_header(test_input_header, expected):
@@ -315,7 +320,6 @@ def test_invalid_input_validate_header(test_input_header, expected):
     [
         ({'alg': 'eee'}, str(InvalidAlgorithmError('eee'))),
         ({'alg': 'RS256 RS384'}, str(InvalidAlgorithmError('RS256 RS384'))),
-        ({'alg': ''}, str(InvalidAlgorithmError(''))),
     ],
 )
 def test_invalid_algorithm_validate_header(test_input_header, expected):

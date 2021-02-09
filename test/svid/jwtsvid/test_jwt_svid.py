@@ -9,6 +9,7 @@ from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     JwtSvidError,
     InvalidClaimError,
+    InvalidTokenError,
 )
 
 """
@@ -98,11 +99,29 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
         ),  # expired token
     ],
 )
-def test_invalid_token_parse_insecure(test_input_token, test_input_audience, expected):
+def test_invalid_claims_parse_insecure(test_input_token, test_input_audience, expected):
     with pytest.raises(JwtSvidError) as exception:
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
     assert str(exception.value) == expected
+
+
+@pytest.mark.parametrize(
+    'test_input_token,test_input_audience',
+    [
+        (
+            'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
+            ["spire"],
+        ),  # middle
+        (
+            'errJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3BpZmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
+            ["spire"],
+        ),  # first
+    ],
+)
+def test_invalid_token_parse_insecure(test_input_token, test_input_audience):
+    with pytest.raises(InvalidTokenError):
+        JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
 
 @pytest.mark.parametrize(

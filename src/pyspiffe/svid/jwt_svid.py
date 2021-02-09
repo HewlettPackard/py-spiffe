@@ -1,10 +1,16 @@
+"""
+This module manages JWT SVID objects.
+"""
+
 import jwt
+from jwt import PyJWTError
 import datetime
 from typing import List, Dict
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
+from pyspiffe.svid.exceptions import InvalidTokenError
 
 
 class JwtSvid(object):
@@ -56,22 +62,27 @@ class JwtSvid(object):
             from 'exp' claim.
 
         Raises:
-            ValueError: when the token is blank or cannot be parsed, or in case header is not specified.
+            ValueError: when the token is blank or cannot be parsed, or in case header is not specified or in case expected_audience is empty or
+                if the SPIFFE ID in the 'sub' claim doesn't comply with the SPIFFE standard.
             InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
             InvalidTypeError: in case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
             InvalidClaimError: in case a required claim ('exp', 'aud', 'sub') is not present in payload or expected_audience is not a subset of audience_claim.
             TokenExpiredError: in case token is expired.
-            ValueError: in case expected_audience is empty or if the SPIFFE ID in the 'sub' claim doesn't comply with the SPIFFE standard.
+            InvalidTokenError: in case token is malformed and fails to decode.
         """
         if not token:
             raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
-        token_header = jwt.get_unverified_header(token)
-        validator = JwtSvidValidator()
-        validator.validate_header(token_header)
-        claims = jwt.decode(token, options={'verify_signature': False})
-        validator.validate_claims(claims, expected_audience)
-        spiffe_ID = SpiffeId.parse(claims['sub'])
-        result = JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
+        result = None
+        try:
+            token_header = jwt.get_unverified_header(token)
+            validator = JwtSvidValidator()
+            validator.validate_header(token_header)
+            claims = jwt.decode(token, options={'verify_signature': False})
+            validator.validate_claims(claims, expected_audience)
+            spiffe_ID = SpiffeId.parse(claims['sub'])
+            result = JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
+        except PyJWTError as err:
+            raise InvalidTokenError(err)
 
         return result
 
@@ -101,22 +112,27 @@ class JwtSvid(object):
             BundleNotFoundError:    if the bundle for the trust domain of the spiffe id from the 'sub'
                                     cannot be found the jwt_bundle_source.
             AuthorityNotFoundError: if the authority cannot be found in the bundle using the value from the 'kid' header.
+            InvalidTokenError: in case token is malformed and fails to decode.
         """
-        token_header = jwt.get_unverified_header(token)
-        signing_key = jwt_bundle.findJwtAuthority(token_header['kid'])
+        claims = None
+        try:
+            token_header = jwt.get_unverified_header(token)
+            signing_key = jwt_bundle.findJwtAuthority(token_header['kid'])
 
-        claims = jwt.decode(
-            token,
-            algorithms=token_header['alg'],
-            key=signing_key,
-            audience=audience,
-            options={
-                'verify_signature': True,
-                'verify_aud': True,
-                'verify_exp': True,
-                'require': cls._required_claims,
-            },
-        )
+            claims = jwt.decode(
+                token,
+                algorithms=token_header['alg'],
+                key=signing_key,
+                audience=audience,
+                options={
+                    'verify_signature': True,
+                    'verify_aud': True,
+                    'verify_exp': True,
+                    'require': cls._required_claims,
+                },
+            )
+        except PyJWTError as err:
+            raise InvalidTokenError(err)
 
         spiffe_ID = SpiffeId.parse(claims['sub'])
         result = JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
