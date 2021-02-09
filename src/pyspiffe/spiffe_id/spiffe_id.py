@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Union, Dict
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
@@ -41,12 +41,14 @@ class SpiffeId(object):
         uri = cls.parse_and_validate_uri(spiffe_id)
 
         result = SpiffeId()
-        result.__set_path(uri.get('path'))
-        result.__set_trust_domain(TrustDomain(uri.get('authority')))
+        result.__set_path(uri['path'])
+        result.__set_trust_domain(TrustDomain(uri['authority']))
         return result
 
     @classmethod
-    def of(cls, trust_domain: TrustDomain, path_segments=None) -> 'SpiffeId':
+    def of(
+        cls, trust_domain: TrustDomain, path_segments: Union[str, List[str]] = None
+    ) -> 'SpiffeId':
         """Creates SpiffeId type instance from a Trust Domain and zero or more paths.
 
         Args:
@@ -101,8 +103,8 @@ class SpiffeId(object):
             )
         return '{}://{}'.format(SPIFFE_SCHEME, self.__trust_domain.name())
 
-    # path_segments can be an array of path segments or a single string representing a path
-    def __set_path(self, path: Any) -> None:
+    # path can be an array of path segments or a single string representing a path
+    def __set_path(self, path: Union[str, List[str]]) -> None:
         if isinstance(path, list):
             self.__path = ''
             for s in path:
@@ -123,7 +125,7 @@ class SpiffeId(object):
         return self.__trust_domain == trust_domain
 
     @staticmethod
-    def parse_and_validate_uri(spiffe_id: str) -> dict:
+    def parse_and_validate_uri(spiffe_id: str) -> Dict:
         if len(spiffe_id) > SPIFFE_ID_MAXIMUM_LENGTH:
             raise ValueError(
                 'SPIFFE ID: maximum length is {} bytes.'.format(

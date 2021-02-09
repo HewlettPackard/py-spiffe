@@ -27,7 +27,7 @@ class TrustDomain(object):
         spiffe://domain.test
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.__set_name(name)
 
     def __str__(self) -> str:
