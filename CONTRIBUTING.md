@@ -97,7 +97,7 @@ As example this is the docstring of pyspiffe.spiffe_id.spiffe_id.py:
 
 ```
 """
-This module manage SpiffeId objects
+This module manages SpiffeId objects.
 """
 
 ...
@@ -156,7 +156,7 @@ def function_with_pep484_type_annotations(param1: int, param2: str) -> bool:
         The return value. True for success, False otherwise.
 
     Raises:
-        ValueError: if `param1` is lees than 0.
+        ValueError: If `param1` is lees than 0.
 
     Examples:
         >>> result = function_with_pep484_type_annotations(1, 2)

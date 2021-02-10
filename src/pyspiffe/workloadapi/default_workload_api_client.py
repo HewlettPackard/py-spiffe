@@ -1,3 +1,4 @@
+from typing import Optional, Set
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.config import ConfigSetter
@@ -14,7 +15,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """Creates a new Workload API Client.
 
         Args:
-            spiffe_socket (str, optional): Path to Workload API UDS. If
+            spiffe_socket: Path to Workload API UDS. If
                 not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
                 must be set.
 
@@ -23,7 +24,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Raises:
             ValueError: If spiffe_socket_path is invalid or not provided and
-                SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist
+                SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist.
         """
 
         try:
@@ -39,7 +40,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """Returns the spiffe endpoint socket config for this WorkloadApiClient.
 
         Returns:
-            str: spiffe endpoint socket configuration value
+            str: spiffe endpoint socket configuration value.
         """
 
         return self._config.spiffe_endpoint_socket
@@ -48,7 +49,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """Fetches a SPIFFE X.509-SVID.
 
         Returns:
-            X509Svid: Instance of X509Svid object
+            X509Svid: Instance of X509Svid object.
         """
 
         pass
@@ -57,20 +58,22 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """Fetches X.509 bundles, keyed by trust domain.
 
         Returns:
-            X509BundleSet: Set of X509Bundle objects
+            X509BundleSet: Set of X509Bundle objects.
         """
 
         pass
 
-    def fetch_jwt_svid(self, audiences: str, subject: str = None) -> JwtSvid:
+    def fetch_jwt_svid(
+        self, audiences: Set[str], subject: Optional[str] = None
+    ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
-            audiences (set of str): Set of audiences for the JWT.
-            subject (str, optional): SPIFFE ID Subject for the JWT.
+            audiences: Set of audiences for the JWT.
+            subject: SPIFFE ID Subject for the JWT.
 
         Returns:
-            JwtSvid: Instance of JwtSvid object
+            JwtSvid: Instance of JwtSvid object.
         """
 
         pass
@@ -80,7 +83,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         domain.
 
         Returns:
-            JwtBundleSet: Set of JwtBundle objects
+            JwtBundleSet: Set of JwtBundle objects.
         """
 
         pass
@@ -90,8 +93,8 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         returned.
 
         Args:
-            token (str): JWT to validate.
-            audience (str): Audience to validate against.
+            token: JWT to validate.
+            audience: Audience to validate against.
 
         Returns:
             JwtSvid: If the token and audience could be validated.

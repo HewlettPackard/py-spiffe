@@ -48,10 +48,13 @@ format:
 
 
 ## Generates docs.
-docs:
-	@echo "Generates docs."
-	cd docs && $(PIPENV_CMD) run make html
-
+docs: docs_clean docs_generate lint
+	$(PIPENV_CMD) run sphinx-build -n -T -W -b html docs docs/_build/html
+	@echo "\033[95m\n\nBuild successful! View the docs homepage at docs/_build/html/index.html.\n\033[0m"
+# -n nitpick: Run in nit-picky mode. This generates warnings for all missing references.
+# -T Display the full traceback when an unhandled exception occurs.
+# -W Turn warnings into errors. This means that the build stops at the first warning and sphinx-build exits with exit status 1
+# -b Selects a builder, html here.
 
 ## Generates pb files from ./proto/workload.proto.
 pb_generate:
@@ -82,6 +85,16 @@ mypy:
 	@echo "Running mypy."
 	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports -p pyspiffe
 
+# Generate source files for the documentation
+docs_generate: export SPHINX_APIDOC_OPTIONS = members,show-inheritance
+docs_generate:
+	@echo "Generating source files."
+	cd docs && $(PIPENV_CMD) run sphinx-apidoc -feM -o ./source ../src/pyspiffe/
+
+# Cleans docs.
+docs_clean:
+	@echo "Cleans docs."
+	cd docs && $(PIPENV_CMD) run make clean
 
 #------------------------------------------------------------------------
 # Document file

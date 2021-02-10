@@ -1,18 +1,14 @@
+"""
+This module manages X509Svid objects.
+"""
+
 from typing import Mapping, Set
 from datetime import datetime
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 
 
 class X509Svid(object):
-    """
-    Represents a SPIFFE X509 - SVID
-
-    :param spiffe_id: SPIFFE ID of the JWT-SVID as present in the 'sub' claim.
-    :param audience: Audience is the intended recipients of JWT-SVID as present in the 'aud' claim.
-    :param expiry: Expiration time of JWT-SVID as present in 'exp' claim.
-    :param claims: Parsed claims from token.
-    :param token: Serialized JWT token.
-    """
+    """Represents a SPIFFE X509 SVID."""
 
     def __init__(
         self,
@@ -22,6 +18,15 @@ class X509Svid(object):
         claims: Mapping[str, object],
         token: str,
     ):
+        """Creates a new X509Svid Object.
+
+        Args:
+            spiffe_id: SPIFFE ID of the JWT-SVID as present in the 'sub' claim.
+            audience: Audience is the intended recipients of JWT-SVID as present in the 'aud' claim.
+            expiry: Expiration time of JWT-SVID as present in 'exp' claim.
+            claims: Parsed claims from token.
+            token: Serialized JWT token.
+        """
         self.spiffe_id = spiffe_id
         self.audience = audience
         self.expiry = expiry

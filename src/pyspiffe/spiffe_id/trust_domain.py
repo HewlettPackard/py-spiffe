@@ -1,33 +1,44 @@
+"""
+This module manages TrustDomain objects.
+"""
+
 from urllib.parse import urlparse, ParseResult
 from typing import Any, cast
+
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
 
 EMPTY_DOMAIN_ERROR = 'Trust domain cannot be empty.'
+"""str: Default error message for empty Trust Domains."""
+
 SCHEME_SUFFIX = '://'
+"""str: SPIFFE Scheme suffix."""
+
 TRUST_DOMAIN_MAXIMUM_LENGTH = 255
+"""str: Trust domain maximum length."""
 
 
 class TrustDomain(object):
-    """
-    Represents the name of a SPIFFE trust domain (e.g. 'domain.test').
-
-    Args:
-        name(str): The name of the Trust Domain
-
-    Raises:
-        ValueError: if the name of the trust domain is empty, has a port, or contains an invalid scheme.
-
-    Examples:
-        >>> trust_domain = TrustDomain('Domain.Test')
-        >>> print(trust_domain)
-        domain.test
-
-        >>> print(trust_domain.as_str_id())
-        spiffe://domain.test
-    """
+    """Represents the name of a SPIFFE trust domain (e.g. 'domain.test')."""
 
     def __init__(self, name: str) -> None:
+        """Creates a new TrustDomain Object.
+
+        Args:
+            name: The name of the Trust Domain.
+
+        Raises:
+            ValueError: If the name of the trust domain is empty, has a port, or contains an invalid scheme.
+
+        Examples:
+            >>> trust_domain = TrustDomain('Domain.Test')
+            >>> print(trust_domain)
+            domain.test
+
+            >>> print(trust_domain.as_str_id())
+            spiffe://domain.test
+
+        """
         self.__set_name(name)
 
     def __str__(self) -> str:
@@ -62,6 +73,7 @@ class TrustDomain(object):
 
     @staticmethod
     def normalize(name: str) -> str:
+        """Adds the SPIFFE scheme if not present."""
         if SCHEME_SUFFIX not in name:
             name = SPIFFE_SCHEME + SCHEME_SUFFIX + name
         return name

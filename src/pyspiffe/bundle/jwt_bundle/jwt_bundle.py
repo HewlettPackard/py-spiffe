@@ -1,8 +1,15 @@
+"""
+JwtBundle module manages JwtBundle objects.
+"""
+
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleNotFoundError
 
 
 class JwtBundle(object):
-    """Represents a JWT Bundle."""
+    """Represents a JWT Bundle.
+
+    JwtBundle is a collection of trusted JWT public keys for a trust domain
+    """
 
     def __init__(self) -> None:
         """Creates an instance of JwtBundle.
@@ -11,7 +18,7 @@ class JwtBundle(object):
         pass
         # self.jwt_authorities = {}
 
-    def findJwtAuthority(self, key_id: str) -> str:
+    def find_jwt_authority(self, key_id: str) -> str:
         """Returns the authority for the specified key_id.
             TODO: complete
 

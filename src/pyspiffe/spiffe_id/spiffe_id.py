@@ -1,4 +1,8 @@
-from typing import Any, List, Union, Dict
+"""
+This module manages SpiffeId objects.
+"""
+
+from typing import Any, Union, List, Dict
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
@@ -6,26 +10,24 @@ from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from rfc3987 import parse
 
 SPIFFE_ID_MAXIMUM_LENGTH = 2048
+"""int: Maximum length for SPIFFE IDs."""
 
 
 class SpiffeId(object):
-    """
-    Represents a SPIFFE ID
-    as defined in the `SPIFFE standard <https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md>`
-    """
+    """Represents a SPIFFE ID as defined in the `SPIFFE standard <https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md>`_."""
 
     @classmethod
     def parse(cls, spiffe_id: str) -> 'SpiffeId':
         """Parses a SPIFFE ID from a string into a SpiffeId type instance.
 
         Args:
-            spiffe_id: a string representing the SPIFFE ID
+            spiffe_id: A string representing the SPIFFE ID.
 
         Returns:
-            an instance of a compliant SPIFFE ID (SpiffeId type)
+            An instance of a compliant SPIFFE ID (SpiffeId type).
 
         Raises:
-            ValueError: if the string spiffe_id doesn't comply the the SPIFFE standard.
+            ValueError: If the string spiffe_id doesn't comply the the SPIFFE standard.
 
         Examples:
             >>> spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
@@ -35,7 +37,7 @@ class SpiffeId(object):
             /path/element
         """
 
-        if spiffe_id == '' or spiffe_id is None:
+        if not spiffe_id:
             raise ValueError('SPIFFE ID cannot be empty.')
 
         uri = cls.parse_and_validate_uri(spiffe_id)
@@ -52,14 +54,14 @@ class SpiffeId(object):
         """Creates SpiffeId type instance from a Trust Domain and zero or more paths.
 
         Args:
-            trust_domain(TrustDomain): The trust domain corresponds to the trust root of a system.
-            path_segments (optional): can be a single string or a list of path segments
+            trust_domain: The trust domain corresponds to the trust root of a system.
+            path_segments: A single string or a list of path segments.
 
         Returns:
-            an instance of a compliant SPIFFE ID (SpiffeId type)
+            An instance of a compliant SPIFFE ID (SpiffeId type).
 
         Raises:
-            ValueError: if the trust_domain is None or is not instance of the class TrustDomain.
+            ValueError: If the trust_domain is None or is not instance of the class TrustDomain.
 
         Examples:
             >>> spiffe_id_1 = SpiffeId.of(TrustDomain('example.org'), 'path')
