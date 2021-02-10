@@ -1,5 +1,5 @@
-from urllib.parse import urlparse
-from typing import Tuple, Any
+from urllib.parse import urlparse, ParseResult
+from typing import Any, cast
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
 
@@ -27,7 +27,7 @@ class TrustDomain(object):
         spiffe://domain.test
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.__set_name(name)
 
     def __str__(self) -> str:
@@ -56,9 +56,9 @@ class TrustDomain(object):
             )
 
         name = self.normalize(name)
-        uri = urlparse(name)
+        uri: ParseResult = urlparse(name)
         self.validate_uri(uri)
-        self.__name = uri.hostname.lower().strip()
+        self.__name = cast(str, uri.hostname).lower().strip()
 
     @staticmethod
     def normalize(name: str) -> str:
@@ -67,7 +67,7 @@ class TrustDomain(object):
         return name
 
     @staticmethod
-    def validate_uri(uri: Tuple) -> None:
+    def validate_uri(uri: ParseResult) -> None:
         if uri.scheme != SPIFFE_SCHEME:
             raise ValueError(
                 'Trust domain: invalid scheme: expected {}.'.format(SPIFFE_SCHEME)
