@@ -13,7 +13,6 @@ class JwtSvidError(PySpiffeError):
 
     Attributes:
         message: message describing the error.
-
     """
 
     def __init__(self, message: str) -> None:
@@ -75,7 +74,6 @@ class InvalidAlgorithmError(JwtSvidError):
 
         Args:
             additional_information: additional information about the error.
-
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -90,6 +88,5 @@ class InvalidTypeError(JwtSvidError):
 
         Args:
             additional_information: additional information about the error.
-
         """
         super().__init__(self._MESSAGE.format(additional_information))

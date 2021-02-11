@@ -7,7 +7,6 @@ class JwtBundle(object):
     def __init__(self) -> None:
         """Creates an instance of JwtBundle.
         TODO: complete
-
         """
         pass
         # self.jwt_authorities = {}
@@ -22,7 +21,7 @@ class JwtBundle(object):
         Returns:
             TBD
 
-        Raises
+        Raises:
             JwtBundleNotFoundError:  when no authority is found for the given key_id.
         """
         # key = self.jwt_authorities.get(key_id)
