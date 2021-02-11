@@ -19,7 +19,7 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | proto
+  | src/pyspiffe/proto
 )/
 '''
 
