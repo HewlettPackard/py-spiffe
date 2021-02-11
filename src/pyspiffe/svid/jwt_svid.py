@@ -4,7 +4,6 @@ This module manages JWT SVID objects.
 
 import jwt
 from jwt import PyJWTError
-import datetime
 from typing import List, Dict
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
@@ -17,19 +16,13 @@ class JwtSvid(object):
     """Represents a SPIFFE JWT SVID as defined in the SPIFFE standard.
     See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md>`
 
-    Attributes:
-        spiffeId (SpiffeId): SPIFFE ID as present in the 'sub' claim.
-        audience (List): audience claim.
-        expiry (datetime): date and time in UTC specifing expiry date.
-        claims (Dict): key-value pairs with all the claims present in the token.
-        token (str): encoded token.
     """
 
     def __init__(
         self,
         spiffeId: SpiffeId,
         audience: List,
-        expiry: datetime,
+        expiry: int,
         claims: Dict,
         token: str,
     ) -> None:
@@ -72,7 +65,6 @@ class JwtSvid(object):
         """
         if not token:
             raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
-        result = None
         try:
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -80,15 +72,13 @@ class JwtSvid(object):
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, expected_audience)
             spiffe_ID = SpiffeId.parse(claims['sub'])
-            result = JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
+            return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
-            raise InvalidTokenError(err)
-
-        return result
+            raise InvalidTokenError(str(err))
 
     @classmethod
     def parse_and_validate(
-        cls, token: str, jwt_bundle: JwtBundle, audience: List
+        cls, token: str, jwt_bundle: JwtBundle, audience: List[str]
     ) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
 
@@ -114,11 +104,16 @@ class JwtSvid(object):
             AuthorityNotFoundError: if the authority cannot be found in the bundle using the value from the 'kid' header.
             InvalidTokenError: in case token is malformed and fails to decode.
         """
-        claims = None
+        if not token:
+            raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
+
+        if not jwt_bundle:
+            raise ValueError(INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty'))
         try:
             token_header = jwt.get_unverified_header(token)
+            validator = JwtSvidValidator()
+            validator.validate_header(token_header)
             signing_key = jwt_bundle.findJwtAuthority(token_header['kid'])
-
             claims = jwt.decode(
                 token,
                 algorithms=token_header['alg'],
@@ -128,13 +123,10 @@ class JwtSvid(object):
                     'verify_signature': True,
                     'verify_aud': True,
                     'verify_exp': True,
-                    'require': cls._required_claims,
                 },
             )
+            # TODO:validate required claims
+            spiffe_ID = SpiffeId.parse(claims['sub'])
+            return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
-            raise InvalidTokenError(err)
-
-        spiffe_ID = SpiffeId.parse(claims['sub'])
-        result = JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
-
-        return result
+            raise InvalidTokenError(str(err))

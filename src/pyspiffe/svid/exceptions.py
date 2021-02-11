@@ -33,10 +33,10 @@ class InvalidTokenError(JwtSvidError):
     """Error raised when provided token is invalid."""
 
     def __init__(self, message: str = '') -> None:
-        """Creates an instace of InvalidTokenError adding the provided additional_information to the error mesage.
+        """Creates an instace of InvalidTokenError adding the provided message to the error mesage.
 
         Args:
-            additional_information: contains additional information about the error.
+            message: contains additional information about the error.
         """
         super().__init__(message)
 
@@ -61,12 +61,7 @@ class TokenExpiredError(JwtSvidError):
     _MESSAGE = 'Token has expired.'
 
     def __init__(self) -> None:
-        """Creates an instance of TokenExpiredError
-
-        Args:
-            aadditional_information: additional information about the error.
-
-        """
+        """Creates an instance of TokenExpiredError"""
         super().__init__(self._MESSAGE)
 
 
@@ -79,7 +74,7 @@ class InvalidAlgorithmError(JwtSvidError):
         """Creates an instance of InvalidAlgorithmError
 
         Args:
-            aadditional_information: additional information about the error.
+            additional_information: additional information about the error.
 
         """
         super().__init__(self._MESSAGE.format(additional_information))

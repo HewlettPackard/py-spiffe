@@ -3,7 +3,7 @@ This module manages the validations of JWT tokens.
 """
 
 import datetime
-from typing import List, Dict
+from typing import List, Dict, Any
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -42,7 +42,7 @@ class JwtSvidValidator(object):
     def __init__(self) -> None:
         pass
 
-    def validate_header(self, header: Dict) -> None:
+    def validate_header(self, header: Dict[str, str]) -> None:
         """Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
 
         Args:
@@ -70,7 +70,9 @@ class JwtSvidValidator(object):
         if typ and typ not in self._SUPPORTED_TYPES:
             raise InvalidTypeError(typ)
 
-    def validate_claims(self, payload: Dict, expected_audience: List) -> None:
+    def validate_claims(
+        self, payload: Dict[str, Any], expected_audience: List[str]
+    ) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
@@ -88,8 +90,10 @@ class JwtSvidValidator(object):
         for claim in self._REQUIRED_CLAIMS:
             if not payload.get(claim):
                 raise InvalidClaimError(claim)
-        self._validate_exp(payload.get('exp'))
-        self._validate_aud(payload.get('aud'), expected_audience)
+        aud = payload.get('aud')
+        if aud is not None:
+            self._validate_exp(str(payload.get('exp')))
+            self._validate_aud(aud, expected_audience)
 
     def _validate_exp(self, expiration_date: str) -> None:
         """Verifies expiration.
@@ -102,14 +106,16 @@ class JwtSvidValidator(object):
             TokenExpiredError: in case it is expired.
             InvalidClaimError: in case expiration_date is not provided.
         """
-        if not expiration_date or expiration_date == '':
+        if not expiration_date:
             raise InvalidClaimError("expiration_date cannot be empty")
-        expiration_date = int(expiration_date)
+        int_date = int(expiration_date)
         utctime = timegm(datetime.datetime.utcnow().utctimetuple())
-        if expiration_date < utctime:
+        if int_date < utctime:
             raise TokenExpiredError()
 
-    def _validate_aud(self, audience_claim: List, expected_audience: List) -> None:
+    def _validate_aud(
+        self, audience_claim: List[str], expected_audience: List[str]
+    ) -> None:
         """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
 
         Args:
