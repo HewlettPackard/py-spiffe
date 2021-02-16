@@ -1,3 +1,5 @@
+from typing import cast
+
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.config import ConfigSetter
@@ -5,18 +7,25 @@ from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
+from pyspiffe.grpc.default_grpc_client import GrpcClient, DefaultGrpcClient
 
 
 class DefaultWorkloadApiClient(WorkloadApiClient):
     """Default implementation for a SPIFFE Workload API Client."""
 
-    def __init__(self, spiffe_socket: str = None) -> None:
+    def __init__(
+        self,
+        spiffe_socket: str = None,
+        grpc_client: GrpcClient = cast(GrpcClient, DefaultGrpcClient),
+    ) -> None:
         """Creates a new Workload API Client.
 
         Args:
             spiffe_socket (str, optional): Path to Workload API UDS. If
                 not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
                 must be set.
+            grpc_client (GrpcClient, optional): GrpcClient implementation to
+                use. If not specified, uses DefaultGrpcClient.
 
         Returns:
             DefaultWorkloadApiClient: New Workload API Client object.
@@ -34,6 +43,10 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise ValueError(
                 'SPIFFE socket argument or environment variable invalid in DefaultWorkloadApiClient.'
             )
+
+        self._channel = grpc_client.insecure_channel(
+            spiffe_socket=self._config.spiffe_endpoint_socket
+        )
 
     def get_spiffe_endpoint_socket(self) -> str:
         """Returns the spiffe endpoint socket config for this WorkloadApiClient.

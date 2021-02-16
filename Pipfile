@@ -4,8 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-grpcio = "~=1.33.2"
-grpcio-tools = "~=1.33.2"
+grpcio = "~=1.35.0"
+grpcio-tools = "~=1.35.0"
 requests = "~=2.25.0"
 python-json-logger = "~=0.1.11"
 cryptography = "~=3.4.4"
@@ -16,8 +16,8 @@ pyjwt = {version = "~=2.0.1", extras = ["crypto"]}
 python_version = "3.6"
 
 [dev-packages]
-grpcio = "~=1.33.2"
-grpcio-tools = "~=1.33.2"
+grpcio = "~=1.35.0"
+grpcio-tools = "~=1.35.0"
 black = "==20.8b1"
 mypy = "==0.790"
 mypy-protobuf = "==1.15"
