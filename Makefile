@@ -34,7 +34,7 @@ dev: env
 ## Runs unit tests.
 test: lint
 	@echo "Running unit tests."
-	$(PIPENV_CMD) run tox
+	$(PIPENV_CMD) run tox --recreate
 
 
 ## Lint source files.
