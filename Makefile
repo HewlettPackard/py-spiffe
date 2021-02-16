@@ -29,6 +29,8 @@ rm_env:
 dev: env
 	$(PIPENV_CMD) sync --dev && \
 	$(PIPENV_CMD) run pre-commit install
+	mkdir -p .tox
+	$(PIPENV_CMD) lock --requirements >.tox/requirements.txt
 
 
 ## Runs unit tests.
