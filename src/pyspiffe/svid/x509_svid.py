@@ -71,6 +71,7 @@ class X509Svid(object):
         self.private_key = private_key
 
     def leaf(self) -> Certificate:
+        """Returns the Leaf X.509 certificate of the chain."""
         return self.cert_chain[0]
 
     @classmethod
