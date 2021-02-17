@@ -107,11 +107,11 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage
         """
 
-        chain = cls.process_der_chain(certs_chain_bytes)
-        cls.validate_chain(chain)
+        chain = cls._parse_der_certificates(certs_chain_bytes)
+        cls._validate_chain(chain)
 
-        private_key = cls.parse_der_private_key(private_key_bytes)
-        spiffe_id = cls.extract_spiffe_id(chain[0])
+        private_key = cls._parse_der_private_key(private_key_bytes)
+        spiffe_id = cls._extract_spiffe_id(chain[0])
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -145,12 +145,12 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage
         """
 
-        chain = cls.parse_pem(certs_chain_bytes)
+        chain = cls._parse_pem_certificates(certs_chain_bytes)
 
-        cls.validate_chain(chain)
+        cls._validate_chain(chain)
 
-        private_key = cls.parse_pem_private_key(private_key_bytes)
-        spiffe_id = cls.extract_spiffe_id(chain[0])
+        private_key = cls._parse_pem_private_key(private_key_bytes)
+        spiffe_id = cls._extract_spiffe_id(chain[0])
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -194,8 +194,8 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage
         """
 
-        chain_bytes = cls.load_certs_bytes(certs_chain_path)
-        key_bytes = cls.load_private_key_bytes(private_key_path)
+        chain_bytes = cls._load_certs_bytes(certs_chain_path)
+        key_bytes = cls._load_private_key_bytes(private_key_path)
         if encoding == serialization.Encoding.PEM:
             return cls.parse(chain_bytes, key_bytes)
         elif encoding == serialization.Encoding.DER:
@@ -246,15 +246,15 @@ class X509Svid(object):
                 )
             )
 
-        cls.write_certs_to_file(certs_chain_path, encoding, x509_svid)
+        cls._write_certs_to_file(certs_chain_path, encoding, x509_svid)
 
-        private_key_bytes = cls.extract_private_key_bytes(
+        private_key_bytes = cls._extract_private_key_bytes(
             encoding, x509_svid.private_key
         )
-        cls.write_private_key_to_file(private_key_path, private_key_bytes)
+        cls._write_private_key_to_file(private_key_path, private_key_bytes)
 
     @staticmethod
-    def load_private_key_bytes(private_key_path: str) -> bytes:
+    def _load_private_key_bytes(private_key_path: str) -> bytes:
         try:
             with open(private_key_path, 'rb') as key_file:
                 return key_file.read()
@@ -268,7 +268,7 @@ class X509Svid(object):
             )
 
     @staticmethod
-    def load_certs_bytes(certs_chain_path: str) -> bytes:
+    def _load_certs_bytes(certs_chain_path: str) -> bytes:
         try:
             with open(certs_chain_path, 'rb') as chain_file:
                 return chain_file.read()
@@ -282,7 +282,7 @@ class X509Svid(object):
             )
 
     @classmethod
-    def write_private_key_to_file(
+    def _write_private_key_to_file(
         cls, private_key_path: str, private_key_bytes: bytes
     ) -> None:
         try:
@@ -295,7 +295,7 @@ class X509Svid(object):
             )
 
     @staticmethod
-    def extract_private_key_bytes(
+    def _extract_private_key_bytes(
         encoding: serialization.Encoding, private_key: _PRIVATE_KEY_TYPES
     ) -> bytes:
         try:
@@ -310,7 +310,7 @@ class X509Svid(object):
             )
 
     @classmethod
-    def write_certs_to_file(
+    def _write_certs_to_file(
         cls,
         certs_chain_path: str,
         encoding: serialization.Encoding,
@@ -320,18 +320,18 @@ class X509Svid(object):
             with open(certs_chain_path, 'wb') as chain_file:
                 os.chmod(chain_file.name, _CERTS_FILE_MODE)
                 for cert in x509_svid.cert_chain:
-                    cls.write_cert_to_file(cert, chain_file, encoding)
+                    cls._write_cert_to_file(cert, chain_file, encoding)
         except Exception as err:
             raise StoreCertificateError(
                 'Error opening certs chain file: {}'.format(str(err))
             )
 
     @classmethod
-    def write_cert_to_file(
+    def _write_cert_to_file(
         cls, cert: Certificate, chain_file: BinaryIO, encoding: serialization.Encoding
     ) -> None:
         try:
-            chain_bytes = cls.extract_chain_bytes(cert, encoding)
+            chain_bytes = cls._extract_chain_bytes(cert, encoding)
             chain_file.write(chain_bytes)
         except Exception as err:
             raise StoreCertificateError(
@@ -339,7 +339,7 @@ class X509Svid(object):
             )
 
     @staticmethod
-    def extract_chain_bytes(
+    def _extract_chain_bytes(
         cert: Certificate, encoding: serialization.Encoding
     ) -> bytes:
         try:
@@ -352,26 +352,26 @@ class X509Svid(object):
         return chain_bytes
 
     @staticmethod
-    def parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
+    def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
         try:
             return load_der_private_key(private_key_bytes, None, None)
         except Exception as err:
             raise ParsePrivateKeyError(str(err))
 
     @staticmethod
-    def parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
+    def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
         try:
             return load_pem_private_key(private_key_bytes, None, None)
         except Exception as err:
             raise ParsePrivateKeyError(str(err))
 
     @staticmethod
-    def process_der_chain(certs_chain_bytes: bytes) -> List[Certificate]:
+    def _parse_der_certificates(chain_der_bytes: bytes) -> List[Certificate]:
         chain = []
         try:
-            leaf = x509.load_der_x509_certificate(certs_chain_bytes, default_backend())
+            leaf = x509.load_der_x509_certificate(chain_der_bytes, default_backend())
             chain.append(leaf)
-            _, remaining_data = decode(certs_chain_bytes)
+            _, remaining_data = decode(chain_der_bytes)
             while len(remaining_data) > 0:
                 cert = x509.load_der_x509_certificate(remaining_data, default_backend())
                 chain.append(cert)
@@ -382,9 +382,9 @@ class X509Svid(object):
         return chain
 
     @staticmethod
-    def parse_pem(pem_bytes: bytes) -> List[Certificate]:
+    def _parse_pem_certificates(chain_pem_bytes: bytes) -> List[Certificate]:
         result = []
-        parsed_certs = pem.parse(pem_bytes)
+        parsed_certs = pem.parse(chain_pem_bytes)
         for cert in parsed_certs:
             try:
                 x509_cert = x509.load_pem_x509_certificate(
@@ -399,7 +399,7 @@ class X509Svid(object):
         return result
 
     @staticmethod
-    def extract_spiffe_id(cert: Certificate) -> SpiffeId:
+    def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
         ext = cert.extensions.get_extension_for_oid(
             x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
         )
@@ -411,15 +411,15 @@ class X509Svid(object):
         return SpiffeId.parse(sans[0])
 
     @classmethod
-    def validate_chain(cls, cert_chain: List[Certificate]) -> None:
+    def _validate_chain(cls, cert_chain: List[Certificate]) -> None:
         leaf = cert_chain[0]
-        cls.validate_leaf_certificate(leaf)
+        cls._validate_leaf_certificate(leaf)
 
         for cert in cert_chain[1:]:
-            cls.validate_intermediate_certificate(cert)
+            cls._validate_intermediate_certificate(cert)
 
     @staticmethod
-    def validate_leaf_certificate(leaf: Certificate) -> None:
+    def _validate_leaf_certificate(leaf: Certificate) -> None:
         basic_constraints = leaf.extensions.get_extension_for_oid(
             x509.ExtensionOID.BASIC_CONSTRAINTS
         )
@@ -442,7 +442,7 @@ class X509Svid(object):
             )
 
     @staticmethod
-    def validate_intermediate_certificate(cert: Certificate) -> None:
+    def _validate_intermediate_certificate(cert: Certificate) -> None:
         basic_constraints = cert.extensions.get_extension_for_oid(
             x509.ExtensionOID.BASIC_CONSTRAINTS
         )
