@@ -331,25 +331,25 @@ class X509Svid(object):
         cls, cert: Certificate, chain_file: BinaryIO, encoding: serialization.Encoding
     ) -> None:
         try:
-            chain_bytes = cls._extract_chain_bytes(cert, encoding)
-            chain_file.write(chain_bytes)
+            cert_bytes = cls._extract_cert_bytes(cert, encoding)
+            chain_file.write(cert_bytes)
         except Exception as err:
             raise StoreCertificateError(
                 'Error writing certs chain to file: {}'.format(str(err))
             )
 
     @staticmethod
-    def _extract_chain_bytes(
+    def _extract_cert_bytes(
         cert: Certificate, encoding: serialization.Encoding
     ) -> bytes:
         try:
-            chain_bytes = cert.public_bytes(encoding)
+            cert_bytes = cert.public_bytes(encoding)
         except Exception as err:
             raise X509SvidError(
                 'Could not get certs chain key bytes from object: {}'.format(str(err))
             )
 
-        return chain_bytes
+        return cert_bytes
 
     @staticmethod
     def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
