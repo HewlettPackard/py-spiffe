@@ -281,9 +281,9 @@ class X509Svid(object):
                 'Certs chain file could not be read: {}'.format(str(err))
             )
 
-    @classmethod
+    @staticmethod
     def _write_private_key_to_file(
-        cls, private_key_path: str, private_key_bytes: bytes
+        private_key_path: str, private_key_bytes: bytes
     ) -> None:
         try:
             with open(private_key_path, 'wb') as private_key_file:
