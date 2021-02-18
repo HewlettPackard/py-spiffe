@@ -23,10 +23,12 @@ def test_parse_raw_chain_and_ec_key():
 
     x509_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert x509_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/service')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/service')
+    assert x509_svid.spiffe_id == expected_spiffe_id
     assert len(x509_svid.cert_chain) == 2
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
+    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_chain_and_ec_key():
@@ -35,10 +37,13 @@ def test_parse_chain_and_ec_key():
 
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/service')
     assert x509_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/service')
     assert len(x509_svid.cert_chain) == 2
     assert isinstance(x509_svid.leaf(), Certificate)
+    assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
+    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_leaf_only_and_rsa_key():
@@ -47,10 +52,12 @@ def test_parse_leaf_only_and_rsa_key():
 
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
-    assert x509_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/workload-1')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/workload-1')
+    assert x509_svid.spiffe_id == expected_spiffe_id
     assert len(x509_svid.cert_chain) == 1
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.private_key, rsa.RSAPrivateKey)
+    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_raw_missing_certificate():
@@ -254,10 +261,13 @@ def test_load_from_pem_files():
 
     x509_svid = X509Svid.load(chain_path, key_path, serialization.Encoding.PEM)
 
-    assert x509_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/service')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/service')
+    assert x509_svid.spiffe_id == expected_spiffe_id
     assert len(x509_svid.cert_chain) == 2
     assert isinstance(x509_svid.leaf(), Certificate)
+    assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
+    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_load_from_der_files():
@@ -266,10 +276,13 @@ def test_load_from_der_files():
 
     x509_svid = X509Svid.load(chain_path, key_path, serialization.Encoding.DER)
 
-    assert x509_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/service')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/service')
+    assert x509_svid.spiffe_id == expected_spiffe_id
     assert len(x509_svid.cert_chain) == 2
     assert isinstance(x509_svid.leaf(), Certificate)
+    assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
+    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_load_non_existent_cert_file():
@@ -313,10 +326,13 @@ def test_save_chain_and_ec_key_as_pem(tmpdir):
 
     # now load the saved svid, and check that everything was stored correctly
     saved_svid = X509Svid.load(chain_pem_file, key_pem_file, serialization.Encoding.PEM)
-    assert saved_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/service')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/service')
+    assert saved_svid.spiffe_id == expected_spiffe_id
     assert len(saved_svid.cert_chain) == 2
     assert isinstance(saved_svid.leaf(), Certificate)
+    assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(saved_svid.private_key, ec.EllipticCurvePrivateKey)
+    assert X509Svid._extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
 
 
 def test_save_chain_and_rsa_key_as_der(tmpdir):
@@ -334,10 +350,12 @@ def test_save_chain_and_rsa_key_as_der(tmpdir):
 
     # now load the saved svid, and check that everything was stored correctly
     saved_svid = X509Svid.load(chain_der_file, key_der_file, serialization.Encoding.DER)
-    assert saved_svid.spiffe_id == SpiffeId.parse('spiffe://example.org/workload-1')
+    expected_spiffe_id = SpiffeId.parse('spiffe://example.org/workload-1')
+    assert saved_svid.spiffe_id == expected_spiffe_id
     assert len(saved_svid.cert_chain) == 1
     assert isinstance(saved_svid.leaf(), Certificate)
     assert isinstance(saved_svid.private_key, rsa.RSAPrivateKey)
+    assert X509Svid._extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
 
 
 def test_save_non_supported_encoding():
