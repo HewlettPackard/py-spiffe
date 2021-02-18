@@ -234,9 +234,12 @@ class X509Svid(object):
         Raises:
             ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding).
 
-            X509SvidError: in the case the file path in certs_chain_path or in private_key_path cannot be open to write.
-
             X509SvidError: in case the certs chain or the private key in the X509Svid cannot be converted to bytes.
+
+            StorePrivateKeyError: in the case there is an error storing the private key to the file.
+
+            StoreCertificateError: in the case the file path in certs_chain_path cannot be open to write,
+                                  or there is an error storing the certificates to the file.
         """
 
         if not (encoding is encoding.PEM or encoding is encoding.DER):
