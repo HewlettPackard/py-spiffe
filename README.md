@@ -1,6 +1,7 @@
 # py-spiffe Library
 
 [![Build Status](https://travis-ci.com/HewlettPackard/py-spiffe.svg?branch=master)](https://travis-ci.com/HewlettPackard/py-spiffe)
+[![CircleCI](https://circleci.com/gh/HewlettPackard/py-spiffe.svg?style=shield)](https://app.circleci.com/pipelines/github/HewlettPackard/py-spiffe)
 
 ## Overview
 Python library for SPIFFE.
