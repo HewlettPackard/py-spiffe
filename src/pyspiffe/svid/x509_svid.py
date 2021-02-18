@@ -47,7 +47,7 @@ _PRIVATE_KEY_TYPES = Union[
 
 class X509Svid(object):
     """
-    Represents a SPIFFE X.509-SVID
+    Represents a SPIFFE X.509-SVID.
 
     Contains a SpiffeId, a private key and a chain of X.509 certificates.
     """
@@ -62,8 +62,8 @@ class X509Svid(object):
 
         Args:
             spiffe_id: a SpiffeId instance.
-            cert_chain: a list representing a chain of X.509 Certificate
-            private_key: a Private Key object
+            cert_chain: a list representing a chain of X.509 Certificate.
+            private_key: a Private Key object.
         """
 
         self.spiffe_id = spiffe_id
@@ -85,26 +85,26 @@ class X509Svid(object):
         It is assumed that the leaf certificate is always the first certificate in the parsed chain.
 
         Args:
-            certs_chain_bytes: chain of X.509 certificates in ASN.1 DER format
-            private_key_bytes: private key as PKCS#8 ASN.1 DER
+            certs_chain_bytes: chain of X.509 certificates in ASN.1 DER format.
+            private_key_bytes: private key as PKCS#8 ASN.1 DER.
 
         Returns:
             an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
-            leaf certificate in the chain
+            leaf certificate in the chain.
 
         Raises:
-            ParseCertificateError: in case the chain of certificates cannot be parsed from the cert_chain_bytes
+            ParseCertificateError: in case the chain of certificates cannot be parsed from the cert_chain_bytes.
 
-            ParsePrivateKeyError: in case the private key cannot be parsed from the private_key_bytes
+            ParsePrivateKeyError: in case the private key cannot be parsed from the private_key_bytes.
 
             InvalidLeafCertificateError: in case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage
+                                         in case the leaf certificate does not have 'cRLSign' as key usage.
 
             InvalidIntermediateCertificateError: in case one of the intermediate certificates is not CA,
-                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage
+                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
         chain = cls._parse_der_certificates(certs_chain_bytes)
@@ -123,26 +123,26 @@ class X509Svid(object):
         It is assumed that the leaf certificate is always the first certificate in the parsed chain.
 
         Args:
-            certs_chain_bytes: chain of X.509 certificates in PEM format
-            private_key_bytes: private key as PKCS#8 PEM block
+            certs_chain_bytes: chain of X.509 certificates in PEM format.
+            private_key_bytes: private key as PKCS#8 PEM block.
 
         Returns:
             an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
-            leaf certificate in the chain
+            leaf certificate in the chain.
 
         Raises:
-            ParseCertificateError: in case the chain of certificates cannot be parsed from the cert_chain_bytes
+            ParseCertificateError: in case the chain of certificates cannot be parsed from the cert_chain_bytes.
 
-            ParsePrivateKeyError: in case the private key cannot be parsed from the private_key_bytes
+            ParsePrivateKeyError: in case the private key cannot be parsed from the private_key_bytes.
 
             InvalidLeafCertificateError: in case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage
+                                         in case the leaf certificate does not have 'cRLSign' as key usage.
 
             InvalidIntermediateCertificateError: in case one of the intermediate certificates is not CA,
-                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage
+                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
         chain = cls._parse_pem_certificates(certs_chain_bytes)
@@ -166,32 +166,32 @@ class X509Svid(object):
         The private key should be without encryption.
 
         Args:
-            certs_chain_path (str): path to the file containing one or more X.509 certificates as PEM blocks
-            private_key_path (str): path the file containing a private key as PKCS#8 PEM block
+            certs_chain_path (str): path to the file containing one or more X.509 certificates as PEM blocks.
+            private_key_path (str): path the file containing a private key as PKCS#8 PEM block.
             encoding (serialization.Encoding): the encoding used to serialize the certs and private key, can be
-                                            serialization.Encoding.PEM or serialization.Encoding.DER
+                                            serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Returns:
             an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
-            leaf certificate in the chain
+            leaf certificate in the chain.
 
         Raises:
-            ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding)
+            ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding).
 
-            X509SvidError: in case the file path in certs_chain_path or in private_key_path does not exists or cannot be open
+            X509SvidError: in case the file path in certs_chain_path or in private_key_path does not exists or cannot be open.
 
-            ParseCertificateError: in case the chain of certificates cannot be parsed from the bytes read from certs_chain_path
+            ParseCertificateError: in case the chain of certificates cannot be parsed from the bytes read from certs_chain_path.
 
-            ParsePrivateKeyError: in case the private key cannot be parsed from the bytes read from private_key_path
+            ParsePrivateKeyError: in case the private key cannot be parsed from the bytes read from private_key_path.
 
             InvalidLeafCertificateError: in case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage
+                                         in case the leaf certificate does not have 'cRLSign' as key usage.
 
             InvalidIntermediateCertificateError: in case one of the intermediate certificates is not CA,
-                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage
+                                                 in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
         chain_bytes = cls._load_certs_bytes(certs_chain_path)
@@ -217,26 +217,26 @@ class X509Svid(object):
     ) -> None:
         """Saves the X.509 SVID certs chain and private key in PEM or DER encoded files on disk.
 
-        The private key is stored without encryption, but the file is set with filemode = '0600' (only owner has read/write permission)
+        The private key is stored without encryption, but the file is set with filemode = '0600' (only owner has read/write permission).
 
         Args:
-            x509_svid: the 'X509Svid' that has the certs_chain and private_key to be saved on disk
+            x509_svid: the 'X509Svid' that has the certs_chain and private_key to be saved on disk.
 
-            certs_chain_path (str): path to the file containing one or more X.509 certificates as PEM blocks
-                                    The certs_chain file is configured with a filemode = '0644'
+            certs_chain_path (str): path to the file containing one or more X.509 certificates as PEM blocks.
+                                    The certs_chain file is configured with a filemode = '0644'.
 
-            private_key_path (str): path the file containing a PKCS#8 PEM block
-                                    The private_key file is configured with a filemode = '0600'
+            private_key_path (str): path the file containing a PKCS#8 PEM block.
+                                    The private_key file is configured with a filemode = '0600'.
 
             encoding (serialization.Encoding): the encoding used to serialize the certs and private key, can be
-                                            serialization.Encoding.PEM or serialization.Encoding.DER
+                                            serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Raises:
-            ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding)
+            ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding).
 
-            X509SvidError: in the case the file path in certs_chain_path or in private_key_path cannot be open to write
+            X509SvidError: in the case the file path in certs_chain_path or in private_key_path cannot be open to write.
 
-            X509SvidError: in case the certs chain or the private key in the X509Svid cannot be converted to bytes
+            X509SvidError: in case the certs chain or the private key in the X509Svid cannot be converted to bytes.
         """
 
         if not (encoding is encoding.PEM or encoding is encoding.DER):
