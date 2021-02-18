@@ -1,28 +1,43 @@
+"""
+This module manages JwtBundleSet objects.
+"""
+
 from typing import Mapping
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
 
 class JwtBundleSet(object):
-    bundles: Mapping[TrustDomain, JwtBundle]
+    """JwtBundleSet is a set of JWTBundles objects, keyed by trust domain."""
 
-    def new_set(
-        self, bundles: Mapping[TrustDomain, JwtBundle]
-    ) -> Mapping[TrustDomain, JwtBundle]:
-        """
-        NewSet creates a new, empty set.
-        """
-        raise Exception('not implemented')
+    def __init__(self, bundles: Mapping[TrustDomain, JwtBundle]) -> None:
+        """Creates a new initialized with the given JWT bundles.
 
-    def add(self, bundle: JwtBundle):
-        """
-        Add adds a new bundle into the set. If a bundle already exists for the
-        trust domain, the existing bundle is replaced.
-        """
-        raise Exception('not implemented')
+        Args:
+            bundles: A set of JwtBundles to initialize the JwtBundleSet.
 
-    def get_jtw_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> JwtBundle:
         """
-        returns the JWT bundle of the given trust domain.
+        self._bundles = bundles
+        pass
+
+    def add(self, jwt_bundle: JwtBundle):
+        """Adds a new bundle into the set.
+
+        If a bundle already exists for the trust domain, the existing bundle is
+        replaced.
+
+        Args:
+            jwt_bundle: The new JwtBundle to add.
         """
-        raise Exception('not implemented')
+        raise Exception('not implemented.')
+
+    def get_jwt_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> JwtBundle:
+        """Returns the JWT bundle of the given trust domain.
+
+        Args:
+            trust_domain: The TrustDomain to get a JwtBundle.
+
+        Returns:
+            A JwtBundle for the given TrustDomain.
+        """
+        raise Exception('not implemented.')

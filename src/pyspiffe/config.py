@@ -50,7 +50,7 @@ class ConfigSetter:
                 the SPIFFE_ENDPOINT_SOCKET environment variable must be set.
 
         Raises:
-            ValueError: if any configuration variable has an invalid format.
+            ValueError: If any configuration variable has an invalid format.
         """
         self._apply_default_config()
         self._apply_environment_variables()
