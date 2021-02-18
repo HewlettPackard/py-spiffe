@@ -4,6 +4,7 @@
 
 PIPENV_CMD=pipenv
 ROOT_DIR=$(PWD)
+PROTO_DIR=./src/pyspiffe/proto/spiffe
 
 NAME = py-spiffe
 VERSION = 0.0.1
@@ -34,7 +35,7 @@ dev: env
 ## Runs unit tests.
 test: lint
 	@echo "Running unit tests."
-	$(PIPENV_CMD) run tox
+	$(PIPENV_CMD) run tox --recreate
 
 
 ## Lint source files.
@@ -53,15 +54,14 @@ docs:
 	cd docs && $(PIPENV_CMD) run make html
 
 
-## Generates pb files from ./proto/workload.proto.
+## Generates pb files from ./src/pyspiffe/proto/spiffe/workload.proto.
 pb_generate:
 	@echo "Generates pb files."
 	$(PIPENV_CMD) run python -m grpc_tools.protoc \
-		--proto_path=./proto \
-		--mypy_out=./proto \
-		--proto_path=. \
-		--python_out=./proto \
-		--grpc_python_out=./proto ./proto/workload.proto
+		--proto_path=$(PROTO_DIR) \
+		--mypy_out=$(PROTO_DIR) \
+		--python_out=$(PROTO_DIR) \
+		--grpc_python_out=$(PROTO_DIR) $(PROTO_DIR)/workload.proto
 
 
 #------------------------------------------------------------------------
@@ -80,7 +80,11 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports -p pyspiffe
+	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports -p pyspiffe.bundle  \
+	-p pyspiffe.spiffe_id -p pyspiffe.svid -p pyspiffe.workloadapi -m pyspiffe.config  \
+	-m pyspiffe.exceptions
+#TODO: Update mypy and use the following once https://github.com/python/mypy/issues/10062 is merge.
+# MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
 
 
 #------------------------------------------------------------------------
