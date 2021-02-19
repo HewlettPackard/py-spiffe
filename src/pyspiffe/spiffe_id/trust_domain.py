@@ -49,6 +49,9 @@ class TrustDomain(object):
             return self.__name == other.name()
         return False
 
+    def __hash__(self) -> int:
+        return hash(self.__name)
+
     def name(self) -> str:
         return self.__name
 

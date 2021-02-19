@@ -25,6 +25,13 @@ setup(
     license='Apache License Version 2.0',
     packages=find_packages(where='src', exclude=['test']),
     package_dir={'': 'src'},
-    install_requires=['rfc3987', 'pyjwt', 'cryptography', 'grpcio-tools', 'pyasn1', 'pem'],
+    install_requires=[
+        'rfc3987',
+        'pyjwt',
+        'cryptography',
+        'grpcio-tools',
+        'pyasn1',
+        'pem',
+    ],
     python_requires='>=3.6',
 )
