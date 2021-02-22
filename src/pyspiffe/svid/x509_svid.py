@@ -66,13 +66,25 @@ class X509Svid(object):
             private_key: a Private Key object.
         """
 
-        self.spiffe_id = spiffe_id
-        self.cert_chain = cert_chain
-        self.private_key = private_key
+        self._spiffe_id = spiffe_id
+        self._cert_chain = cert_chain
+        self._private_key = private_key
 
     def leaf(self) -> Certificate:
         """Returns the Leaf X.509 certificate of the chain."""
-        return self.cert_chain[0]
+        return self._cert_chain[0]
+
+    def cert_chain(self) -> List[Certificate]:
+        """Returns the X.509 chain of certificates."""
+        return self._cert_chain
+
+    def private_key(self) -> _PRIVATE_KEY_TYPES:
+        """Returns the private key."""
+        return self._private_key
+
+    def spiffe_id(self) -> SpiffeId:
+        """Returns the SpiffeId."""
+        return self._spiffe_id
 
     @classmethod
     def parse_raw(
@@ -252,7 +264,7 @@ class X509Svid(object):
         cls._write_certs_to_file(certs_chain_path, encoding, x509_svid)
 
         private_key_bytes = cls._extract_private_key_bytes(
-            encoding, x509_svid.private_key
+            encoding, x509_svid.private_key()
         )
         cls._write_private_key_to_file(private_key_path, private_key_bytes)
 
@@ -322,7 +334,7 @@ class X509Svid(object):
         try:
             with open(certs_chain_path, 'wb') as chain_file:
                 os.chmod(chain_file.name, _CERTS_FILE_MODE)
-                for cert in x509_svid.cert_chain:
+                for cert in x509_svid.cert_chain():
                     cls._write_cert_to_file(cert, chain_file, encoding)
         except Exception as err:
             raise StoreCertificateError(
