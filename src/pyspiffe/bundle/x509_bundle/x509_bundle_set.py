@@ -22,7 +22,7 @@ class X509BundleSet(object):
         bundles = {}
         for pair in bundles_map.items():
             bundles[pair[0]] = pair[1]
-        self.bundles = bundles
+        self._bundles = bundles
 
     def put(self, bundle: X509Bundle) -> None:
         """Adds a new X509Bundle object or replace an existing one into the set.
@@ -30,7 +30,7 @@ class X509BundleSet(object):
         Args:
             bundle: The new X509Bundle to put into the set.
         """
-        self.bundles[bundle.trust_domain] = bundle
+        self._bundles[bundle.trust_domain()] = bundle
 
     def get_x509_bundle_for_trust_domain(
         self, trust_domain: TrustDomain
@@ -44,7 +44,7 @@ class X509BundleSet(object):
             A X509Bundle object for the given TrustDomain.
             None if the TrustDomain is not found in the set.
         """
-        return self.bundles.get(trust_domain)
+        return self._bundles.get(trust_domain)
 
     @classmethod
     def of(cls, bundle_list: List[X509Bundle]) -> 'X509BundleSet':
@@ -55,6 +55,6 @@ class X509BundleSet(object):
         """
         bundles = {}
         for b in bundle_list:
-            bundles[b.trust_domain] = b
+            bundles[b.trust_domain()] = b
 
         return X509BundleSet(bundles)

@@ -40,21 +40,29 @@ class X509Bundle(object):
             trust_domain: a TrustDomain instance.
             x509_authorities: a set of CA certificates.
         """
-        self.trust_domain = trust_domain
-        self.x509_authorities = x509_authorities
+        self._trust_domain = trust_domain
+        self._x509_authorities = x509_authorities
+
+    def trust_domain(self) -> TrustDomain:
+        """Returns the trust domain of the bundle"""
+        return self._trust_domain
+
+    def x509_authorities(self) -> Set[Certificate]:
+        """Returns the set of X.509 authorities in the bundle"""
+        return self._x509_authorities
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
-        if not self.x509_authorities:
-            self.x509_authorities = set()
+        if not self._x509_authorities:
+            self._x509_authorities = set()
 
-        self.x509_authorities.add(x509_authority)
+        self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle."""
-        if not self.x509_authorities:
+        if not self._x509_authorities:
             return
-        self.x509_authorities.remove(x509_authority)
+        self._x509_authorities.remove(x509_authority)
 
     @classmethod
     def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'X509Bundle':
@@ -224,7 +232,7 @@ class X509Bundle(object):
         try:
             with open(bundle_path, 'wb') as chain_file:
                 os.chmod(chain_file.name, _BUNDLE_FILE_MODE)
-                for cert in x509_bundle.x509_authorities:
+                for cert in x509_bundle._x509_authorities:
                     cls._write_cert_to_file(cert, chain_file, encoding)
         except Exception as err:
             raise SaveX509BundleError(

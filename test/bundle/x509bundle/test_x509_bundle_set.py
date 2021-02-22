@@ -17,7 +17,7 @@ def test_create_new_x509_bundle_set():
 
     x509_bundle_set = X509BundleSet(bundles)
 
-    assert len(x509_bundle_set.bundles) == 2
+    assert len(x509_bundle_set._bundles) == 2
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain_1)
     assert found_bundle == bundle_1
@@ -41,7 +41,7 @@ def test_create_x509_bundle_set_from_list_of_bundles():
 
     x509_bundle_set = X509BundleSet.of(bundles)
 
-    assert len(x509_bundle_set.bundles) == 2
+    assert len(x509_bundle_set._bundles) == 2
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain_1)
     assert found_bundle == bundle_1
@@ -65,10 +65,10 @@ def test_put_bundle():
 
     x509_bundle_set = X509BundleSet({})
 
-    assert len(x509_bundle_set.bundles) == 0
+    assert len(x509_bundle_set._bundles) == 0
 
     x509_bundle_set.put(bundle_1)
-    assert len(x509_bundle_set.bundles) == 1
+    assert len(x509_bundle_set._bundles) == 1
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain_1)
     assert found_bundle == bundle_1
@@ -77,11 +77,11 @@ def test_put_bundle():
     assert found_bundle is None
 
     x509_bundle_set.put(bundle_2)
-    assert len(x509_bundle_set.bundles) == 2
+    assert len(x509_bundle_set._bundles) == 2
 
     # putting other bundle for the trust domain 1
     x509_bundle_set.put(other_bundle)
-    assert len(x509_bundle_set.bundles) == 2
+    assert len(x509_bundle_set._bundles) == 2
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain_1)
     assert found_bundle == other_bundle

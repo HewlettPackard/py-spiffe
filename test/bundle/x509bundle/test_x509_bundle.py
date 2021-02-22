@@ -23,10 +23,10 @@ def test_parse_raw_bundle_single_authority():
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain == trust_domain
-    assert len(x509_bundle.x509_authorities) == 1
+    assert x509_bundle.trust_domain() == trust_domain
+    assert len(x509_bundle.x509_authorities()) == 1
 
-    authority = x509_bundle.x509_authorities.pop()
+    authority = x509_bundle.x509_authorities().pop()
     assert isinstance(authority, Certificate)
     assert 'CN=PEMUTILTEST1' == authority.subject.rfc4514_string()
 
@@ -36,15 +36,15 @@ def test_parse_raw_bundle_multiple_authorities():
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain == trust_domain
-    assert len(x509_bundle.x509_authorities) == 2
+    assert x509_bundle.trust_domain() == trust_domain
+    assert len(x509_bundle.x509_authorities()) == 2
 
     expected_subjects = ['O=SPIRE,C=US', 'O=SPIFFE,C=US']
-    authority1 = x509_bundle.x509_authorities.pop()
+    authority1 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities.pop()
+    authority2 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -54,9 +54,9 @@ def test_parse_bundle_single_authority():
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain == trust_domain
-    assert len(x509_bundle.x509_authorities) == 1
-    authority = x509_bundle.x509_authorities.pop()
+    assert x509_bundle.trust_domain() == trust_domain
+    assert len(x509_bundle.x509_authorities()) == 1
+    authority = x509_bundle.x509_authorities().pop()
     assert isinstance(authority, Certificate)
     assert 'CN=PEMUTILTEST1' == authority.subject.rfc4514_string()
 
@@ -66,15 +66,15 @@ def test_parse_bundle_multiple_authorities():
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain == trust_domain
-    assert len(x509_bundle.x509_authorities) == 2
+    assert x509_bundle.trust_domain() == trust_domain
+    assert len(x509_bundle.x509_authorities()) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = x509_bundle.x509_authorities.pop()
+    authority1 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities.pop()
+    authority2 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -126,15 +126,15 @@ def test_load_bundle():
 
     x509_bundle = X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.PEM)
 
-    assert x509_bundle.trust_domain == trust_domain
-    assert len(x509_bundle.x509_authorities) == 2
+    assert x509_bundle.trust_domain() == trust_domain
+    assert len(x509_bundle.x509_authorities()) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = x509_bundle.x509_authorities.pop()
+    authority1 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities.pop()
+    authority2 = x509_bundle.x509_authorities().pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -169,15 +169,15 @@ def test_save_bundle_pem_encoded(tmpdir):
         trust_domain, bundle_path, serialization.Encoding.PEM
     )
 
-    assert saved_bundle.trust_domain == trust_domain
-    assert len(saved_bundle.x509_authorities) == 2
+    assert saved_bundle.trust_domain() == trust_domain
+    assert len(saved_bundle.x509_authorities()) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = saved_bundle.x509_authorities.pop()
+    authority1 = saved_bundle.x509_authorities().pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = saved_bundle.x509_authorities.pop()
+    authority2 = saved_bundle.x509_authorities().pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -194,15 +194,15 @@ def test_save_bundle_der_encoded(tmpdir):
         trust_domain, bundle_path, serialization.Encoding.DER
     )
 
-    assert saved_bundle.trust_domain == trust_domain
-    assert len(saved_bundle.x509_authorities) == 2
+    assert saved_bundle.trust_domain() == trust_domain
+    assert len(saved_bundle.x509_authorities()) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = saved_bundle.x509_authorities.pop()
+    authority1 = saved_bundle.x509_authorities().pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = saved_bundle.x509_authorities.pop()
+    authority2 = saved_bundle.x509_authorities().pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -236,16 +236,16 @@ def test_add_and_remove_authority():
     bundle.add_authority(x509_cert_1)
     bundle.add_authority(x509_cert_2)
 
-    assert len(bundle.x509_authorities) == 2
+    assert len(bundle.x509_authorities()) == 2
 
-    for a in bundle.x509_authorities:
+    for a in bundle.x509_authorities():
         assert isinstance(a, Certificate)
         assert 'CN=PEMUTILTEST' in a.subject.rfc4514_string()
 
     bundle.remove_authority(x509_cert_1)
-    assert len(bundle.x509_authorities) == 1
+    assert len(bundle.x509_authorities()) == 1
     bundle.remove_authority(x509_cert_2)
-    assert len(bundle.x509_authorities) == 0
+    assert len(bundle.x509_authorities()) == 0
 
 
 def read_bytes(path):
