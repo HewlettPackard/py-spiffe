@@ -135,7 +135,7 @@ class InvalidIntermediateCertificateError(X509SvidError):
         """Creates an instance of InvalidIntermediateCertificateError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -149,7 +149,7 @@ class ParseCertificateError(X509SvidError):
         """Creates an instance of ParseCertificateError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -163,7 +163,7 @@ class ParsePrivateKeyError(X509SvidError):
         """Creates an instance of ParsePrivateKeyError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -177,7 +177,7 @@ class StoreCertificateError(X509SvidError):
         """Creates an instance of StoreCertificateError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -191,7 +191,7 @@ class StorePrivateKeyError(X509SvidError):
         """Creates an instance of StorePrivateKeyError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -205,7 +205,7 @@ class LoadCertificateError(X509SvidError):
         """Creates an instance of LoadCertificateError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -219,7 +219,7 @@ class LoadPrivateKeyError(X509SvidError):
         """Creates an instance of LoadPrivateKeyError
 
         Args:
-            additional_information: optional additional information about the error.
+            additional_information: additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
