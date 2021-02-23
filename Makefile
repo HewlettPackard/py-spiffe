@@ -83,11 +83,7 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports -p pyspiffe.bundle  \
-	-p pyspiffe.spiffe_id -p pyspiffe.svid -p pyspiffe.workloadapi -m pyspiffe.config  \
-	-m pyspiffe.exceptions
-#TODO: Update mypy and use the following once https://github.com/python/mypy/issues/10062 is merge.
-# MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
+	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
 
 # Generate source files for the documentation
 docs_generate: export SPHINX_APIDOC_OPTIONS = members,show-inheritance
