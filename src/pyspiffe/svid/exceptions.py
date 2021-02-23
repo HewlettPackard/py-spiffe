@@ -115,7 +115,7 @@ class X509SvidError(PySpiffeError):
 class InvalidLeafCertificateError(X509SvidError):
     """Error raised when an invalid leaf certificate is found in the X.509 chain."""
 
-    _MESSAGE = 'Invalid leaf certificate: {}'
+    _MESSAGE = 'Invalid leaf certificate: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of InvalidLeafCertificateError
@@ -129,13 +129,13 @@ class InvalidLeafCertificateError(X509SvidError):
 class InvalidIntermediateCertificateError(X509SvidError):
     """Error raised when an invalid intermediate certificate is found in the X.509 chain."""
 
-    _MESSAGE = 'Invalid intermediate certificate: {}'
+    _MESSAGE = 'Invalid intermediate certificate: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of InvalidIntermediateCertificateError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -143,13 +143,13 @@ class InvalidIntermediateCertificateError(X509SvidError):
 class ParseCertificateError(X509SvidError):
     """Error raised when an certificate could not be parsed from bytes."""
 
-    _MESSAGE = 'Error parsing certificate: {}'
+    _MESSAGE = 'Error parsing certificate: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of ParseCertificateError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -157,13 +157,13 @@ class ParseCertificateError(X509SvidError):
 class ParsePrivateKeyError(X509SvidError):
     """Error raised when the private key could not be parsed from bytes."""
 
-    _MESSAGE = 'Error parsing private key: {}'
+    _MESSAGE = 'Error parsing private key: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of ParsePrivateKeyError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -171,13 +171,13 @@ class ParsePrivateKeyError(X509SvidError):
 class StoreCertificateError(X509SvidError):
     """Error raised when an certificate could not be saved to disk."""
 
-    _MESSAGE = 'Error saving certificate to file: {}'
+    _MESSAGE = 'Error saving certificate to file: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of StoreCertificateError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -185,13 +185,13 @@ class StoreCertificateError(X509SvidError):
 class StorePrivateKeyError(X509SvidError):
     """Error raised when the private key could not be saved to disk."""
 
-    _MESSAGE = 'Error saving private key to file: {}'
+    _MESSAGE = 'Error saving private key to file: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of StorePrivateKeyError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -199,13 +199,13 @@ class StorePrivateKeyError(X509SvidError):
 class LoadCertificateError(X509SvidError):
     """Error raised when an certificate could not be loaded from disk."""
 
-    _MESSAGE = 'Error loading certificate from file: {}'
+    _MESSAGE = 'Error loading certificate from file: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of LoadCertificateError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -213,12 +213,19 @@ class LoadCertificateError(X509SvidError):
 class LoadPrivateKeyError(X509SvidError):
     """Error raised when the private key could not be loaded from disk."""
 
-    _MESSAGE = 'Error loading private key from file: {}'
+    _MESSAGE = 'Error loading private key from file: {}.'
 
     def __init__(self, additional_information: str = '') -> None:
         """Creates an instance of LoadPrivateKeyError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: optional additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
+
+
+def normalize_exception_message(msg: str) -> str:
+    """Removes the last point from the string."""
+    if msg[-1] != '.':
+        return msg
+    return msg[:-1]

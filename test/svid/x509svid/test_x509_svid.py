@@ -68,7 +68,7 @@ def test_parse_raw_missing_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate'
+        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
     )
 
 
@@ -80,7 +80,7 @@ def test_parse_missing_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate'
+        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
     )
 
 
@@ -118,7 +118,7 @@ def test_parse_raw_corrupted_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate'
+        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
     )
 
 
@@ -130,7 +130,7 @@ def test_parse_corrupted_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate'
+        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
     )
 
 
@@ -294,7 +294,7 @@ def test_load_non_existent_cert_file():
 
     assert (
         str(exception.value)
-        == 'Error loading certificate from file: Certs chain file file not found: no-exists'
+        == 'Error loading certificate from file: Certs chain file file not found: no-exists.'
     )
 
 
@@ -307,7 +307,7 @@ def test_load_non_existent_key_bytes():
 
     assert (
         str(exception.value)
-        == 'Error loading private key from file: Private key file not found: no-exists'
+        == 'Error loading private key from file: Private key file not found: no-exists.'
     )
 
 
@@ -370,7 +370,7 @@ def test_save_non_supported_encoding():
 
     assert (
         str(err.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
+        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
     )
 
 
@@ -380,7 +380,7 @@ def test_load_non_supported_encoding():
 
     assert (
         str(err.value)
-        == 'Encoding not supported: Encoding.OpenSSH. Expected \'PEM\' or \'DER\''
+        == 'Encoding not supported: Encoding.OpenSSH. Expected \'PEM\' or \'DER\'.'
     )
 
 

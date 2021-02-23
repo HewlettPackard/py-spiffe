@@ -31,6 +31,7 @@ from pyspiffe.svid.exceptions import (
     StorePrivateKeyError,
     LoadCertificateError,
     LoadPrivateKeyError,
+    normalize_exception_message,
 )
 
 _CERTS_FILE_MODE = 0o644
@@ -214,7 +215,7 @@ class X509Svid(object):
             return cls.parse_raw(chain_bytes, key_bytes)
         else:
             raise ValueError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
                     encoding
                 )
             )
@@ -256,7 +257,7 @@ class X509Svid(object):
 
         if not (encoding is encoding.PEM or encoding is encoding.DER):
             raise ValueError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
                     encoding
                 )
             )
@@ -321,7 +322,9 @@ class X509Svid(object):
             )
         except Exception as err:
             raise X509SvidError(
-                'Could extract private key bytes from object: {}'.format(str(err))
+                'Could extract private key bytes from object: {}'.format(
+                    normalize_exception_message(str(err))
+                )
             )
 
     @classmethod
@@ -371,14 +374,14 @@ class X509Svid(object):
         try:
             return load_der_private_key(private_key_bytes, None, None)
         except Exception as err:
-            raise ParsePrivateKeyError(str(err))
+            raise ParsePrivateKeyError(normalize_exception_message(str(err)))
 
     @staticmethod
     def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
         try:
             return load_pem_private_key(private_key_bytes, None, None)
         except Exception as err:
-            raise ParsePrivateKeyError(str(err))
+            raise ParsePrivateKeyError(normalize_exception_message(str(err)))
 
     @staticmethod
     def _parse_der_certificates(chain_der_bytes: bytes) -> List[Certificate]:
@@ -392,7 +395,7 @@ class X509Svid(object):
                 chain.append(cert)
                 _, remaining_data = decode(remaining_data)
         except Exception as err:
-            raise ParseCertificateError(str(err))
+            raise ParseCertificateError(normalize_exception_message(str(err)))
 
         return chain
 
@@ -421,7 +424,7 @@ class X509Svid(object):
         sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
         if len(sans) == 0:
             raise InvalidLeafCertificateError(
-                'Certificate does not contain a SPIFFE ID in the URI SAN.'
+                'Certificate does not contain a SPIFFE ID in the URI SAN'
             )
         return SpiffeId.parse(sans[0])
 
@@ -440,20 +443,20 @@ class X509Svid(object):
         )
         if basic_constraints.value.ca:
             raise InvalidLeafCertificateError(
-                'Leaf certificate must not have CA flag set to true.'
+                'Leaf certificate must not have CA flag set to true'
             )
         key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE)
         if not key_usage.value.digital_signature:
             raise InvalidLeafCertificateError(
-                'Leaf certificate must have \'digitalSignature\' as key usage.'
+                'Leaf certificate must have \'digitalSignature\' as key usage'
             )
         if key_usage.value.key_cert_sign:
             raise InvalidLeafCertificateError(
-                'Leaf certificate must not have \'keyCertSign\' as key usage.'
+                'Leaf certificate must not have \'keyCertSign\' as key usage'
             )
         if key_usage.value.crl_sign:
             raise InvalidLeafCertificateError(
-                'Leaf certificate must not have \'cRLSign\' as key usage.'
+                'Leaf certificate must not have \'cRLSign\' as key usage'
             )
 
     @staticmethod
@@ -463,10 +466,10 @@ class X509Svid(object):
         )
         if not basic_constraints.value.ca:
             raise InvalidIntermediateCertificateError(
-                'Signing certificate must have CA flag set to true.'
+                'Signing certificate must have CA flag set to true'
             )
         key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE)
         if not key_usage.value.key_cert_sign:
             raise InvalidIntermediateCertificateError(
-                'Signing certificate must have \'keyCertSign\' as key usage.'
+                'Signing certificate must have \'keyCertSign\' as key usage'
             )
