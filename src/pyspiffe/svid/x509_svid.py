@@ -68,6 +68,15 @@ class X509Svid(object):
             private_key: A Private Key object.
         """
 
+        if spiffe_id is None:
+            raise ValueError('spiffe_id cannot be None')
+
+        if cert_chain is None or len(cert_chain) == 0:
+            raise ValueError('cert_chain cannot be empty')
+
+        if private_key is None:
+            raise ValueError('private_key cannot be None')
+
         self._spiffe_id = spiffe_id
         self._cert_chain = cert_chain
         self._private_key = private_key
