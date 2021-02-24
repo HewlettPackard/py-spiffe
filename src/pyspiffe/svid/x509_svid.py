@@ -104,7 +104,7 @@ class X509Svid(object):
             private_key_bytes: Private key as PKCS#8 ASN.1 DER.
 
         Returns:
-            an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
+            An instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
             leaf certificate in the chain.
 
         Raises:
@@ -141,7 +141,7 @@ class X509Svid(object):
             private_key_bytes: Private key as PKCS#8 PEM block.
 
         Returns:
-            an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
+            An instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
             leaf certificate in the chain.
 
         Raises:
@@ -183,7 +183,7 @@ class X509Svid(object):
                                             serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Returns:
-            an instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
+            An instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
             leaf certificate in the chain.
 
         Raises:
