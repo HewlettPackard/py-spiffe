@@ -19,7 +19,7 @@ trust_domain = TrustDomain('domain.test')
 
 
 def test_parse_raw_bundle_single_authority():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('cert.der'))
+    bundle_bytes = read_bytes('cert.der')
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
@@ -32,7 +32,7 @@ def test_parse_raw_bundle_single_authority():
 
 
 def test_parse_raw_bundle_multiple_authorities():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.der'))
+    bundle_bytes = read_bytes('certs.der')
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
@@ -50,7 +50,7 @@ def test_parse_raw_bundle_multiple_authorities():
 
 
 def test_parse_bundle_single_authority():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('cert.pem'))
+    bundle_bytes = read_bytes('cert.pem')
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
@@ -62,7 +62,7 @@ def test_parse_bundle_single_authority():
 
 
 def test_parse_bundle_multiple_authorities():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.pem'))
+    bundle_bytes = read_bytes('certs.pem')
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
@@ -80,7 +80,7 @@ def test_parse_bundle_multiple_authorities():
 
 
 def test_parse_raw_trust_domain_is_emtpy():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.der'))
+    bundle_bytes = read_bytes('certs.der')
 
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse_raw(None, bundle_bytes)
@@ -89,7 +89,7 @@ def test_parse_raw_trust_domain_is_emtpy():
 
 
 def test_parse_trust_domain_is_emtpy():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.pem'))
+    bundle_bytes = read_bytes('certs.pem')
 
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse(None, bundle_bytes)
@@ -98,7 +98,7 @@ def test_parse_trust_domain_is_emtpy():
 
 
 def test_parse_bundle_from_empty():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('empty.pem'))
+    bundle_bytes = read_bytes('empty.pem')
 
     with pytest.raises(ParseX509BundleError) as exception:
         X509Bundle.parse(trust_domain, bundle_bytes)
@@ -110,7 +110,7 @@ def test_parse_bundle_from_empty():
 
 
 def test_parse_bundle_from_not_pem():
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('not-pem'))
+    bundle_bytes = read_bytes('not-pem')
 
     with pytest.raises(ParseX509BundleError) as exception:
         X509Bundle.parse(trust_domain, bundle_bytes)
@@ -150,7 +150,7 @@ def test_load_bundle_non_existent_file():
 
 
 def test_load_bundle_empty_trust_domain():
-    bundle_path = _TEST_CERTS_PATH.format('certs.pem')
+    bundle_path = 'certs.pem'
     with pytest.raises(Exception) as exception:
         X509Bundle.load(None, bundle_path, serialization.Encoding.PEM)
 
@@ -158,7 +158,7 @@ def test_load_bundle_empty_trust_domain():
 
 
 def test_save_bundle_pem_encoded(tmpdir):
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.pem'))
+    bundle_bytes = read_bytes('certs.pem')
     # create the X509Bundle to be saved
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
@@ -183,7 +183,7 @@ def test_save_bundle_pem_encoded(tmpdir):
 
 
 def test_save_bundle_der_encoded(tmpdir):
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.pem'))
+    bundle_bytes = read_bytes('certs.pem')
     # create the X509Bundle to be saved
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
@@ -208,7 +208,7 @@ def test_save_bundle_der_encoded(tmpdir):
 
 
 def test_save_non_supported_encoding(tmpdir):
-    bundle_bytes = read_bytes(_TEST_CERTS_PATH.format('certs.pem'))
+    bundle_bytes = read_bytes('certs.pem')
     # create the X509Bundle to be saved
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
@@ -248,6 +248,7 @@ def test_add_and_remove_authority():
     assert len(bundle.x509_authorities()) == 0
 
 
-def read_bytes(path):
+def read_bytes(filename):
+    path = _TEST_CERTS_PATH.format(filename)
     with open(path, 'rb') as file:
         return file.read()

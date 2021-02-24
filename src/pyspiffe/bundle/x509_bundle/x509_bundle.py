@@ -37,18 +37,18 @@ class X509Bundle(object):
         """Creates a X509Bundle instance.
 
         Args:
-            trust_domain: a TrustDomain instance.
-            x509_authorities: a set of CA certificates.
+            trust_domain: A TrustDomain instance.
+            x509_authorities: A set of CA certificates.
         """
         self._trust_domain = trust_domain
         self._x509_authorities = x509_authorities
 
     def trust_domain(self) -> TrustDomain:
-        """Returns the trust domain of the bundle"""
+        """Returns the trust domain of the bundle. """
         return self._trust_domain
 
     def x509_authorities(self) -> Set[Certificate]:
-        """Returns the set of X.509 authorities in the bundle"""
+        """Returns the set of X.509 authorities in the bundle. """
         return self._x509_authorities
 
     def add_authority(self, x509_authority: Certificate) -> None:
@@ -59,7 +59,7 @@ class X509Bundle(object):
         self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
-        """Removes an X.509 authority from the bundle."""
+        """Removes an X.509 authority from the bundle. """
         if not self._x509_authorities:
             return
         self._x509_authorities.remove(x509_authority)
@@ -69,14 +69,14 @@ class X509Bundle(object):
         """Parses an X.509 bundle from an array of bytes containing trusted authorities as PEM blocks.
 
         Args:
-            trust_domain: a trust domain to associate to the bundle.
-            bundle_bytes: an array of bytes that represents a set of X.509 authorities.
+            trust_domain: A TrustDomain to associate to the bundle.
+            bundle_bytes: An array of bytes that represents a set of X.509 authorities.
 
         Returns:
-            an instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
+            An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
-            ParseBundleError: in case the set of x509_authorities cannot be parsed from the bundle_bytes.
+            ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
         if not trust_domain:
@@ -91,14 +91,14 @@ class X509Bundle(object):
         """Parses an X.509 bundle from an array of bytes containing trusted authorities as DER blocks.
 
         Args:
-            trust_domain: a trust domain to associate to the bundle.
-            bundle_bytes: an array of bytes that represents a set of X.509 authorities.
+            trust_domain: A TrustDomain to associate to the bundle.
+            bundle_bytes: An array of bytes that represents a set of X.509 authorities.
 
         Returns:
-            an instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
+            An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
-            ParseBundleError: in case the set of x509_authorities cannot be parsed from the bundle_bytes.
+            ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
         if not trust_domain:
@@ -118,31 +118,31 @@ class X509Bundle(object):
         """Loads an X.509 bundle from a file in disk containing DER or PEM encoded trusted authorities.
 
         Args:
-            trust_domain: a trust domain to associate to the bundle.
-            bundle_path: path to the file containing a set of X.509 authorities.
-            encoding: bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER.
+            trust_domain: A trust domain to associate to the bundle.
+            bundle_path: Path to the file containing a set of X.509 authorities.
+            encoding: Bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Returns:
-            an instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
+            An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
-            LoadBundleError: in case the set of x509_authorities cannot be parsed from the bundle_bytes.
+            LoadBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
         if not trust_domain:
             raise X509BundleError(EMPTY_DOMAIN_ERROR)
 
         bundle_bytes = cls._load_bundle_bytes(bundle_path)
+
         if encoding == serialization.Encoding.PEM:
             return cls.parse(trust_domain, bundle_bytes)
-        elif encoding == serialization.Encoding.DER:
+
+        if encoding == serialization.Encoding.DER:
             return cls.parse_raw(trust_domain, bundle_bytes)
-        else:
-            raise ValueError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
-                    encoding
-                )
-            )
+
+        raise ValueError(
+            'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(encoding)
+        )
 
     @classmethod
     def save(
@@ -154,16 +154,14 @@ class X509Bundle(object):
         """Saves an X.509 bundle to a file in disk.
 
         Args:
-            x509_bundle: instance of 'X509Bundle' to be saved to disk
-            bundle_path: path to the file containing a set of X.509 authorities
-            encoding: bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER
+            x509_bundle: Instance of 'X509Bundle' to be saved to disk
+            bundle_path: Path to the file containing a set of X.509 authorities
+            encoding: Bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER
 
         Raises:
-            ValueError: in case the encoding is not either PEM or DER (from serialization.Encoding)
-
-            X509BundleError: in case the authorities in the bundle cannot be converted to bytes.
-
-            SaveX509BundleError: in the case the file path in bundle_path cannot be open to write, or there is an error
+            ValueError: In case the encoding is not either PEM or DER (from serialization.Encoding)
+            X509BundleError: In case the authorities in the bundle cannot be converted to bytes.
+            SaveX509BundleError: In the case the file path in bundle_path cannot be open to write, or there is an error
                                 writing the authorities bytes to the file.
         """
 

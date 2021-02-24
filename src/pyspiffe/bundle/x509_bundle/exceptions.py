@@ -6,17 +6,13 @@ from pyspiffe.exceptions import PySpiffeError
 
 
 class X509BundleError(PySpiffeError):
-    """Top level exception for the X509Bundle module.
-
-    Attributes:
-        message: message describing the error.
-    """
+    """Top level exception for the X509Bundle module. """
 
     def __init__(self, message: str) -> None:
         """Creates an instance of X509BundleError.
 
         Args:
-            message: message describing the error.
+            message: Message describing the error.
         """
 
         self.message = message
@@ -30,11 +26,11 @@ class ParseX509BundleError(X509BundleError):
 
     _MESSAGE = 'Error parsing X.509 bundle: {}.'
 
-    def __init__(self, additional_information: str = '') -> None:
+    def __init__(self, additional_information: str) -> None:
         """Creates an instance of ParseX509BundleError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -44,11 +40,11 @@ class LoadX509BundleError(X509BundleError):
 
     _MESSAGE = 'Error loading X.509 bundle: {}.'
 
-    def __init__(self, additional_information: str = '') -> None:
+    def __init__(self, additional_information: str) -> None:
         """Creates an instance of LoadX509BundleError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
 
@@ -58,10 +54,10 @@ class SaveX509BundleError(X509BundleError):
 
     _MESSAGE = 'Error saving X.509 bundle: {}.'
 
-    def __init__(self, additional_information: str = '') -> None:
+    def __init__(self, additional_information: str) -> None:
         """Creates an instance of SaveX509BundleError
 
         Args:
-            additional_information: additional information about the error.
+            additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
