@@ -34,6 +34,11 @@ class SpiffeWorkloadAPIStub(object):
                 request_serializer=workload__pb2.X509SVIDRequest.SerializeToString,
                 response_deserializer=workload__pb2.X509SVIDResponse.FromString,
                 )
+        self.FetchX509Bundles = channel.unary_stream(
+                '/SpiffeWorkloadAPI/FetchX509Bundles',
+                request_serializer=workload__pb2.X509BundlesRequest.SerializeToString,
+                response_deserializer=workload__pb2.X509BundlesResponse.FromString,
+                )
 
 
 class SpiffeWorkloadAPIServicer(object):
@@ -68,6 +73,12 @@ class SpiffeWorkloadAPIServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def FetchX509Bundles(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SpiffeWorkloadAPIServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -90,6 +101,11 @@ def add_SpiffeWorkloadAPIServicer_to_server(servicer, server):
                     servicer.FetchX509SVID,
                     request_deserializer=workload__pb2.X509SVIDRequest.FromString,
                     response_serializer=workload__pb2.X509SVIDResponse.SerializeToString,
+            ),
+            'FetchX509Bundles': grpc.unary_stream_rpc_method_handler(
+                    servicer.FetchX509Bundles,
+                    request_deserializer=workload__pb2.X509BundlesRequest.FromString,
+                    response_serializer=workload__pb2.X509BundlesResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -166,5 +182,22 @@ class SpiffeWorkloadAPI(object):
         return grpc.experimental.unary_stream(request, target, '/SpiffeWorkloadAPI/FetchX509SVID',
             workload__pb2.X509SVIDRequest.SerializeToString,
             workload__pb2.X509SVIDResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def FetchX509Bundles(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/SpiffeWorkloadAPI/FetchX509Bundles',
+            workload__pb2.X509BundlesRequest.SerializeToString,
+            workload__pb2.X509BundlesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
