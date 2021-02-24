@@ -18,8 +18,8 @@ _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
 
 
 def test_parse_raw_chain_and_ec_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('1-key.der'))
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('1-key.der')
 
     x509_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
 
@@ -32,8 +32,8 @@ def test_parse_raw_chain_and_ec_key():
 
 
 def test_parse_chain_and_ec_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('2-chain.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
@@ -47,8 +47,8 @@ def test_parse_chain_and_ec_key():
 
 
 def test_parse_leaf_only_and_rsa_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('3-good-leaf-only.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('3-key-pkcs8-rsa.pem'))
+    chain_bytes = read_bytes('3-good-leaf-only.pem')
+    key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
@@ -61,8 +61,8 @@ def test_parse_leaf_only_and_rsa_key():
 
 
 def test_parse_raw_missing_certificate():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('1-key.der'))
+    chain_bytes = read_bytes('1-key.der')
+    key_bytes = read_bytes('1-key.der')
 
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
@@ -73,8 +73,8 @@ def test_parse_raw_missing_certificate():
 
 
 def test_parse_missing_certificate():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('2-key.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -85,8 +85,8 @@ def test_parse_missing_certificate():
 
 
 def test_parse_raw_missing_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('1-chain.der')
 
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
@@ -98,8 +98,8 @@ def test_parse_raw_missing_key():
 
 
 def test_parse_missing_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('2-chain.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-chain.pem'))
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('2-chain.pem')
 
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -111,8 +111,8 @@ def test_parse_missing_key():
 
 
 def test_parse_raw_corrupted_certificate():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('corrupted'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('1-key.der'))
+    chain_bytes = read_bytes('corrupted')
+    key_bytes = read_bytes('1-key.der')
 
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
@@ -123,8 +123,8 @@ def test_parse_raw_corrupted_certificate():
 
 
 def test_parse_corrupted_certificate():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('corrupted'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('corrupted')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -135,8 +135,8 @@ def test_parse_corrupted_certificate():
 
 
 def test_parse_raw_corrupted_private_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('corrupted'))
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('corrupted')
 
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
@@ -148,8 +148,8 @@ def test_parse_raw_corrupted_private_key():
 
 
 def test_parse_corrupted_private_key():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('2-chain.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('corrupted'))
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('corrupted')
 
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -161,8 +161,8 @@ def test_parse_corrupted_private_key():
 
 
 def test_parse_invalid_spiffe_id():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('wrong-empty-spiffe-id.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-empty-spiffe-id.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidLeafCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -174,8 +174,8 @@ def test_parse_invalid_spiffe_id():
 
 
 def test_parse_leaf_ca_true():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('wrong-leaf-ca-true.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-leaf-ca-true.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidLeafCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -187,10 +187,8 @@ def test_parse_leaf_ca_true():
 
 
 def test_parse_no_digital_signature():
-    chain_bytes = read_bytes(
-        _TEST_CERTS_PATH.format('wrong-leaf-no-digital-signature.pem')
-    )
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-leaf-no-digital-signature.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidLeafCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -202,8 +200,8 @@ def test_parse_no_digital_signature():
 
 
 def test_parse_key_cert_sign():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('wrong-leaf-cert-sign.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-leaf-cert-sign.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidLeafCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -215,8 +213,8 @@ def test_parse_key_cert_sign():
 
 
 def test_parse_crl_sign():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('wrong-leaf-crl-sign.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-leaf-crl-sign.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidLeafCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -228,8 +226,8 @@ def test_parse_crl_sign():
 
 
 def test_parse_intermediate_no_ca():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('wrong-intermediate-no-ca.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-intermediate-no-ca.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidIntermediateCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -241,10 +239,8 @@ def test_parse_intermediate_no_ca():
 
 
 def test_parse_intermediate_no_key_cert_sign():
-    chain_bytes = read_bytes(
-        _TEST_CERTS_PATH.format('wrong-intermediate-no-key-cert-sign.pem')
-    )
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('wrong-intermediate-no-key-cert-sign.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     with pytest.raises(InvalidIntermediateCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
@@ -287,7 +283,7 @@ def test_load_from_der_files():
 
 def test_load_non_existent_cert_file():
     chain_path = 'no-exists'
-    key_path = _TEST_CERTS_PATH.format('2-key.pem')
+    key_path = '2-key.pem'
 
     with pytest.raises(LoadCertificateError) as exception:
         X509Svid.load(chain_path, key_path, serialization.Encoding.PEM)
@@ -312,8 +308,8 @@ def test_load_non_existent_key_bytes():
 
 
 def test_save_chain_and_ec_key_as_pem(tmpdir):
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('2-chain.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('2-key.pem'))
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('2-key.pem')
 
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
@@ -336,8 +332,8 @@ def test_save_chain_and_ec_key_as_pem(tmpdir):
 
 
 def test_save_chain_and_rsa_key_as_der(tmpdir):
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('3-good-leaf-only.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('3-key-pkcs8-rsa.pem'))
+    chain_bytes = read_bytes('3-good-leaf-only.pem')
+    key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
@@ -359,8 +355,8 @@ def test_save_chain_and_rsa_key_as_der(tmpdir):
 
 
 def test_save_non_supported_encoding():
-    chain_bytes = read_bytes(_TEST_CERTS_PATH.format('3-good-leaf-only.pem'))
-    key_bytes = read_bytes(_TEST_CERTS_PATH.format('3-key-pkcs8-rsa.pem'))
+    chain_bytes = read_bytes('3-good-leaf-only.pem')
+    key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
@@ -384,6 +380,7 @@ def test_load_non_supported_encoding():
     )
 
 
-def read_bytes(path):
+def read_bytes(filename):
+    path = _TEST_CERTS_PATH.format(filename)
     with open(path, 'rb') as file:
         return file.read()
