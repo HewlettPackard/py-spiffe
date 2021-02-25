@@ -7,6 +7,8 @@ from typing import Mapping, List, Optional
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
+__all__ = ['X509Bundle']
+
 
 class X509BundleSet(object):
     """X509BundleSet is a set of X509Bundles objects, keyed by trust domain."""
