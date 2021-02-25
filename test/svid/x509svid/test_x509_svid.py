@@ -11,7 +11,7 @@ from pyspiffe.svid.exceptions import (
     LoadCertificateError,
     LoadPrivateKeyError,
 )
-from pyspiffe.svid.x509_svid import X509Svid
+from pyspiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
@@ -28,7 +28,7 @@ def test_parse_raw_chain_and_ec_key():
     assert len(x509_svid.cert_chain()) == 2
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.private_key(), ec.EllipticCurvePrivateKey)
-    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_chain_and_ec_key():
@@ -43,7 +43,7 @@ def test_parse_chain_and_ec_key():
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.cert_chain()[1], Certificate)
     assert isinstance(x509_svid.private_key(), ec.EllipticCurvePrivateKey)
-    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_leaf_only_and_rsa_key():
@@ -57,7 +57,7 @@ def test_parse_leaf_only_and_rsa_key():
     assert len(x509_svid.cert_chain()) == 1
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.private_key(), rsa.RSAPrivateKey)
-    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_parse_raw_missing_certificate():
@@ -263,7 +263,7 @@ def test_load_from_pem_files():
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.cert_chain()[1], Certificate)
     assert isinstance(x509_svid.private_key(), ec.EllipticCurvePrivateKey)
-    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_load_from_der_files():
@@ -278,7 +278,7 @@ def test_load_from_der_files():
     assert isinstance(x509_svid.leaf(), Certificate)
     assert isinstance(x509_svid.cert_chain()[1], Certificate)
     assert isinstance(x509_svid.private_key(), ec.EllipticCurvePrivateKey)
-    assert X509Svid._extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(x509_svid.leaf()) == expected_spiffe_id
 
 
 def test_load_non_existent_cert_file():
@@ -328,7 +328,7 @@ def test_save_chain_and_ec_key_as_pem(tmpdir):
     assert isinstance(saved_svid.leaf(), Certificate)
     assert isinstance(x509_svid.cert_chain()[1], Certificate)
     assert isinstance(saved_svid.private_key(), ec.EllipticCurvePrivateKey)
-    assert X509Svid._extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
 
 
 def test_save_chain_and_rsa_key_as_der(tmpdir):
@@ -351,7 +351,7 @@ def test_save_chain_and_rsa_key_as_der(tmpdir):
     assert len(saved_svid.cert_chain()) == 1
     assert isinstance(saved_svid.leaf(), Certificate)
     assert isinstance(saved_svid.private_key(), rsa.RSAPrivateKey)
-    assert X509Svid._extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
+    assert _extract_spiffe_id(saved_svid.leaf()) == expected_spiffe_id
 
 
 def test_save_non_supported_encoding():
