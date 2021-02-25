@@ -108,7 +108,7 @@ SPIFFE_ID_MAXIMUM_LENGTH = 2048
 ```
 
 ### Classes
-Class docstrings should document the list of public members including its types.
+Class docstrings should document the list of class public members including its types.
 Then `__init__` methods should be documented including its arguments. Typing for arguments
 should be defined as PEP 484 type annotations. As example:
 
@@ -121,8 +121,11 @@ class ExampleClass(object):
 
     Attributes:
         attr1 (str): Description of `attr1`.
-        attr2 (int, optional): Description of `attr2`.
+        attr2 (int): Description of `attr2`.
     """
+
+    attr1 = "some string"
+    attr2 = 10
 
     def __init__(self, param1: str, param2: bool, param3: int = None) -> None:
         """Example of docstring on the __init__ method.
@@ -134,9 +137,9 @@ class ExampleClass(object):
             param3: Description of `param3`.
 
         """
-        self.attr1 = param1
-        self.attr2 = param2
-        self.attr3 = param3
+        self.param1 = param1
+        self.param2 = param2
+        self.param3 = param3
 ```
 _Note_: Do not include the `self` parameter in the ``Args`` section.
 
