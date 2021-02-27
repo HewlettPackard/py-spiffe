@@ -143,6 +143,8 @@ class ExampleClass(object):
 ```
 _Note_: Do not include the `self` parameter in the ``Args`` section.
 
+This project uses the convention that is followed by most Python code: a name prefixed with an underscore (e.g. _message) should be considered a non-public member, and thus, subject to change without notice.
+
 ### Functions
 Functions should include the type of their arguments as
 [PEP 484](https://www.python.org/dev/peps/pep-0484/) type annotations and not as part
