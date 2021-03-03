@@ -178,8 +178,11 @@ class X509Bundle(object):
 
 # Internal utility functions
 def _parse_pem_authorities(pem_bytes: bytes) -> Set[Certificate]:
-    result = set()
     parsed_certs = pem.parse(pem_bytes)
+    if not parsed_certs:
+        raise ParseX509BundleError('Unable to load PEM X.509 certificate')
+
+    result = set()
     for cert in parsed_certs:
         try:
             x509_cert = x509.load_pem_x509_certificate(
@@ -189,8 +192,6 @@ def _parse_pem_authorities(pem_bytes: bytes) -> Set[Certificate]:
         except Exception:
             raise ParseX509BundleError('Unable to load PEM X.509 certificate')
 
-    if len(result) < 1:
-        raise ParseX509BundleError('Unable to load PEM X.509 certificate')
     return result
 
 
