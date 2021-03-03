@@ -71,13 +71,13 @@ class X509Svid(object):
         """
 
         if spiffe_id is None:
-            raise ValueError('spiffe_id cannot be None')
+            raise ValueError('spiffe_id cannot be None.')
 
-        if cert_chain is None or len(cert_chain) == 0:
-            raise ValueError('cert_chain cannot be empty')
+        if not cert_chain:
+            raise ValueError('cert_chain cannot be empty.')
 
         if private_key is None:
-            raise ValueError('private_key cannot be None')
+            raise ValueError('private_key cannot be None.')
 
         self._spiffe_id = spiffe_id
         self._cert_chain = cert_chain
@@ -188,9 +188,9 @@ class X509Svid(object):
         The private key should be without encryption.
 
         Args:
-            certs_chain_path (str): Path to the file containing one or more X.509 certificates as PEM blocks.
-            private_key_path (str): Path the file containing a private key as PKCS#8 PEM block.
-            encoding (serialization.Encoding): The encoding used to serialize the certs and private key, can be
+            certs_chain_path: Path to the file containing one or more X.509 certificates as PEM blocks.
+            private_key_path: Path the file containing a private key as PKCS#8 PEM block.
+            encoding: The encoding used to serialize the certs and private key, can be
                                             serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Returns:
@@ -238,11 +238,11 @@ class X509Svid(object):
 
         Args:
             x509_svid: the 'X509Svid' that has the certs_chain and private_key to be saved on disk.
-            certs_chain_path (str): Path to the file containing one or more X.509 certificates as PEM blocks.
+            certs_chain_path: Path to the file containing one or more X.509 certificates as PEM blocks.
                                     The certs_chain file is configured with a filemode = '0644'.
-            private_key_path (str): Path the file containing a PKCS#8 PEM block.
+            private_key_path: Path the file containing a PKCS#8 PEM block.
                                     The private_key file is configured with a filemode = '0600'.
-            encoding (serialization.Encoding): The encoding used to serialize the certs and private key, can be
+            encoding: The encoding used to serialize the certs and private key, can be
                                             serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Raises:
@@ -398,8 +398,11 @@ def _parse_der_certificates(chain_der_bytes: bytes) -> List[Certificate]:
 
 
 def _parse_pem_certificates(chain_pem_bytes: bytes) -> List[Certificate]:
-    result = []
     parsed_certs = pem.parse(chain_pem_bytes)
+    if not parsed_certs:
+        raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
+
+    result = []
     for cert in parsed_certs:
         try:
             x509_cert = x509.load_pem_x509_certificate(
@@ -409,8 +412,6 @@ def _parse_pem_certificates(chain_pem_bytes: bytes) -> List[Certificate]:
         except Exception:
             raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
 
-    if len(result) < 1:
-        raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
     return result
 
 
