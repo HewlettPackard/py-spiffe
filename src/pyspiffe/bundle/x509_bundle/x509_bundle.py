@@ -44,6 +44,8 @@ class X509Bundle(object):
         """
         self._trust_domain = trust_domain
         self._x509_authorities = x509_authorities
+        if not self._x509_authorities:
+            self._x509_authorities = set()
 
     def trust_domain(self) -> TrustDomain:
         """Returns the trust domain of the bundle. """
@@ -55,9 +57,6 @@ class X509Bundle(object):
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
-        if not self._x509_authorities:
-            self._x509_authorities = set()
-
         self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
@@ -167,7 +166,7 @@ class X509Bundle(object):
                                 writing the authorities bytes to the file.
         """
 
-        if not (encoding is encoding.PEM or encoding is encoding.DER):
+        if encoding not in [encoding.PEM, encoding.DER]:
             raise ValueError(
                 'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
                     encoding

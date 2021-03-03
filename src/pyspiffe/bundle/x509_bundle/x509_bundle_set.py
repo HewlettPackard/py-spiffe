@@ -14,7 +14,7 @@ class X509BundleSet(object):
     """X509BundleSet is a set of X509Bundles objects, keyed by trust domain."""
 
     def __init__(self, bundles_map: Mapping[TrustDomain, X509Bundle]) -> None:
-        """Creates a new initialized Set with the given X509Bundle objects keyed by TrustDomain.
+        """Creates a new initialized X509BundleSet with the given X509Bundle objects keyed by TrustDomain.
 
         Args:
             bundles_map: A map object of X509Bundle objects keyed by TrustDomain to initialize the X509BundleSet.
@@ -22,8 +22,8 @@ class X509BundleSet(object):
 
         # create and initialize a dict, so it can be updated (as Mapping doesn't define __setitem__)
         bundles = {}
-        for pair in bundles_map.items():
-            bundles[pair[0]] = pair[1]
+        for td, bundle in bundles_map.items():
+            bundles[td] = bundle
         self._bundles = bundles
 
     def put(self, bundle: X509Bundle) -> None:

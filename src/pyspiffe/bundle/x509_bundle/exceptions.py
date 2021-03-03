@@ -27,7 +27,7 @@ class ParseX509BundleError(X509BundleError):
     _MESSAGE = 'Error parsing X.509 bundle: {}.'
 
     def __init__(self, additional_information: str) -> None:
-        """Creates an instance of ParseX509BundleError
+        """Creates an instance of ParseX509BundleError.
 
         Args:
             additional_information: Additional information about the error.
@@ -41,7 +41,7 @@ class LoadX509BundleError(X509BundleError):
     _MESSAGE = 'Error loading X.509 bundle: {}.'
 
     def __init__(self, additional_information: str) -> None:
-        """Creates an instance of LoadX509BundleError
+        """Creates an instance of LoadX509BundleError.
 
         Args:
             additional_information: Additional information about the error.
@@ -55,7 +55,7 @@ class SaveX509BundleError(X509BundleError):
     _MESSAGE = 'Error saving X.509 bundle: {}.'
 
     def __init__(self, additional_information: str) -> None:
-        """Creates an instance of SaveX509BundleError
+        """Creates an instance of SaveX509BundleError.
 
         Args:
             additional_information: Additional information about the error.
