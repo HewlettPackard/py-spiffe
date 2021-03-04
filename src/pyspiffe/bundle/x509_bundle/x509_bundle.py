@@ -27,9 +27,7 @@ __all__ = ['X509Bundle']
 
 
 class X509Bundle(object):
-    """
-    Represents a collection of trusted X.509 authorities for a trust domain.
-    """
+    """Represents a collection of trusted X.509 authorities for a trust domain. """
 
     def __init__(
         self,
@@ -41,8 +39,14 @@ class X509Bundle(object):
         Args:
             trust_domain: A TrustDomain instance.
             x509_authorities: A set of CA certificates.
+
+        Raises:
+            X509BundleError: In case the trust_domain is empty.
         """
+        if not trust_domain:
+            raise X509BundleError(EMPTY_DOMAIN_ERROR)
         self._trust_domain = trust_domain
+
         self._x509_authorities = x509_authorities
         if not self._x509_authorities:
             self._x509_authorities = set()
@@ -77,14 +81,11 @@ class X509Bundle(object):
             An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
+            X509BundleError: In case the trust_domain is empty.
             ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
-        if not trust_domain:
-            raise X509BundleError(EMPTY_DOMAIN_ERROR)
-
         authorities = _parse_pem_authorities(bundle_bytes)
-
         return X509Bundle(trust_domain, authorities)
 
     @classmethod
@@ -99,14 +100,11 @@ class X509Bundle(object):
             An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
+            X509BundleError: In case the trust_domain is empty.
             ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
-        if not trust_domain:
-            raise X509BundleError(EMPTY_DOMAIN_ERROR)
-
         authorities = _parse_der_authorities(bundle_bytes)
-
         return X509Bundle(trust_domain, authorities)
 
     @classmethod
@@ -127,11 +125,9 @@ class X509Bundle(object):
             An instance of 'X509Bundle' with the X.509 authorities associated to the given trust domain.
 
         Raises:
+            X509BundleError: In case the trust_domain is empty.
             LoadBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
-
-        if not trust_domain:
-            raise X509BundleError(EMPTY_DOMAIN_ERROR)
 
         bundle_bytes = _load_bundle_bytes(bundle_path)
 

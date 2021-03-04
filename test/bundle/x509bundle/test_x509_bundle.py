@@ -150,7 +150,7 @@ def test_load_bundle_non_existent_file():
 
 
 def test_load_bundle_empty_trust_domain():
-    bundle_path = 'certs.pem'
+    bundle_path = _TEST_CERTS_PATH.format('certs.pem')
     with pytest.raises(Exception) as exception:
         X509Bundle.load(None, bundle_path, serialization.Encoding.PEM)
 
@@ -246,6 +246,10 @@ def test_add_and_remove_authority():
     assert len(bundle.x509_authorities()) == 1
     bundle.remove_authority(x509_cert_2)
     assert len(bundle.x509_authorities()) == 0
+
+    # removing an authority that is not present, do nothing
+    bundle.remove_authority(x509_cert_1)
+    bundle.remove_authority(x509_cert_2)
 
 
 def read_bytes(filename):
