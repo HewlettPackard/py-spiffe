@@ -98,6 +98,9 @@ class SpiffeId(object):
             self.__trust_domain == other.__trust_domain and self.__path == other.path()
         )
 
+    def __hash__(self) -> int:
+        return hash((self.__trust_domain, self.__path))
+
     def __str__(self) -> str:
         if self.__path:
             return '{}://{}{}'.format(
