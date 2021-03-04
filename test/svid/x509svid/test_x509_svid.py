@@ -371,8 +371,10 @@ def test_save_non_supported_encoding():
 
 
 def test_load_non_supported_encoding():
+    chain_path = _TEST_CERTS_PATH.format('2-chain.pem')
+    key_path = _TEST_CERTS_PATH.format('2-key.pem')
     with pytest.raises(ValueError) as err:
-        X509Svid.load('chain_file', 'key_file', serialization.Encoding.OpenSSH)
+        X509Svid.load(chain_path, key_path, serialization.Encoding.OpenSSH)
 
     assert (
         str(err.value)
