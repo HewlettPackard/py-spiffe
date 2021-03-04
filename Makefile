@@ -83,7 +83,8 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
+    # TODO: `--disable-error-code override` is a workaround to avoid an error with the protobuf generated code. Look for a better solution.
+	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe --disable-error-code override
 
 # Generate source files for the documentation
 docs_generate: export SPHINX_APIDOC_OPTIONS = members,show-inheritance
