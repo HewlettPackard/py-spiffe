@@ -6,10 +6,10 @@ from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.config import ConfigSetter
 from pyspiffe.proto.spiffe import (
-    header_manipulator_client_interceptor,
     workload_pb2_grpc,
     workload_pb2,
 )
+from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
