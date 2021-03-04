@@ -235,7 +235,11 @@ def test_add_and_remove_authority():
 
     bundle.add_authority(x509_cert_1)
     bundle.add_authority(x509_cert_2)
+    assert len(bundle.x509_authorities()) == 2
 
+    # repeat the adds
+    bundle.add_authority(x509_cert_1)
+    bundle.add_authority(x509_cert_2)
     assert len(bundle.x509_authorities()) == 2
 
     for a in bundle.x509_authorities():
