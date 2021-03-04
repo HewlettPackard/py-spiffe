@@ -80,7 +80,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             X509BundleSet: Set of X509Bundle objects.
         """
 
-    pass
+        pass
 
     def fetch_jwt_svid(
         self, audiences: Set[str], subject: Optional[str] = None
@@ -95,7 +95,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             JwtSvid: Instance of JwtSvid object.
         """
 
-    pass
+        pass
 
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust
