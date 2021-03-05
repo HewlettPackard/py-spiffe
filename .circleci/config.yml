@@ -10,18 +10,31 @@ commands:
       env:
         default: "py36"
         type: string
+      coveralls_token:
+        default: ""
+        type: string
     steps:
-      - run: tox --recreate -e <<parameters.env>>
-
+      - run:
+          name: run tox
+          command: |
+            COVERALLS_REPO_TOKEN=<<parameters.coveralls_token>> tox --recreate -e <<parameters.env>>
 jobs:
-  test_py36:
+  lint:
     docker:
       - image: circleci/python:3.6
     steps:
       - checkout
       - install_tox
       - run_tox:
-          env: "py36"
+          env: "lint"
+
+  test_py36:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - install_tox
+      - run_tox
 
   test_py37:
     docker:
@@ -50,10 +63,32 @@ jobs:
       - run_tox:
           env: "py39"
 
+  test_cov_report:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - install_tox
+      - run_tox:
+          env: "cov-report"
+          coveralls_token: $COVERALLS_REPO_TOKEN
+
 workflows:
   main:
     jobs:
-      - test_py36
-      - test_py37
-      - test_py38
-      - test_py39
+      - lint
+      - test_py36:
+          requires:
+              - lint
+      - test_py37:
+          requires:
+            - test_py36
+      - test_py38:
+          requires:
+            - test_py36
+      - test_py39:
+          requires:
+            - test_py36
+      - test_cov_report:
+          requires:
+            - test_py36

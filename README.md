@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/HewlettPackard/py-spiffe.svg?branch=master)](https://travis-ci.com/HewlettPackard/py-spiffe)
 [![CircleCI](https://circleci.com/gh/HewlettPackard/py-spiffe.svg?style=shield)](https://app.circleci.com/pipelines/github/HewlettPackard/py-spiffe)
+[![Coverage Status](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=master)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=master)
 
 ## Overview
 Python library for SPIFFE.
