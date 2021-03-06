@@ -11,6 +11,8 @@ from pyspiffe.svid.exceptions import (
     InvalidClaimError,
     InvalidTokenError,
 )
+from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
 """
     parse_insecure tests
@@ -172,6 +174,31 @@ def test_valid_parse_insecure(test_input_token, test_input_audience, expected):
 """
     parse_and_validate tests
 
-    TBD
-
 """
+
+
+@pytest.mark.parametrize(
+    'test_input_token,test_input_jwtBundle, test_input_audience, expected',
+    [
+        (
+            '',
+            None,
+            ['spire'],
+            INVALID_INPUT_ERROR.format('token cannot be empty'),
+        ),
+        (
+            'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
+            None,
+            ['spire'],
+            INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty'),
+        ),
+    ],
+)
+def test_invalid_parameters_parse_and_validate(
+    test_input_token, test_input_jwtBundle, test_input_audience, expected
+):
+    with pytest.raises(ValueError) as exception:
+        JwtSvid.parse_and_validate(
+            test_input_token, test_input_jwtBundle, test_input_audience
+        )
+    assert str(exception.value) == expected

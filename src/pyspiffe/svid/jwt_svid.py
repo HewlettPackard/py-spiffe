@@ -22,9 +22,9 @@ class JwtSvid(object):
     def __init__(
         self,
         spiffeId: SpiffeId,
-        audience: List,
+        audience: List[str],
         expiry: int,
-        claims: Dict,
+        claims: Dict[str, str],
         token: str,
     ) -> None:
         """Creates a JwtSvid instance.
@@ -117,7 +117,7 @@ class JwtSvid(object):
             signing_key = jwt_bundle.find_jwt_authority(token_header['kid'])
             claims = jwt.decode(
                 token,
-                algorithms=token_header['alg'],
+                algorithms=token_header.get('alg', None),
                 key=signing_key,
                 audience=audience,
                 options={
@@ -126,8 +126,9 @@ class JwtSvid(object):
                     'verify_exp': True,
                 },
             )
-            # TODO:validate required claims
             spiffe_ID = SpiffeId.parse(claims['sub'])
             return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
+        except ValueError as value_err:
+            raise InvalidTokenError(str(value_err))

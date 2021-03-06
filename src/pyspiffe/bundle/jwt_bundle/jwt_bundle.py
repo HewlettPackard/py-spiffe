@@ -11,29 +11,34 @@ class JwtBundle(object):
     JwtBundle is a collection of trusted JWT public keys for a trust domain
     """
 
-    def __init__(self) -> None:
-        """Creates an instance of JwtBundle.
-        TODO: complete
+    def __init__(
+        self, trust_domain: TrustDomain, jwt_authorities: Dict[str, str]
+    ) -> None:
+        """Creates a JwtBundle instance.
+
+        Args:
+            trust_domain: The TrustDomain to associate with the JwtBundle instance.
+            jwt_authorities: A dictionay with key_id->PublicKey valid for the given TrustDomain.
         """
-        pass
-        # self.jwt_authorities = {}
+        self.trust_domain = trust_domain
+        self.jwt_authorities = jwt_authorities
 
     def find_jwt_authority(self, key_id: str) -> str:
         """Returns the authority for the specified key_id.
-            TODO: complete
 
         Args:
-            key_id: key of the token to return the correspondent bundle.
+            key_id: Key id of the token to return the correspondent authority.
 
         Returns:
-            TBD
+            The authority assocaited with the supplied key_id.
 
         Raises:
-            JwtBundleNotFoundError:  when no authority is found for the given key_id.
+            AuthorityNotFoundError: When no authority is found associated to the given key_id.
         """
-        # key = self.jwt_authorities.get(key_id)
-        key = ''
-        if not key:
-            raise JwtBundleNotFoundError(key_id)
+        if not key_id:
+            raise ValueError('key_id cannot be empty.')
 
+        key = self.jwt_authorities.get(key_id, None)
+        if not key:
+            raise AuthorityNotFoundError(key_id)
         return key
