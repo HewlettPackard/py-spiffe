@@ -1,6 +1,5 @@
-import pytest
-
 import pem
+import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -105,7 +104,7 @@ def test_parse_bundle_from_empty():
 
     assert (
         str(exception.value)
-        == 'Error parsing X.509 bundle: Unable to load PEM X.509 certificate.'
+        == 'Error parsing X.509 bundle: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -117,7 +116,7 @@ def test_parse_bundle_from_not_pem():
 
     assert (
         str(exception.value)
-        == 'Error parsing X.509 bundle: Unable to load PEM X.509 certificate.'
+        == 'Error parsing X.509 bundle: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -145,7 +144,7 @@ def test_load_bundle_non_existent_file():
 
     assert (
         str(exception.value)
-        == 'Error loading X.509 bundle: Certs chain file file not found: no-exists.'
+        == 'Error loading X.509 bundle: Certificates file not found: no-exists.'
     )
 
 
