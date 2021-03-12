@@ -190,4 +190,6 @@ def _write_bundle_to_file(
             for cert in x509_bundle.x509_authorities():
                 write_certificate_to_file(cert, certs_file, encoding)
     except Exception as err:
-        raise SaveX509BundleError('Error opening bundle file: {}'.format(str(err)))
+        raise SaveX509BundleError(
+            'Error writing X.509 bundle to file: {}'.format(str(err))
+        )

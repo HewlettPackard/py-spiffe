@@ -331,7 +331,7 @@ def _write_x509_svid_to_file(
                 write_certificate_to_file(cert, chain_file, encoding)
     except Exception as err:
         raise StoreCertificateError(
-            'Error opening certificates chain file: {}'.format(str(err))
+            'Error writing X.509 SVID to file: {}'.format(str(err))
         )
 
 
