@@ -1,8 +1,9 @@
 """
 JwtBundle module manages JwtBundle objects.
 """
-
-from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleNotFoundError
+from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from typing import Dict
 
 
 class JwtBundle(object):

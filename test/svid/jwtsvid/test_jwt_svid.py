@@ -2,17 +2,17 @@ import pytest
 import datetime
 from calendar import timegm
 import jwt
-
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.svid.jwt_svid import JwtSvid
+from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     JwtSvidError,
     InvalidClaimError,
     InvalidTokenError,
 )
-from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from test_utils import generate_rsa_key_pair, generate_ec_key_pair
 
 """
     parse_insecure tests
@@ -202,3 +202,45 @@ def test_invalid_parameters_parse_and_validate(
             test_input_token, test_input_jwtBundle, test_input_audience
         )
     assert str(exception.value) == expected
+
+
+def test_valid_parse_and_validate_RSA():
+    rsakeypem, rsapubpem = generate_rsa_key_pair()
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsapubpem})
+    token = jwt.encode(
+        {
+            'aud': ['spire', 'test', 'valid'],
+            'sub': 'spiffe://test.orgcom/',
+            'exp': timegm(
+                (
+                    datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                ).utctimetuple()
+            ),
+        },
+        algorithm="RS256",
+        key=rsakeypem,
+        headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid1'},
+    )
+    JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    assert True
+
+
+def test_valid_parse_and_validate_EC():
+    rsakeypem, rsapubpem = generate_ec_key_pair()
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsapubpem})
+    token = jwt.encode(
+        {
+            'aud': ['spire', 'test', 'valid'],
+            'sub': 'spiffe://test.orgcom/',
+            'exp': timegm(
+                (
+                    datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                ).utctimetuple()
+            ),
+        },
+        algorithm="ES256",
+        key=rsakeypem,
+        headers={'alg': 'ES256', 'typ': 'JWT', 'kid': 'kid1'},
+    )
+    JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    assert True
