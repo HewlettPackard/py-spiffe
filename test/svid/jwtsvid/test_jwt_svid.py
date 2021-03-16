@@ -226,8 +226,8 @@ def test_valid_parse_and_validate_RSA():
 
 
 def test_valid_parse_and_validate_EC():
-    rsakeypem, rsapubpem = generate_ec_key_pair()
-    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsapubpem})
+    eckeypem, ecpubpem = generate_ec_key_pair()
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid_ec': ecpubpem})
     token = jwt.encode(
         {
             'aud': ['spire', 'test', 'valid'],
@@ -239,8 +239,48 @@ def test_valid_parse_and_validate_EC():
             ),
         },
         algorithm="ES256",
-        key=rsakeypem,
-        headers={'alg': 'ES256', 'typ': 'JWT', 'kid': 'kid1'},
+        key=eckeypem,
+        headers={'alg': 'ES256', 'typ': 'JOSE', 'kid': 'kid_ec'},
     )
     JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    assert True
+
+
+def test_valid_parse_and_validate_multiple_keys_bundle():
+    eckeypem, ecpubpem = generate_ec_key_pair()
+    rsakeypem, rsapubpem = generate_rsa_key_pair()
+    jwt_bundle = JwtBundle(
+        TrustDomain('test.orgcom'), {'kid_rsa': rsapubpem, 'kid_ec': ecpubpem}
+    )
+    token = jwt.encode(
+        {
+            'aud': ['spire', 'test', 'valid'],
+            'sub': 'spiffe://test.orgcom/',
+            'exp': timegm(
+                (
+                    datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                ).utctimetuple()
+            ),
+        },
+        algorithm="ES256",
+        key=eckeypem,
+        headers={'alg': 'ES256', 'typ': 'JOSE', 'kid': 'kid_ec'},
+    )
+
+    token2 = jwt.encode(
+        {
+            'aud': ['spire', 'test', 'valid'],
+            'sub': 'spiffe://test.orgcom/',
+            'exp': timegm(
+                (
+                    datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                ).utctimetuple()
+            ),
+        },
+        algorithm="RS256",
+        key=rsakeypem,
+        headers={'alg': 'RS256', 'kid': 'kid_rsa'},
+    )
+    JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    JwtSvid.parse_and_validate(token2, jwt_bundle, 'spire')
     assert True
