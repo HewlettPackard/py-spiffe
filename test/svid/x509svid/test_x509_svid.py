@@ -68,7 +68,8 @@ def test_parse_raw_missing_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -80,7 +81,8 @@ def test_parse_missing_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -118,7 +120,8 @@ def test_parse_raw_corrupted_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -130,7 +133,8 @@ def test_parse_corrupted_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -290,7 +294,7 @@ def test_load_non_existent_cert_file():
 
     assert (
         str(exception.value)
-        == 'Error loading certificate from file: Certs chain file file not found: no-exists.'
+        == 'Error loading certificate from file: Certificates file not found: no-exists.'
     )
 
 

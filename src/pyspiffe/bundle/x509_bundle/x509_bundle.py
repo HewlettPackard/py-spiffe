@@ -5,21 +5,22 @@ This module manages X.509 Bundle objects.
 import os
 from typing import Set
 
-import pem
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
-from typing.io import BinaryIO
 
 from pyspiffe.bundle.x509_bundle.exceptions import (
-    ParseX509BundleError,
     X509BundleError,
-    LoadX509BundleError,
     SaveX509BundleError,
+    ParseX509BundleError,
+    LoadX509BundleError,
 )
 from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
-from pyasn1.codec.der.decoder import decode
+from pyspiffe.utils.certificate_utils import (
+    parse_pem_certificates,
+    parse_der_certificates,
+    load_certificates_bytes_from_file,
+    write_certificate_to_file,
+)
 
 _BUNDLE_FILE_MODE = 0o644
 
@@ -85,8 +86,12 @@ class X509Bundle(object):
             ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
-        authorities = _parse_pem_authorities(bundle_bytes)
-        return X509Bundle(trust_domain, authorities)
+        try:
+            authorities = parse_pem_certificates(bundle_bytes)
+        except Exception as e:
+            raise ParseX509BundleError(str(e))
+
+        return X509Bundle(trust_domain, set(authorities))
 
     @classmethod
     def parse_raw(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'X509Bundle':
@@ -104,8 +109,8 @@ class X509Bundle(object):
             ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
-        authorities = _parse_der_authorities(bundle_bytes)
-        return X509Bundle(trust_domain, authorities)
+        authorities = parse_der_certificates(bundle_bytes)
+        return X509Bundle(trust_domain, set(authorities))
 
     @classmethod
     def load(
@@ -129,7 +134,10 @@ class X509Bundle(object):
             LoadBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
-        bundle_bytes = _load_bundle_bytes(bundle_path)
+        try:
+            bundle_bytes = load_certificates_bytes_from_file(bundle_path)
+        except Exception as e:
+            raise LoadX509BundleError(str(e))
 
         if encoding == serialization.Encoding.PEM:
             return cls.parse(trust_domain, bundle_bytes)
@@ -168,90 +176,20 @@ class X509Bundle(object):
                     encoding
                 )
             )
-        _write_certs_to_file(bundle_path, encoding, x509_bundle)
+        _write_bundle_to_file(bundle_path, encoding, x509_bundle)
 
 
-# Internal utility functions
-def _parse_pem_authorities(pem_bytes: bytes) -> Set[Certificate]:
-    parsed_certs = pem.parse(pem_bytes)
-    if not parsed_certs:
-        raise ParseX509BundleError('Unable to load PEM X.509 certificate')
-
-    result = set()
-    for cert in parsed_certs:
-        try:
-            x509_cert = x509.load_pem_x509_certificate(
-                cert.as_bytes(), default_backend()
-            )
-            result.add(x509_cert)
-        except Exception:
-            raise ParseX509BundleError('Unable to load PEM X.509 certificate')
-
-    return result
-
-
-def _parse_der_authorities(der_bytes: bytes) -> Set[Certificate]:
-    chain = set()
-    try:
-        leaf = x509.load_der_x509_certificate(der_bytes, default_backend())
-        chain.add(leaf)
-        _, remaining_data = decode(der_bytes)
-        while len(remaining_data) > 0:
-            cert = x509.load_der_x509_certificate(remaining_data, default_backend())
-            chain.add(cert)
-            _, remaining_data = decode(remaining_data)
-    except Exception as err:
-        raise ParseX509BundleError(str(err))
-
-    return chain
-
-
-def _load_bundle_bytes(certs_chain_path: str) -> bytes:
-    try:
-        with open(certs_chain_path, 'rb') as chain_file:
-            return chain_file.read()
-    except FileNotFoundError:
-        raise LoadX509BundleError(
-            'Certs chain file file not found: {}'.format(certs_chain_path)
-        )
-    except Exception as err:
-        raise LoadX509BundleError(
-            'Certs chain file could not be read: {}'.format(str(err))
-        )
-
-
-def _write_certs_to_file(
+def _write_bundle_to_file(
     bundle_path: str,
     encoding: serialization.Encoding,
     x509_bundle: 'X509Bundle',
 ) -> None:
     try:
-        with open(bundle_path, 'wb') as chain_file:
-            os.chmod(chain_file.name, _BUNDLE_FILE_MODE)
+        with open(bundle_path, 'wb') as certs_file:
+            os.chmod(certs_file.name, _BUNDLE_FILE_MODE)
             for cert in x509_bundle.x509_authorities():
-                _write_cert_to_file(cert, chain_file, encoding)
-    except Exception as err:
-        raise SaveX509BundleError('Error opening certs chain file: {}'.format(str(err)))
-
-
-def _write_cert_to_file(
-    authority: Certificate,
-    bundle_file: BinaryIO,
-    encoding: serialization.Encoding,
-) -> None:
-    try:
-        authority_bytes = _extract_chain_bytes(authority, encoding)
-        bundle_file.write(authority_bytes)
+                write_certificate_to_file(cert, certs_file, encoding)
     except Exception as err:
         raise SaveX509BundleError(
-            'Error writing authority certificate to file: {}'.format(str(err))
+            'Error writing X.509 bundle to file: {}'.format(str(err))
         )
-
-
-def _extract_chain_bytes(cert: Certificate, encoding: serialization.Encoding) -> bytes:
-    try:
-        cert_bytes = cert.public_bytes(encoding)
-    except Exception as err:
-        raise X509BundleError('Could not get bytes from object: {}'.format(str(err)))
-
-    return cert_bytes

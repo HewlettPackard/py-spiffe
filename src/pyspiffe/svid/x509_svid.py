@@ -3,35 +3,33 @@ This module manages X.509 SVID objects.
 """
 
 import os
-
-import pem
 from typing import List, Union
-from typing.io import BinaryIO
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519, ed448, rsa, ec, dsa
+from cryptography.hazmat.primitives.serialization import load_der_private_key
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import Certificate
 
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.serialization import load_der_private_key
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-
-from pyasn1.codec.der.decoder import decode
-
 from pyspiffe.svid.exceptions import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
-    ParseCertificateError,
     ParsePrivateKeyError,
     X509SvidError,
     StoreCertificateError,
     StorePrivateKeyError,
-    LoadCertificateError,
     LoadPrivateKeyError,
     normalize_exception_message,
+    ParseCertificateError,
+    LoadCertificateError,
+)
+from pyspiffe.utils.certificate_utils import (
+    parse_der_certificates,
+    parse_pem_certificates,
+    load_certificates_bytes_from_file,
+    write_certificate_to_file,
 )
 
 _UNABLE_TO_LOAD_CERTIFICATE = 'Unable to load certificate'
@@ -130,7 +128,11 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        chain = _parse_der_certificates(certs_chain_bytes)
+        try:
+            chain = parse_der_certificates(certs_chain_bytes)
+        except Exception as e:
+            raise ParseCertificateError(str(e))
+
         _validate_chain(chain)
 
         private_key = _parse_der_private_key(private_key_bytes)
@@ -167,7 +169,10 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        chain = _parse_pem_certificates(certs_chain_bytes)
+        try:
+            chain = parse_pem_certificates(certs_chain_bytes)
+        except Exception as e:
+            raise ParseCertificateError(str(e))
 
         _validate_chain(chain)
 
@@ -211,7 +216,11 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        chain_bytes = _load_certs_bytes(certs_chain_path)
+        try:
+            chain_bytes = load_certificates_bytes_from_file(certs_chain_path)
+        except Exception as e:
+            raise LoadCertificateError(str(e))
+
         key_bytes = _load_private_key_bytes(private_key_path)
 
         if encoding == serialization.Encoding.PEM:
@@ -260,7 +269,7 @@ class X509Svid(object):
                 )
             )
 
-        _write_certs_to_file(certs_chain_path, encoding, x509_svid)
+        _write_x509_svid_to_file(certs_chain_path, encoding, x509_svid)
 
         private_key_bytes = _extract_private_key_bytes(
             encoding, x509_svid.private_key()
@@ -268,7 +277,6 @@ class X509Svid(object):
         _write_private_key_to_file(private_key_path, private_key_bytes)
 
 
-# Internal utility methods
 def _load_private_key_bytes(private_key_path: str) -> bytes:
     try:
         with open(private_key_path, 'rb') as key_file:
@@ -280,20 +288,6 @@ def _load_private_key_bytes(private_key_path: str) -> bytes:
     except Exception as err:
         raise LoadPrivateKeyError(
             'Private key file could not be read: {}'.format(str(err))
-        )
-
-
-def _load_certs_bytes(certs_chain_path: str) -> bytes:
-    try:
-        with open(certs_chain_path, 'rb') as chain_file:
-            return chain_file.read()
-    except FileNotFoundError:
-        raise LoadCertificateError(
-            'Certs chain file file not found: {}'.format(certs_chain_path)
-        )
-    except Exception as err:
-        raise LoadCertificateError(
-            'Certs chain file could not be read: {}'.format(str(err))
         )
 
 
@@ -325,7 +319,7 @@ def _extract_private_key_bytes(
         )
 
 
-def _write_certs_to_file(
+def _write_x509_svid_to_file(
     certs_chain_path: str,
     encoding: serialization.Encoding,
     x509_svid: 'X509Svid',
@@ -334,34 +328,11 @@ def _write_certs_to_file(
         with open(certs_chain_path, 'wb') as chain_file:
             os.chmod(chain_file.name, _CERTS_FILE_MODE)
             for cert in x509_svid.cert_chain():
-                _write_cert_to_file(cert, chain_file, encoding)
+                write_certificate_to_file(cert, chain_file, encoding)
     except Exception as err:
         raise StoreCertificateError(
-            'Error opening certs chain file: {}'.format(str(err))
+            'Error writing X.509 SVID to file: {}'.format(str(err))
         )
-
-
-def _write_cert_to_file(
-    cert: Certificate, chain_file: BinaryIO, encoding: serialization.Encoding
-) -> None:
-    try:
-        cert_bytes = _extract_cert_bytes(cert, encoding)
-        chain_file.write(cert_bytes)
-    except Exception as err:
-        raise StoreCertificateError(
-            'Error writing certs chain to file: {}'.format(str(err))
-        )
-
-
-def _extract_cert_bytes(cert: Certificate, encoding: serialization.Encoding) -> bytes:
-    try:
-        cert_bytes = cert.public_bytes(encoding)
-    except Exception as err:
-        raise X509SvidError(
-            'Could not get certs chain key bytes from object: {}'.format(str(err))
-        )
-
-    return cert_bytes
 
 
 def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
@@ -376,43 +347,6 @@ def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
         return load_pem_private_key(private_key_bytes, None, None)
     except Exception as err:
         raise ParsePrivateKeyError(normalize_exception_message(str(err)))
-
-
-def _parse_der_certificates(chain_der_bytes: bytes) -> List[Certificate]:
-    result = []
-    try:
-        leaf = x509.load_der_x509_certificate(chain_der_bytes, default_backend())
-        result.append(leaf)
-        _, remaining_data = decode(chain_der_bytes)
-        while len(remaining_data) > 0:
-            cert = x509.load_der_x509_certificate(remaining_data, default_backend())
-            result.append(cert)
-            _, remaining_data = decode(remaining_data)
-    except Exception as err:
-        raise ParseCertificateError(normalize_exception_message(str(err)))
-
-    if len(result) < 1:
-        raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
-
-    return result
-
-
-def _parse_pem_certificates(chain_pem_bytes: bytes) -> List[Certificate]:
-    parsed_certs = pem.parse(chain_pem_bytes)
-    if not parsed_certs:
-        raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
-
-    result = []
-    for cert in parsed_certs:
-        try:
-            x509_cert = x509.load_pem_x509_certificate(
-                cert.as_bytes(), default_backend()
-            )
-            result.append(x509_cert)
-        except Exception:
-            raise ParseCertificateError(_UNABLE_TO_LOAD_CERTIFICATE)
-
-    return result
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
