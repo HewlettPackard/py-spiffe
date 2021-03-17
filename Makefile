@@ -83,7 +83,8 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-    # TODO: `--disable-error-code override` is a workaround to avoid an error with the protobuf generated code. Look for a better solution.
+    # `--disable-error-code override` is a workaround to suppress mypy errors in the protobuf generated code,
+    # that start showing up when make calls to it, even though it is excluded. TODO: research if there's already a fix for this.
 	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe --disable-error-code override
 
 # Generate source files for the documentation

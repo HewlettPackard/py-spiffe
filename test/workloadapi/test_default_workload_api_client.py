@@ -1,16 +1,12 @@
 import os
-from concurrent import futures
-from contextlib import contextmanager
-
-import grpc
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
 
 from fake_workload_api import FakeWorkloadApi
-from pyspiffe.proto.spiffe import workload_pb2_grpc
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
+from utils import workload_api
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
@@ -106,18 +102,3 @@ def test_validate_jwt_svid():
 # Utility functions
 def get_client():
     return DefaultWorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')
-
-
-@contextmanager
-def workload_api(cls):
-    """Instantiate a WorkloadApi and return a stub for use in tests"""
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-    workload_pb2_grpc.add_SpiffeWorkloadAPIServicer_to_server(cls(), server)
-    port = server.add_insecure_port('[::]:0')
-    server.start()
-
-    try:
-        with grpc.insecure_channel('localhost:%d' % port) as channel:
-            yield workload_pb2_grpc.SpiffeWorkloadAPIStub(channel)
-    finally:
-        server.stop(None)

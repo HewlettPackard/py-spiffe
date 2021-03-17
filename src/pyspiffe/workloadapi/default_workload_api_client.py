@@ -9,13 +9,16 @@ from pyspiffe.proto.spiffe import (
     workload_pb2_grpc,
     workload_pb2,
 )
+from pyspiffe.workloadapi.exceptions import FetchX509SvidError
 from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
-from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
-
-_WORKLOAD_API_HEADER = 'workload.spiffe.io'
+from pyspiffe.workloadapi.workload_api_client import (
+    WorkloadApiClient,
+    WORKLOAD_API_HEADER,
+    HEADER_TRUE_VALUE,
+)
 
 
 class DefaultWorkloadApiClient(WorkloadApiClient):
@@ -54,11 +57,18 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         Returns:
             X509Svid: Instance of X509Svid object.
         """
-        response = self._spiffe_workload_api_stub.FetchX509SVID(
-            workload_pb2.X509SVIDRequest()
-        )
 
-        item = next(response)
+        try:
+            response = self._spiffe_workload_api_stub.FetchX509SVID(
+                workload_pb2.X509SVIDRequest()
+            )
+            item = next(response)
+        except Exception:
+            raise FetchX509SvidError('X.509 SVID response is invalid.')
+
+        if len(item.svids) == 0:
+            raise FetchX509SvidError('X.509 SVID response is empty.')
+
         svid = item.svids[0]
 
         cert = svid.x509_svid
@@ -136,7 +146,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         )
         spiffe_client_interceptor = (
             header_manipulator_client_interceptor.header_adder_interceptor(
-                _WORKLOAD_API_HEADER, 'true'
+                WORKLOAD_API_HEADER, HEADER_TRUE_VALUE
             )
         )
 
