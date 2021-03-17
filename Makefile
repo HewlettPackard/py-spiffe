@@ -33,10 +33,15 @@ dev: env
 
 
 ## Runs unit tests.
+test: export TOX_SKIP_ENV = lint|cov-report
 test: lint
 	@echo "Running unit tests."
 	$(PIPENV_CMD) run tox --recreate
 
+## Generates tests coverage report.
+test_cov: test_clean
+	@echo "Running test coverage"
+	$(PIPENV_CMD) run tox --recreate -e cov-report
 
 ## Lint source files.
 lint: black flake8 mypy
@@ -85,6 +90,10 @@ mypy:
 	@echo "Running mypy."
 	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
 
+test_clean:
+	@echo "cleaning existing test reports"
+	rm -rf reports/*
+
 # Generate source files for the documentation
 docs_generate: export SPHINX_APIDOC_OPTIONS = members,show-inheritance
 docs_generate:
@@ -95,6 +104,22 @@ docs_generate:
 docs_clean:
 	@echo "Cleans docs."
 	cd docs && $(PIPENV_CMD) run make clean
+
+define COVERALL_CALL
+import os
+from subprocess import call
+
+if __name__ == '__main__':
+    if 'CIRCLECI' in os.environ:
+        rc = call('coveralls')
+        raise SystemExit(rc)
+    print("Not in Circle-CI, skipping coveralls call")
+endef
+export COVERALL_CALL
+
+# runs coveralls if CIRCLECI env var is set. Prevents the call to coveralls when running locally.
+coveralls_call:
+	$(PIPENV_CMD) run python -c "$$COVERALL_CALL"
 
 #------------------------------------------------------------------------
 # Document file
