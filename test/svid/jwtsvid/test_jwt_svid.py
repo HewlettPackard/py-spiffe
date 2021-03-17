@@ -2,6 +2,8 @@ import pytest
 import datetime
 from calendar import timegm
 import jwt
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.backends import default_backend
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
@@ -12,7 +14,7 @@ from pyspiffe.svid.exceptions import (
     InvalidClaimError,
     InvalidTokenError,
 )
-from test_utils import generate_rsa_key_pair, generate_ec_key_pair
+from test_utils import get_keys_pems
 
 """
     parse_insecure tests
@@ -205,8 +207,9 @@ def test_invalid_parameters_parse_and_validate(
 
 
 def test_valid_parse_and_validate_RSA():
-    rsakeypem, rsapubpem = generate_rsa_key_pair()
-    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsapubpem})
+    rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
+    rsakeypem, _ = get_keys_pems(rsa_key)
     token = jwt.encode(
         {
             'aud': ['spire', 'test', 'valid'],
@@ -226,8 +229,9 @@ def test_valid_parse_and_validate_RSA():
 
 
 def test_valid_parse_and_validate_EC():
-    eckeypem, ecpubpem = generate_ec_key_pair()
-    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid_ec': ecpubpem})
+    ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid_ec': ec_key.public_key()})
+    eckeypem, _ = get_keys_pems(ec_key)
     token = jwt.encode(
         {
             'aud': ['spire', 'test', 'valid'],
@@ -247,11 +251,13 @@ def test_valid_parse_and_validate_EC():
 
 
 def test_valid_parse_and_validate_multiple_keys_bundle():
-    eckeypem, ecpubpem = generate_ec_key_pair()
-    rsakeypem, rsapubpem = generate_rsa_key_pair()
+    ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
+    rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(
-        TrustDomain('test.orgcom'), {'kid_rsa': rsapubpem, 'kid_ec': ecpubpem}
+        TrustDomain('test.orgcom'),
+        {'kid_rsa': rsa_key.public_key(), 'kid_ec': ec_key.public_key()},
     )
+    eckeypem, _ = get_keys_pems(ec_key)
     token = jwt.encode(
         {
             'aud': ['spire', 'test', 'valid'],
@@ -262,11 +268,11 @@ def test_valid_parse_and_validate_multiple_keys_bundle():
                 ).utctimetuple()
             ),
         },
-        algorithm="ES256",
+        algorithm="ES512",
         key=eckeypem,
-        headers={'alg': 'ES256', 'typ': 'JOSE', 'kid': 'kid_ec'},
+        headers={'alg': 'ES512', 'typ': 'JOSE', 'kid': 'kid_ec'},
     )
-
+    rsakeypem, _ = get_keys_pems(rsa_key)
     token2 = jwt.encode(
         {
             'aud': ['spire', 'test', 'valid'],

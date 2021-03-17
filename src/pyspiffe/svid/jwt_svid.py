@@ -6,7 +6,7 @@ import jwt
 from jwt import PyJWTError
 from typing import List, Dict
 from pyspiffe.svid import INVALID_INPUT_ERROR
-
+from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
@@ -115,10 +115,16 @@ class JwtSvid(object):
             validator = JwtSvidValidator()
             validator.validate_header(token_header)
             signing_key = jwt_bundle.find_jwt_authority(token_header['kid'])
+
+            public_key_pem = signing_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            ).decode('UTF-8')
+
             claims = jwt.decode(
                 token,
                 algorithms=token_header.get('alg', None),
-                key=signing_key,
+                key=public_key_pem,
                 audience=audience,
                 options={
                     'verify_signature': True,

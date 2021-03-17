@@ -3,7 +3,16 @@ JwtBundle module manages JwtBundle objects.
 """
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
-from typing import Dict
+from typing import Dict, Union
+from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
+
+_PUBLIC_KEY_TYPES = Union[
+    dsa.DSAPublicKey,
+    rsa.RSAPublicKey,
+    ec.EllipticCurvePublicKey,
+    ed25519.Ed25519PublicKey,
+    ed448.Ed448PublicKey,
+]
 
 
 class JwtBundle(object):
@@ -13,7 +22,7 @@ class JwtBundle(object):
     """
 
     def __init__(
-        self, trust_domain: TrustDomain, jwt_authorities: Dict[str, str]
+        self, trust_domain: TrustDomain, jwt_authorities: Dict[str, _PUBLIC_KEY_TYPES]
     ) -> None:
         """Creates a JwtBundle instance.
 
@@ -24,7 +33,7 @@ class JwtBundle(object):
         self.trust_domain = trust_domain
         self.jwt_authorities = jwt_authorities
 
-    def find_jwt_authority(self, key_id: str) -> str:
+    def find_jwt_authority(self, key_id: str) -> _PUBLIC_KEY_TYPES:
         """Returns the authority for the specified key_id.
 
         Args:
