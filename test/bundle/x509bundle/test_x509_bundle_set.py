@@ -18,6 +18,8 @@ def test_create_new_x509_bundle_set():
     x509_bundle_set = X509BundleSet(bundles)
 
     assert len(x509_bundle_set._bundles) == 2
+    # check that the bundle map was copied
+    assert x509_bundle_set._bundles is not bundles
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain_1)
     assert found_bundle == bundle_1

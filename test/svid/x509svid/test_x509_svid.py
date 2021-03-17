@@ -386,6 +386,15 @@ def test_load_non_supported_encoding():
     )
 
 
+def test_get_chain_returns_a_copy():
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('1-key.der')
+
+    x509_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
+
+    assert x509_svid.cert_chain() is not x509_svid._cert_chain
+
+
 def read_bytes(filename):
     path = _TEST_CERTS_PATH.format(filename)
     with open(path, 'rb') as file:
