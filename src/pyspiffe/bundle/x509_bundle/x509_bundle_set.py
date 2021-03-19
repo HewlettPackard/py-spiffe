@@ -2,6 +2,7 @@
 This module manages X509BundleSet objects.
 """
 import copy
+import threading
 from typing import List, Optional, Dict
 
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
@@ -20,6 +21,7 @@ class X509BundleSet(object):
             bundles_map: A map object of X509Bundle objects keyed by TrustDomain to initialize the X509BundleSet.
         """
 
+        self.lock = threading.Lock()
         self._bundles = copy.copy(bundles_map)
 
     def put(self, bundle: X509Bundle) -> None:
@@ -28,7 +30,8 @@ class X509BundleSet(object):
         Args:
             bundle: The new X509Bundle to put into the set.
         """
-        self._bundles[bundle.trust_domain()] = bundle
+        with self.lock:
+            self._bundles[bundle.trust_domain()] = bundle
 
     def get_x509_bundle_for_trust_domain(
         self, trust_domain: TrustDomain
@@ -42,7 +45,8 @@ class X509BundleSet(object):
             A X509Bundle object for the given TrustDomain.
             None if the TrustDomain is not found in the set.
         """
-        return self._bundles.get(trust_domain)
+        with self.lock:
+            return self._bundles.get(trust_domain)
 
     @classmethod
     def of(cls, bundle_list: List[X509Bundle]) -> 'X509BundleSet':

@@ -57,9 +57,9 @@ class X509Bundle(object):
             self._x509_authorities = set()
 
     def __eq__(self, o: object) -> bool:
+        if not isinstance(o, X509Bundle):
+            return False
         with self.lock:
-            if not isinstance(o, X509Bundle):
-                return False
             return (
                 self._trust_domain.__eq__(o._trust_domain)
                 and self._x509_authorities == o._x509_authorities
@@ -76,7 +76,8 @@ class X509Bundle(object):
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
-        self._x509_authorities.add(copy.copy(x509_authority))
+        with self.lock:
+            self._x509_authorities.add(copy.copy(x509_authority))
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle. """
