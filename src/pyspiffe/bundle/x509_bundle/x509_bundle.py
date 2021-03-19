@@ -72,12 +72,11 @@ class X509Bundle(object):
     def x509_authorities(self) -> Set[Certificate]:
         """Returns a copy of set of X.509 authorities in the bundle. """
         with self.lock:
-            return copy.deepcopy(self._x509_authorities)
+            return copy.copy(self._x509_authorities)
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
-        with self.lock:
-            self._x509_authorities.add(copy.copy(x509_authority))
+        self._x509_authorities.add(copy.copy(x509_authority))
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle. """
