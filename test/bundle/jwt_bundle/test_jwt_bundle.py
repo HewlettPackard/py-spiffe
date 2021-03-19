@@ -50,3 +50,13 @@ def test_invalid_input_findJwtAuthority():
         jwt_bundle.find_jwt_authority(key_id=None)
 
     assert str(exception.value) == 'key_id cannot be empty.'
+
+
+def test_authority_none_creation():
+    trust_domain = TrustDomain("spiffe://any.domain")
+    authority = None
+    jwt_bundle = JwtBundle(trust_domain, authority)
+    with pytest.raises(AuthorityNotFoundError) as exception:
+        jwt_bundle.find_jwt_authority(key_id='p1')
+
+    assert str(exception.value) == 'Key (p1) not found in authorities.'

@@ -30,8 +30,11 @@ class JwtBundle(object):
             trust_domain: The TrustDomain to associate with the JwtBundle instance.
             jwt_authorities: A dictionay with key_id->PublicKey valid for the given TrustDomain.
         """
-        self.trust_domain = trust_domain
-        self.jwt_authorities = jwt_authorities
+        self._trust_domain = trust_domain
+        if jwt_authorities:
+            self._jwt_authorities = dict(jwt_authorities)
+        else:
+            self._jwt_authorities = dict()
 
     def find_jwt_authority(self, key_id: str) -> _PUBLIC_KEY_TYPES:
         """Returns the authority for the specified key_id.
@@ -40,7 +43,7 @@ class JwtBundle(object):
             key_id: Key id of the token to return the correspondent authority.
 
         Returns:
-            The authority assocaited with the supplied key_id.
+            The authority associated with the supplied key_id.
 
         Raises:
             AuthorityNotFoundError: When no authority is found associated to the given key_id.
@@ -48,7 +51,7 @@ class JwtBundle(object):
         if not key_id:
             raise ValueError('key_id cannot be empty.')
 
-        key = self.jwt_authorities.get(key_id, None)
+        key = self._jwt_authorities.get(key_id, None)
         if not key:
             raise AuthorityNotFoundError(key_id)
         return key

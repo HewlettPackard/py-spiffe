@@ -19,10 +19,3 @@ def get_keys_pems(private_key):
     )
 
     return rsakeypem, rsapubpem
-
-
-def save_to_file(path, private_pem, public_pem):
-    with open(path + "/rsakey.pem", "wb") as f:
-        f.write(private_pem)
-    with open(path + "/rsapub.pem", "wb") as f:
-        f.write(public_pem)
