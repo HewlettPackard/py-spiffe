@@ -1,7 +1,6 @@
 """
 This module manages X.509 Bundle objects.
 """
-import copy
 import os
 import threading
 from typing import Set
@@ -73,7 +72,7 @@ class X509Bundle(object):
     def x509_authorities(self) -> Set[Certificate]:
         """Returns a copy of set of X.509 authorities in the bundle. """
         with self.lock:
-            return copy.copy(self._x509_authorities)
+            return self._x509_authorities.copy()
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
