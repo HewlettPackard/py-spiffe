@@ -232,6 +232,10 @@ def test_add_and_remove_authority():
         pem_certs[1].as_bytes(), default_backend()
     )
 
+    # adding an object to the returned set, as it is a copy, it doesn't change the bundle
+    bundle.x509_authorities().add(x509_cert_1)
+    assert len(bundle.x509_authorities()) == 0
+
     bundle.add_authority(x509_cert_1)
     bundle.add_authority(x509_cert_2)
     assert len(bundle.x509_authorities()) == 2

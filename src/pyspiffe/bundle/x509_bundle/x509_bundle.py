@@ -1,8 +1,8 @@
 """
 This module manages X.509 Bundle objects.
 """
-
 import os
+import threading
 from typing import Set
 
 from cryptography.hazmat.primitives import serialization
@@ -44,31 +44,47 @@ class X509Bundle(object):
         Raises:
             X509BundleError: In case the trust_domain is empty.
         """
+
+        self.lock = threading.Lock()
+
         if not trust_domain:
             raise X509BundleError(EMPTY_DOMAIN_ERROR)
         self._trust_domain = trust_domain
 
-        self._x509_authorities = x509_authorities
-        if not self._x509_authorities:
+        if x509_authorities:
+            self._x509_authorities = x509_authorities.copy()
+        else:
             self._x509_authorities = set()
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, X509Bundle):
+            return False
+        with self.lock:
+            return (
+                self._trust_domain.__eq__(o._trust_domain)
+                and self._x509_authorities == o._x509_authorities
+            )
 
     def trust_domain(self) -> TrustDomain:
         """Returns the trust domain of the bundle. """
         return self._trust_domain
 
     def x509_authorities(self) -> Set[Certificate]:
-        """Returns the set of X.509 authorities in the bundle. """
-        return self._x509_authorities
+        """Returns a copy of set of X.509 authorities in the bundle. """
+        with self.lock:
+            return self._x509_authorities.copy()
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
-        self._x509_authorities.add(x509_authority)
+        with self.lock:
+            self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle. """
-        if not self._x509_authorities:
-            return
-        self._x509_authorities.remove(x509_authority)
+        with self.lock:
+            if not self._x509_authorities:
+                return
+            self._x509_authorities.remove(x509_authority)
 
     @classmethod
     def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'X509Bundle':
@@ -83,7 +99,7 @@ class X509Bundle(object):
 
         Raises:
             X509BundleError: In case the trust_domain is empty.
-            ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
+            ParseX509BundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
         try:
