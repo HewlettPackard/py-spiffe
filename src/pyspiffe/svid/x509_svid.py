@@ -1,7 +1,6 @@
 """
 This module manages X.509 SVID objects.
 """
-import copy
 import os
 from typing import List, Union
 
@@ -87,7 +86,7 @@ class X509Svid(object):
 
     def cert_chain(self) -> List[Certificate]:
         """Returns the X.509 chain of certificates."""
-        return copy.copy(self._cert_chain)
+        return self._cert_chain.copy()
 
     def private_key(self) -> _PRIVATE_KEY_TYPES:
         """Returns the private key."""
