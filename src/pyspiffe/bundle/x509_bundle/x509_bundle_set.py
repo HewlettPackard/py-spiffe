@@ -1,7 +1,6 @@
 """
 This module manages X509BundleSet objects.
 """
-import copy
 import threading
 from typing import List, Optional, Dict
 
@@ -22,7 +21,11 @@ class X509BundleSet(object):
         """
 
         self.lock = threading.Lock()
-        self._bundles = copy.copy(bundles_map)
+
+        if bundles_map is not None:
+            self._bundles = bundles_map.copy()
+        else:
+            self._bundles = dict()
 
     def put(self, bundle: X509Bundle) -> None:
         """Adds a new X509Bundle object or replace an existing one into the set.

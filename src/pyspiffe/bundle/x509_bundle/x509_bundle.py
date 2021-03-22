@@ -52,8 +52,9 @@ class X509Bundle(object):
             raise X509BundleError(EMPTY_DOMAIN_ERROR)
         self._trust_domain = trust_domain
 
-        self._x509_authorities = copy.deepcopy(x509_authorities)
-        if not self._x509_authorities:
+        if x509_authorities is not None:
+            self._x509_authorities = x509_authorities.copy()
+        else:
             self._x509_authorities = set()
 
     def __eq__(self, o: object) -> bool:
@@ -77,7 +78,7 @@ class X509Bundle(object):
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle. """
         with self.lock:
-            self._x509_authorities.add(copy.copy(x509_authority))
+            self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle. """
