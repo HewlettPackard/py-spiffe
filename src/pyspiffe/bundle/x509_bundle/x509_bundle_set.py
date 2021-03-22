@@ -22,7 +22,7 @@ class X509BundleSet(object):
 
         self.lock = threading.Lock()
 
-        if bundles_map is not None:
+        if bundles_map:
             self._bundles = bundles_map.copy()
         else:
             self._bundles = dict()

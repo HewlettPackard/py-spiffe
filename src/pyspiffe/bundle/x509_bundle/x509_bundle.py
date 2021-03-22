@@ -51,7 +51,7 @@ class X509Bundle(object):
             raise X509BundleError(EMPTY_DOMAIN_ERROR)
         self._trust_domain = trust_domain
 
-        if x509_authorities is not None:
+        if x509_authorities:
             self._x509_authorities = x509_authorities.copy()
         else:
             self._x509_authorities = set()
@@ -99,7 +99,7 @@ class X509Bundle(object):
 
         Raises:
             X509BundleError: In case the trust_domain is empty.
-            ParseBundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
+            ParseX509BundleError: In case the set of x509_authorities cannot be parsed from the bundle_bytes.
         """
 
         try:
