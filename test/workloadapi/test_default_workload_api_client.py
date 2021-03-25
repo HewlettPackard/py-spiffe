@@ -1,12 +1,7 @@
 import os
 import pytest
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.x509 import Certificate
 
-from fake_workload_api import FakeWorkloadApi
-from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
-from utils import workload_api
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
@@ -46,52 +41,39 @@ def test_instantiate_bad_socket_path():
         DefaultWorkloadApiClient(spiffe_socket='/invalid')
 
 
-def test_fetch_x509_svid():
-    with workload_api(FakeWorkloadApi) as fake_stub:
-        client = DefaultWorkloadApiClient('unix:/dummy')
-        client._spiffe_workload_api_stub = fake_stub
-
-        svid = client.fetch_x509_svid()
-
-        assert svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
-        assert len(svid.cert_chain()) == 2
-        assert isinstance(svid.leaf(), Certificate)
-        assert isinstance(svid.private_key(), ec.EllipticCurvePrivateKey)
-
-
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jx509_context():
     wlapi = get_client()
     wlapi.fetch_x509_context()
 
 
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jx509_bundles():
     wlapi = get_client()
     wlapi.fetch_x509_bundles()
 
 
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_svid_aud():
     wlapi = get_client()
     audiences = ['foo', 'bar']
     wlapi.fetch_jwt_svid(audiences=audiences)
 
 
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_svid_aud_sub():
     wlapi = get_client()
     audiences = ['foo', 'bar']
     wlapi.fetch_jwt_svid(audiences=audiences, subject='spiffe://TODO')
 
 
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_bundles():
     wlapi = get_client()
     wlapi.fetch_jwt_bundles()
 
 
-# TODO: Implement using the FakeWorkloadApi
+# TODO: Implement using WorkloadApi Mock
 def test_validate_jwt_svid():
     wlapi = get_client()
     token = 'TODO'
