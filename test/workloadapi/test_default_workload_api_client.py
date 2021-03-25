@@ -8,7 +8,6 @@ SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
-    os.environ[SPIFFE_SOCKET_ENV] = ""
     with pytest.raises(ValueError):
         DefaultWorkloadApiClient()
 
