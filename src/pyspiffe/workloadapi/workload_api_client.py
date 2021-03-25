@@ -5,8 +5,8 @@ from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
-WORKLOAD_API_HEADER = 'workload.spiffe.io'
-HEADER_TRUE_VALUE = 'true'
+WORKLOAD_API_HEADER_KEY = 'workload.spiffe.io'
+WORKLOAD_API_HEADER_VALUE = 'true'
 
 
 class WorkloadApiClient(ABC):

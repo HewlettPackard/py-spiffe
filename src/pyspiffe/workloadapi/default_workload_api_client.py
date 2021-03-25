@@ -16,8 +16,8 @@ from pyspiffe.svid.jwt_svid import JwtSvid
 
 from pyspiffe.workloadapi.workload_api_client import (
     WorkloadApiClient,
-    WORKLOAD_API_HEADER,
-    HEADER_TRUE_VALUE,
+    WORKLOAD_API_HEADER_KEY,
+    WORKLOAD_API_HEADER_VALUE,
 )
 
 
@@ -146,7 +146,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         )
         spiffe_client_interceptor = (
             header_manipulator_client_interceptor.header_adder_interceptor(
-                WORKLOAD_API_HEADER, HEADER_TRUE_VALUE
+                WORKLOAD_API_HEADER_KEY, WORKLOAD_API_HEADER_VALUE
             )
         )
 
