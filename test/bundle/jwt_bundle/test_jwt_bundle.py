@@ -4,11 +4,11 @@ from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 
 """
-    findJwtAuthority
+    find_jwt_authority
 """
 
 
-def test_valid_input_findJwtAuthority():
+def test_find_jwt_authority_valid_input():
     p1 = "PublicKey1"
     p2 = "PublicKey2"
     p3 = "PublicKey3"
@@ -24,7 +24,7 @@ def test_valid_input_findJwtAuthority():
     assert p2 == authority_key
 
 
-def test_invalid_key_id_not_found_findJwtAuthority():
+def test_find_jwt_authority_invalid_key_id_not_found():
     trust_domain = TrustDomain("spiffe://any.domain")
     authority = {
         'kid1': 'p1',
@@ -38,7 +38,7 @@ def test_invalid_key_id_not_found_findJwtAuthority():
     assert str(exception.value) == 'Key (p0) not found in authorities.'
 
 
-def test_invalid_input_findJwtAuthority():
+def test_find_jwt_authority_invalid_input():
     trust_domain = TrustDomain("spiffe://any.domain")
     authority = {
         'kid1': 'p1',
@@ -52,7 +52,7 @@ def test_invalid_input_findJwtAuthority():
     assert str(exception.value) == 'key_id cannot be empty.'
 
 
-def test_authority_none_creation():
+def test_find_jwt_authority_authority_none_creation():
     trust_domain = TrustDomain("spiffe://any.domain")
     authority = None
     jwt_bundle = JwtBundle(trust_domain, authority)

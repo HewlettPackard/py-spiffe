@@ -31,7 +31,7 @@ from test_utils import get_keys_pems
         (None, None, INVALID_INPUT_ERROR.format('token cannot be empty')),
     ],
 )
-def test_invalid_input_parse_insecure(test_input_token, test_input_audience, expected):
+def test_parse_insecure_invalid_input(test_input_token, test_input_audience, expected):
     with pytest.raises(ValueError) as exception:
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
@@ -104,7 +104,7 @@ def test_invalid_input_parse_insecure(test_input_token, test_input_audience, exp
         ),  # expired token
     ],
 )
-def test_invalid_claims_parse_insecure(test_input_token, test_input_audience, expected):
+def test_parse_insecure_invalid_claims(test_input_token, test_input_audience, expected):
     with pytest.raises(JwtSvidError) as exception:
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
@@ -124,7 +124,7 @@ def test_invalid_claims_parse_insecure(test_input_token, test_input_audience, ex
         ),  # first
     ],
 )
-def test_invalid_token_parse_insecure(test_input_token, test_input_audience):
+def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
     with pytest.raises(InvalidTokenError):
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
@@ -168,7 +168,7 @@ def test_invalid_token_parse_insecure(test_input_token, test_input_audience):
         ),
     ],
 )
-def test_valid_parse_insecure(test_input_token, test_input_audience, expected):
+def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
     result = JwtSvid.parse_insecure(test_input_token, test_input_audience)
     assert result.token == test_input_token
     assert str(result.spiffeId) == expected
@@ -197,7 +197,7 @@ def test_valid_parse_insecure(test_input_token, test_input_audience, expected):
         ),
     ],
 )
-def test_invalid_parameters_parse_and_validate(
+def test_parse_and_validate_invalid_parameters(
     test_input_token, test_input_jwtBundle, test_input_audience, expected
 ):
     with pytest.raises(ValueError) as exception:
@@ -207,7 +207,31 @@ def test_invalid_parameters_parse_and_validate(
     assert str(exception.value) == expected
 
 
-def test_invalid_missing_kid_parse_and_validate():
+def test_parse_and_validate_invalid_missing_kid_header():
+    rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
+    rsakeypem, _ = get_keys_pems(rsa_key)
+    audience = ['spire', 'test', 'valid']
+    spiffe_id = 'spiffe://test.orgcom/'
+    expiry = timegm(
+        (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).utctimetuple()
+    )
+    token = jwt.encode(
+        {
+            'aud': audience,
+            'sub': spiffe_id,
+            'exp': expiry,
+        },
+        algorithm="RS256",
+        key=rsakeypem,
+    )
+
+    with pytest.raises(InvalidTokenError) as exception:
+        JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    assert str(exception.value) == 'key_id cannot be empty.'
+
+
+def test_parse_and_validate_invalid_missing_kid():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
     rsakeypem, _ = get_keys_pems(rsa_key)
@@ -232,7 +256,7 @@ def test_invalid_missing_kid_parse_and_validate():
     assert str(exception.value) == 'Key (kid10) not found in authorities.'
 
 
-def test_invalid_kid_mismatch_parse_and_validate():
+def test_parse_and_validate_invalid_kid_mismatch():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     rsa_key2 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(
@@ -261,7 +285,7 @@ def test_invalid_kid_mismatch_parse_and_validate():
     assert str(exception.value) == 'Signature verification failed'
 
 
-def test_valid_parse_and_validate_RSA():
+def test_parse_and_validate_valid_token_RSA():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
     rsakeypem, _ = get_keys_pems(rsa_key)
@@ -287,7 +311,7 @@ def test_valid_parse_and_validate_RSA():
     assert jwt_svid.token == token
 
 
-def test_valid_parse_and_validate_EC():
+def test_parse_and_validate_valid_token_EC():
     ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid_ec': ec_key.public_key()})
     eckeypem, _ = get_keys_pems(ec_key)
@@ -313,7 +337,7 @@ def test_valid_parse_and_validate_EC():
     assert jwt_svid.token == token
 
 
-def test_valid_parse_and_validate_multiple_keys_bundle():
+def test_parse_and_validate_valid_token_multiple_keys_bundle():
     ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     audience = ['spire', 'test', 'valid']
