@@ -6,7 +6,7 @@ import jwt
 from jwt import PyJWTError
 from typing import List, Dict
 from pyspiffe.svid import INVALID_INPUT_ERROR
-
+from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
@@ -22,9 +22,9 @@ class JwtSvid(object):
     def __init__(
         self,
         spiffeId: SpiffeId,
-        audience: List,
+        audience: List[str],
         expiry: int,
-        claims: Dict,
+        claims: Dict[str, str],
         token: str,
     ) -> None:
         """Creates a JwtSvid instance.
@@ -114,11 +114,17 @@ class JwtSvid(object):
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
             validator.validate_header(token_header)
-            signing_key = jwt_bundle.find_jwt_authority(token_header['kid'])
+            signing_key = jwt_bundle.find_jwt_authority(token_header.get('kid', None))
+
+            public_key_pem = signing_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            ).decode('UTF-8')
+
             claims = jwt.decode(
                 token,
-                algorithms=token_header['alg'],
-                key=signing_key,
+                algorithms=token_header.get('alg', None),
+                key=public_key_pem,
                 audience=audience,
                 options={
                     'verify_signature': True,
@@ -126,8 +132,9 @@ class JwtSvid(object):
                     'verify_exp': True,
                 },
             )
-            # TODO:validate required claims
             spiffe_ID = SpiffeId.parse(claims['sub'])
             return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
+        except ValueError as value_err:
+            raise InvalidTokenError(str(value_err))

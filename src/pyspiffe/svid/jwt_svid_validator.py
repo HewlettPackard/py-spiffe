@@ -37,6 +37,7 @@ class JwtSvidValidator(object):
         'PS384',
         'PS512',
     ]
+
     _SUPPORTED_TYPES = ['JWT', 'JOSE']
 
     def __init__(self) -> None:
