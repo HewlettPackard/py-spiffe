@@ -5,8 +5,6 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
-# TODO: How to test functions that talk to workload API
-
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
@@ -42,39 +40,39 @@ def test_instantiate_bad_socket_path():
         DefaultWorkloadApiClient(spiffe_socket='/invalid')
 
 
-# TODO: Implement
-def test_fetch_x509_svid():
+# TODO: Implement using WorkloadApi Mock
+def test_fetch_jx509_context():
     wlapi = get_client()
-    wlapi.fetch_x509_svid()
+    wlapi.fetch_x509_context()
 
 
-# TODO: Implement
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jx509_bundles():
     wlapi = get_client()
     wlapi.fetch_x509_bundles()
 
 
-# TODO: Implement
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_svid_aud():
     wlapi = get_client()
     audiences = ['foo', 'bar']
     wlapi.fetch_jwt_svid(audiences=audiences)
 
 
-# TODO: Implement
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_svid_aud_sub():
     wlapi = get_client()
     audiences = ['foo', 'bar']
     wlapi.fetch_jwt_svid(audiences=audiences, subject='spiffe://TODO')
 
 
-# TODO: Implement
+# TODO: Implement using WorkloadApi Mock
 def test_fetch_jwt_bundles():
     wlapi = get_client()
     wlapi.fetch_jwt_bundles()
 
 
-# TODO: Implement
+# TODO: Implement using WorkloadApi Mock
 def test_validate_jwt_svid():
     wlapi = get_client()
     token = 'TODO'

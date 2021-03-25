@@ -1,11 +1,24 @@
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
+
+import grpc
+
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.config import ConfigSetter
+from pyspiffe.proto.spiffe import (
+    workload_pb2_grpc,
+    workload_pb2,
+)
+from pyspiffe.workloadapi.exceptions import FetchX509SvidError
+from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 
-from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
+from pyspiffe.workloadapi.workload_api_client import (
+    WorkloadApiClient,
+    WORKLOAD_API_HEADER_KEY,
+    WORKLOAD_API_HEADER_VALUE,
+)
 
 
 class DefaultWorkloadApiClient(WorkloadApiClient):
@@ -15,16 +28,14 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """Creates a new Workload API Client.
 
         Args:
-            spiffe_socket: Path to Workload API UDS. If
-                not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
-                must be set.
+            spiffe_socket: Path to Workload API UDS. If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
+                           must be set.
 
         Returns:
             DefaultWorkloadApiClient: New Workload API Client object.
 
         Raises:
-            ValueError: If spiffe_socket_path is invalid or not provided and
-                SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist.
+            ValueError: If spiffe_socket_path is invalid or not provided and SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist.
         """
 
         try:
@@ -36,14 +47,9 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                 'SPIFFE socket argument or environment variable invalid in DefaultWorkloadApiClient.'
             )
 
-    def get_spiffe_endpoint_socket(self) -> str:
-        """Returns the spiffe endpoint socket config for this WorkloadApiClient.
-
-        Returns:
-            str: spiffe endpoint socket configuration value.
-        """
-
-        return self._config.spiffe_endpoint_socket
+        self._spiffe_workload_api_stub = workload_pb2_grpc.SpiffeWorkloadAPIStub(
+            self._get_spiffe_grpc_channel()
+        )
 
     def fetch_x509_svid(self) -> X509Svid:
         """Fetches a SPIFFE X.509-SVID.
@@ -52,6 +58,29 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             X509Svid: Instance of X509Svid object.
         """
 
+        try:
+            response = self._spiffe_workload_api_stub.FetchX509SVID(
+                workload_pb2.X509SVIDRequest()
+            )
+            item = next(response)
+        except Exception:
+            raise FetchX509SvidError('X.509 SVID response is invalid.')
+
+        if len(item.svids) == 0:
+            raise FetchX509SvidError('X.509 SVID response is empty.')
+
+        svid = item.svids[0]
+
+        cert = svid.x509_svid
+        key = svid.x509_svid_key
+        return X509Svid.parse_raw(cert, key)
+
+    def fetch_x509_context(self) -> Tuple[X509Svid, X509BundleSet]:
+        """Fetches an X.509 context (X.509 SVID and X.509 Bundles)
+
+        Returns:
+            (X509Svid, X509BundleSet): A tuple containing a X509Svid and a X509BundleSet.
+        """
         pass
 
     def fetch_x509_bundles(self) -> X509BundleSet:
@@ -101,3 +130,24 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """
 
         pass
+
+    def get_spiffe_endpoint_socket(self) -> str:
+        """Returns the spiffe endpoint socket config for this WorkloadApiClient.
+
+        Returns:
+            str: spiffe endpoint socket configuration value.
+        """
+
+        return self._config.spiffe_endpoint_socket
+
+    def _get_spiffe_grpc_channel(self):
+        grpc_insecure_channel = grpc.insecure_channel(
+            self._config.spiffe_endpoint_socket
+        )
+        spiffe_client_interceptor = (
+            header_manipulator_client_interceptor.header_adder_interceptor(
+                WORKLOAD_API_HEADER_KEY, WORKLOAD_API_HEADER_VALUE
+            )
+        )
+
+        return grpc.intercept_channel(grpc_insecure_channel, spiffe_client_interceptor)

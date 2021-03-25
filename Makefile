@@ -88,7 +88,9 @@ flake8:
 
 mypy:
 	@echo "Running mypy."
-	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe
+    # `--disable-error-code override` is a workaround to suppress mypy errors in the protobuf generated code,
+    # that start showing up when make calls to it, even though it is excluded. TODO: research if there's already a fix for this.
+	MYPYPATH=src $(PIPENV_CMD) run mypy --ignore-missing-imports --exclude pyspiffe/proto -p pyspiffe --disable-error-code override
 
 test_clean:
 	@echo "cleaning existing test reports"
