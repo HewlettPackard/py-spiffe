@@ -1,8 +1,8 @@
 """
 This module manages X509BundleSet objects.
 """
-
-from typing import Mapping, List, Optional
+import threading
+from typing import List, Optional, Dict
 
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
@@ -13,18 +13,19 @@ __all__ = ['X509Bundle']
 class X509BundleSet(object):
     """X509BundleSet is a set of X509Bundles objects, keyed by trust domain."""
 
-    def __init__(self, bundles_map: Mapping[TrustDomain, X509Bundle]) -> None:
+    def __init__(self, bundles_map: Dict[TrustDomain, X509Bundle]) -> None:
         """Creates a new initialized X509BundleSet with the given X509Bundle objects keyed by TrustDomain.
 
         Args:
             bundles_map: A map object of X509Bundle objects keyed by TrustDomain to initialize the X509BundleSet.
         """
 
-        # create and initialize a dict, so it can be updated (as Mapping doesn't define __setitem__)
-        bundles = {}
-        for td, bundle in bundles_map.items():
-            bundles[td] = bundle
-        self._bundles = bundles
+        self.lock = threading.Lock()
+
+        if bundles_map:
+            self._bundles = bundles_map.copy()
+        else:
+            self._bundles = dict()
 
     def put(self, bundle: X509Bundle) -> None:
         """Adds a new X509Bundle object or replace an existing one into the set.
@@ -32,7 +33,8 @@ class X509BundleSet(object):
         Args:
             bundle: The new X509Bundle to put into the set.
         """
-        self._bundles[bundle.trust_domain()] = bundle
+        with self.lock:
+            self._bundles[bundle.trust_domain()] = bundle
 
     def get_x509_bundle_for_trust_domain(
         self, trust_domain: TrustDomain
@@ -46,7 +48,8 @@ class X509BundleSet(object):
             A X509Bundle object for the given TrustDomain.
             None if the TrustDomain is not found in the set.
         """
-        return self._bundles.get(trust_domain)
+        with self.lock:
+            return self._bundles.get(trust_domain)
 
     @classmethod
     def of(cls, bundle_list: List[X509Bundle]) -> 'X509BundleSet':

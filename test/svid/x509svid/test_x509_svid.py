@@ -68,7 +68,8 @@ def test_parse_raw_missing_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -80,7 +81,8 @@ def test_parse_missing_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -118,7 +120,8 @@ def test_parse_raw_corrupted_certificate():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -130,7 +133,8 @@ def test_parse_corrupted_certificate():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        str(exception.value) == 'Error parsing certificate: Unable to load certificate.'
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
     )
 
 
@@ -290,7 +294,7 @@ def test_load_non_existent_cert_file():
 
     assert (
         str(exception.value)
-        == 'Error loading certificate from file: Certs chain file file not found: no-exists.'
+        == 'Error loading certificate from file: Certificates file not found: no-exists.'
     )
 
 
@@ -380,6 +384,15 @@ def test_load_non_supported_encoding():
         str(err.value)
         == 'Encoding not supported: Encoding.OpenSSH. Expected \'PEM\' or \'DER\'.'
     )
+
+
+def test_get_chain_returns_a_copy():
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('1-key.der')
+
+    x509_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
+
+    assert x509_svid.cert_chain() is not x509_svid._cert_chain
 
 
 def read_bytes(filename):
