@@ -32,9 +32,9 @@ class JwtBundle(object):
         """
         self._trust_domain = trust_domain
         if jwt_authorities:
-            self._jwt_authorities = dict(jwt_authorities)
+            self._jwt_authorities = jwt_authorities.copy()
         else:
-            self._jwt_authorities = dict()
+            self._jwt_authorities = {}
 
     def find_jwt_authority(self, key_id: str) -> _PUBLIC_KEY_TYPES:
         """Returns the authority for the specified key_id.
