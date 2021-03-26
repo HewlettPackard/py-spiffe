@@ -33,7 +33,7 @@ class X509Bundle(object):
     def __init__(
         self,
         trust_domain: TrustDomain,
-        x509_authorities: Set[Certificate],
+        x509_authorities: Set[Certificate] = None,
     ) -> None:
         """Creates a X509Bundle instance.
 

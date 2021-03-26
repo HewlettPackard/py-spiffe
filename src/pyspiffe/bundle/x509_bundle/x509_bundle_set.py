@@ -7,13 +7,13 @@ from typing import List, Optional, Dict
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 
-__all__ = ['X509Bundle']
+__all__ = ['X509BundleSet']
 
 
 class X509BundleSet(object):
     """X509BundleSet is a set of X509Bundles objects, keyed by trust domain."""
 
-    def __init__(self, bundles_map: Dict[TrustDomain, X509Bundle]) -> None:
+    def __init__(self, bundles_map: Dict[TrustDomain, X509Bundle] = None) -> None:
         """Creates a new initialized X509BundleSet with the given X509Bundle objects keyed by TrustDomain.
 
         Args:

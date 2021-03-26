@@ -1,9 +1,11 @@
-from typing import Optional, Set
 from abc import ABC, abstractmethod
-from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
+from typing import Optional, Set, List
+
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
-from pyspiffe.svid.x509_svid import X509Svid
+from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.svid.jwt_svid import JwtSvid
+from pyspiffe.svid.x509_svid import X509Svid
+from pyspiffe.workloadapi.x509_context import X509Context
 
 WORKLOAD_API_HEADER_KEY = 'workload.spiffe.io'
 WORKLOAD_API_HEADER_VALUE = 'true'
@@ -14,10 +16,26 @@ class WorkloadApiClient(ABC):
 
     @abstractmethod
     def fetch_x509_svid(self) -> X509Svid:
-        """Fetches a SPIFFE X.509-SVID.
+        """Fetches the default X509-SVID, i.e. the first in the list returned by the Workload API.
 
         Returns:
             X509Svid: Instance of X509Svid object.
+        """
+
+    @abstractmethod
+    def fetch_x509_svids(self) -> List[X509Svid]:
+        """Fetches all X509-SVIDs.
+
+        Returns:
+            X509Svid: List of of X509Svid object.
+        """
+
+    @abstractmethod
+    def fetch_x509_context(self) -> X509Context:
+        """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles)
+
+        Returns:
+            X509Context: An object containing a list X509Svids and a X509BundleSet.
         """
 
     @abstractmethod
