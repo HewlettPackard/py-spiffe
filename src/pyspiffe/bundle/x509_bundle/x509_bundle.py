@@ -49,12 +49,9 @@ class X509Bundle(object):
 
         if not trust_domain:
             raise X509BundleError(EMPTY_DOMAIN_ERROR)
-        self._trust_domain = trust_domain
 
-        if x509_authorities:
-            self._x509_authorities = x509_authorities.copy()
-        else:
-            self._x509_authorities = set()
+        self._trust_domain = trust_domain
+        self._x509_authorities = x509_authorities.copy() if x509_authorities else set()
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, X509Bundle):

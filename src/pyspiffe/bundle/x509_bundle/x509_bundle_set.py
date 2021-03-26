@@ -21,11 +21,7 @@ class X509BundleSet(object):
         """
 
         self.lock = threading.Lock()
-
-        if bundles_map:
-            self._bundles = bundles_map.copy()
-        else:
-            self._bundles = dict()
+        self._bundles = bundles_map.copy() if bundles_map else {}
 
     def put(self, bundle: X509Bundle) -> None:
         """Adds a new X509Bundle object or replace an existing one into the set.

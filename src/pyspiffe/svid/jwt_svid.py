@@ -9,6 +9,7 @@ from pyspiffe.svid import INVALID_INPUT_ERROR
 from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
 from pyspiffe.svid.exceptions import InvalidTokenError
 
@@ -114,7 +115,10 @@ class JwtSvid(object):
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
             validator.validate_header(token_header)
-            signing_key = jwt_bundle.find_jwt_authority(token_header.get('kid'))
+            key_id = token_header.get('kid')
+            signing_key = jwt_bundle.get_jwt_authority(key_id)
+            if not signing_key:
+                raise AuthorityNotFoundError(key_id)
 
             public_key_pem = signing_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
