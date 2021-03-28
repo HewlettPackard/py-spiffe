@@ -132,7 +132,7 @@ class JwtSvid(object):
                     'verify_exp': True,
                 },
             )
-            spiffe_ID = SpiffeId.parse(claims['sub'])
+            spiffe_ID = SpiffeId.parse(claims.get('sub', None))
             return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))

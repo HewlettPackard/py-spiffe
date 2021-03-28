@@ -231,6 +231,29 @@ def test_parse_and_validate_invalid_missing_kid_header():
     assert str(exception.value) == 'key_id cannot be empty.'
 
 
+def test_parse_and_validate_invalid_missing_sub():
+    rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
+    rsakeypem, _ = get_keys_pems(rsa_key)
+    audience = ['spire', 'test', 'valid']
+    expiry = timegm(
+        (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).utctimetuple()
+    )
+    token = jwt.encode(
+        {
+            'aud': audience,
+            'exp': expiry,
+        },
+        algorithm="RS256",
+        key=rsakeypem,
+        headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid1'},
+    )
+
+    with pytest.raises(InvalidTokenError) as exception:
+        JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    assert str(exception.value) == 'SPIFFE ID cannot be empty.'
+
+
 def test_parse_and_validate_invalid_missing_kid():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
