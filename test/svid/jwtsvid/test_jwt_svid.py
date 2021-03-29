@@ -210,7 +210,7 @@ def test_parse_and_validate_invalid_parameters(
 def test_parse_and_validate_invalid_missing_kid_header():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     audience = ['spire', 'test', 'valid']
     spiffe_id = 'spiffe://test.orgcom/'
     expiry = timegm(
@@ -223,7 +223,7 @@ def test_parse_and_validate_invalid_missing_kid_header():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
     )
 
     with pytest.raises(InvalidTokenError) as exception:
@@ -234,7 +234,7 @@ def test_parse_and_validate_invalid_missing_kid_header():
 def test_parse_and_validate_invalid_missing_sub():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     audience = ['spire', 'test', 'valid']
     expiry = timegm(
         (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).utctimetuple()
@@ -245,7 +245,7 @@ def test_parse_and_validate_invalid_missing_sub():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
         headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid1'},
     )
 
@@ -257,7 +257,7 @@ def test_parse_and_validate_invalid_missing_sub():
 def test_parse_and_validate_invalid_missing_kid():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     audience = ['spire', 'test', 'valid']
     spiffe_id = 'spiffe://test.orgcom/'
     expiry = timegm(
@@ -270,7 +270,7 @@ def test_parse_and_validate_invalid_missing_kid():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
         headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid10'},
     )
 
@@ -286,7 +286,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
         TrustDomain('test.orgcom'),
         {'kid1': rsa_key.public_key(), 'kid10': rsa_key2.public_key()},
     )
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     audience = ['spire', 'test', 'valid']
     spiffe_id = 'spiffe://test.orgcom/'
     expiry = timegm(
@@ -299,7 +299,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
         headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid10'},
     )
 
@@ -311,7 +311,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
 def test_parse_and_validate_valid_token_RSA():
     rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid1': rsa_key.public_key()})
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     audience = ['spire', 'test', 'valid']
     spiffe_id = 'spiffe://test.orgcom/'
     expiry = timegm(
@@ -324,7 +324,7 @@ def test_parse_and_validate_valid_token_RSA():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
         headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid1'},
     )
     jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
@@ -337,7 +337,7 @@ def test_parse_and_validate_valid_token_RSA():
 def test_parse_and_validate_valid_token_EC():
     ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
     jwt_bundle = JwtBundle(TrustDomain('test.orgcom'), {'kid_ec': ec_key.public_key()})
-    eckeypem, _ = get_keys_pems(ec_key)
+    ec_key_pem, _ = get_keys_pems(ec_key)
     audience = ['spire', 'test', 'valid']
     spiffe_id = 'spiffe://test.orgcom/'
     expiry = timegm(
@@ -350,7 +350,7 @@ def test_parse_and_validate_valid_token_EC():
             'exp': expiry,
         },
         algorithm="ES256",
-        key=eckeypem,
+        key=ec_key_pem,
         headers={'alg': 'ES256', 'typ': 'JOSE', 'kid': 'kid_ec'},
     )
     jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
@@ -373,7 +373,7 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle():
         TrustDomain('test.orgcom'),
         {'kid_rsa': rsa_key.public_key(), 'kid_ec': ec_key.public_key()},
     )
-    eckeypem, _ = get_keys_pems(ec_key)
+    ec_key_pem, _ = get_keys_pems(ec_key)
     token = jwt.encode(
         {
             'aud': audience,
@@ -381,10 +381,10 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle():
             'exp': expiry,
         },
         algorithm="ES512",
-        key=eckeypem,
+        key=ec_key_pem,
         headers={'alg': 'ES512', 'typ': 'JOSE', 'kid': 'kid_ec'},
     )
-    rsakeypem, _ = get_keys_pems(rsa_key)
+    rsa_key_pem, _ = get_keys_pems(rsa_key)
     token2 = jwt.encode(
         {
             'aud': audience,
@@ -392,7 +392,7 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle():
             'exp': expiry,
         },
         algorithm="RS256",
-        key=rsakeypem,
+        key=rsa_key_pem,
         headers={'alg': 'RS256', 'kid': 'kid_rsa'},
     )
     jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')

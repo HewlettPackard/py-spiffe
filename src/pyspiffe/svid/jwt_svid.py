@@ -114,7 +114,7 @@ class JwtSvid(object):
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
             validator.validate_header(token_header)
-            signing_key = jwt_bundle.find_jwt_authority(token_header.get('kid', None))
+            signing_key = jwt_bundle.find_jwt_authority(token_header.get('kid'))
 
             public_key_pem = signing_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -123,7 +123,7 @@ class JwtSvid(object):
 
             claims = jwt.decode(
                 token,
-                algorithms=token_header.get('alg', None),
+                algorithms=token_header.get('alg'),
                 key=public_key_pem,
                 audience=audience,
                 options={
