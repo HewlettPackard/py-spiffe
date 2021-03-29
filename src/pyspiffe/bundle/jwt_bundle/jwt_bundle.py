@@ -18,7 +18,7 @@ _PUBLIC_KEY_TYPES = Union[
 class JwtBundle(object):
     """Represents a JWT Bundle.
 
-    JwtBundle is a collection of trusted JWT public keys for a trust domain
+    JwtBundle is a collection of trusted JWT public keys for a trust domain.
     """
 
     def __init__(
