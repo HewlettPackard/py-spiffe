@@ -9,6 +9,7 @@ from pyspiffe.svid import INVALID_INPUT_ERROR
 from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
 from pyspiffe.svid.exceptions import InvalidTokenError
 
@@ -21,7 +22,7 @@ class JwtSvid(object):
 
     def __init__(
         self,
-        spiffeId: SpiffeId,
+        spiffe_id: SpiffeId,
         audience: List[str],
         expiry: int,
         claims: Dict[str, str],
@@ -30,26 +31,26 @@ class JwtSvid(object):
         """Creates a JwtSvid instance.
 
         Args:
-            spiffeId: A valid spiffeId instance.
+            spiffe_id: A valid spiffeId instance.
             audience: List of audience expected to be in the 'aud' claims.
-            expiry: Date and time in UTC specifing expiry date of the JwtSvid.
+            expiry: Date and time in UTC specifying expiry date of the JwtSvid.
             claims: Key-value pairs with all the claims present in the token.
             token: Encoded token.
         """
-        self.spiffeId = spiffeId
+        self.spiffe_id = spiffe_id
         self.audience = audience
         self.expiry = expiry
         self.claims = claims
         self.token = token
 
     @classmethod
-    def parse_insecure(cls, token: str, expected_audience: List) -> 'JwtSvid':
+    def parse_insecure(cls, token: str, expected_audience: List[str]) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
         and expiry from 'exp' claim. The JWT-SVID signature is not verified.
 
         Args:
             token: A token as a string that is parsed and validated.
-            audience: Audience as a list of strings used to validate the 'aud' claim.
+            expected_audience: Audience as a list of strings used to validate the 'aud' claim.
 
         Returns:
             An instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
@@ -72,8 +73,8 @@ class JwtSvid(object):
             validator.validate_header(token_header)
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, expected_audience)
-            spiffe_ID = SpiffeId.parse(claims['sub'])
-            return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
+            spiffe_id = SpiffeId.parse(claims['sub'])
+            return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
 
@@ -114,7 +115,10 @@ class JwtSvid(object):
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
             validator.validate_header(token_header)
-            signing_key = jwt_bundle.find_jwt_authority(token_header.get('kid'))
+            key_id = token_header.get('kid')
+            signing_key = jwt_bundle.get_jwt_authority(key_id)
+            if not signing_key:
+                raise AuthorityNotFoundError(key_id)
 
             public_key_pem = signing_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -132,8 +136,9 @@ class JwtSvid(object):
                     'verify_exp': True,
                 },
             )
-            spiffe_ID = SpiffeId.parse(claims.get('sub', None))
-            return JwtSvid(spiffe_ID, claims['aud'], claims['exp'], claims, token)
+
+            spiffe_id = SpiffeId.parse(claims.get('sub', None))
+            return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
         except ValueError as value_err:

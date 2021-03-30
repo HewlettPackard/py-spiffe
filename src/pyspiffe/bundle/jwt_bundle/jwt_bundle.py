@@ -1,10 +1,12 @@
 """
 JwtBundle module manages JwtBundle objects.
 """
-from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
-from typing import Dict, Union
+import threading
+from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
+
+from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
+from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError
 
 _PUBLIC_KEY_TYPES = Union[
     dsa.DSAPublicKey,
@@ -28,15 +30,26 @@ class JwtBundle(object):
 
         Args:
             trust_domain: The TrustDomain to associate with the JwtBundle instance.
-            jwt_authorities: A dictionay with key_id->PublicKey valid for the given TrustDomain.
+            jwt_authorities: A dictionary with key_id->PublicKey valid for the given TrustDomain.
         """
-        self._trust_domain = trust_domain
-        if jwt_authorities:
-            self._jwt_authorities = jwt_authorities.copy()
-        else:
-            self._jwt_authorities = {}
+        self.lock = threading.Lock()
 
-    def find_jwt_authority(self, key_id: str) -> _PUBLIC_KEY_TYPES:
+        if not trust_domain:
+            raise JwtBundleError(EMPTY_DOMAIN_ERROR)
+
+        self._trust_domain = trust_domain
+        self._jwt_authorities = jwt_authorities.copy() if jwt_authorities else {}
+
+    def trust_domain(self) -> TrustDomain:
+        """Returns the trust domain of the bundle. """
+        return self._trust_domain
+
+    def jwt_authorities(self) -> Dict[str, _PUBLIC_KEY_TYPES]:
+        """Returns a copy of JWT authorities in the bundle."""
+        with self.lock:
+            return self._jwt_authorities.copy()
+
+    def get_jwt_authority(self, key_id: str) -> Optional[_PUBLIC_KEY_TYPES]:
         """Returns the authority for the specified key_id.
 
         Args:
@@ -44,14 +57,13 @@ class JwtBundle(object):
 
         Returns:
             The authority associated with the supplied key_id.
+            None if the key_id is not found.
 
         Raises:
-            AuthorityNotFoundError: When no authority is found associated to the given key_id.
+            ValueError: When key_id is not valid (empty or None).
         """
         if not key_id:
             raise ValueError('key_id cannot be empty.')
 
-        key = self._jwt_authorities.get(key_id, None)
-        if not key:
-            raise AuthorityNotFoundError(key_id)
-        return key
+        with self.lock:
+            return self._jwt_authorities.get(key_id)

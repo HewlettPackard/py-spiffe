@@ -15,7 +15,7 @@ from pyspiffe.svid.exceptions import (
     InvalidTokenError,
 )
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
-from test_utils import get_keys_pems
+from test.svid.test_utils import get_keys_pems
 
 """
     parse_insecure tests
@@ -61,7 +61,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
             jwt.encode(
                 {
                     'aud': ['spire'],
-                    'sub': 'spiffeid://somwhere.over.the',
+                    'sub': 'spiffeid://somewhere.over.the',
                 },
                 'secret',
                 headers={'alg': 'ES384', 'typ': 'JWT'},
@@ -89,7 +89,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
             jwt.encode(
                 {
                     'aud': ['spire'],
-                    'sub': 'spiffeid://somwhere.over.the',
+                    'sub': 'spiffeid://somewhere.over.the',
                     'exp': timegm(
                         (
                             datetime.datetime.utcnow() - datetime.timedelta(hours=1)
@@ -171,7 +171,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
 def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
     result = JwtSvid.parse_insecure(test_input_token, test_input_audience)
     assert result.token == test_input_token
-    assert str(result.spiffeId) == expected
+    assert str(result.spiffe_id) == expected
 
 
 """
@@ -181,7 +181,7 @@ def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
 
 
 @pytest.mark.parametrize(
-    'test_input_token,test_input_jwtBundle, test_input_audience, expected',
+    'test_input_token,test_input_jwt_bundle, test_input_audience, expected',
     [
         (
             '',
@@ -198,11 +198,11 @@ def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
     ],
 )
 def test_parse_and_validate_invalid_parameters(
-    test_input_token, test_input_jwtBundle, test_input_audience, expected
+    test_input_token, test_input_jwt_bundle, test_input_audience, expected
 ):
     with pytest.raises(ValueError) as exception:
         JwtSvid.parse_and_validate(
-            test_input_token, test_input_jwtBundle, test_input_audience
+            test_input_token, test_input_jwt_bundle, test_input_audience
         )
     assert str(exception.value) == expected
 
@@ -227,7 +227,7 @@ def test_parse_and_validate_invalid_missing_kid_header():
     )
 
     with pytest.raises(InvalidTokenError) as exception:
-        JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+        JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert str(exception.value) == 'key_id cannot be empty.'
 
 
@@ -275,7 +275,7 @@ def test_parse_and_validate_invalid_missing_kid():
     )
 
     with pytest.raises(AuthorityNotFoundError) as exception:
-        JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+        JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert str(exception.value) == 'Key (kid10) not found in authorities.'
 
 
@@ -304,7 +304,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
     )
 
     with pytest.raises(InvalidTokenError) as exception:
-        JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+        JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert str(exception.value) == 'Signature verification failed'
 
 
@@ -327,9 +327,9 @@ def test_parse_and_validate_valid_token_RSA():
         key=rsa_key_pem,
         headers={'alg': 'RS256', 'typ': 'JWT', 'kid': 'kid1'},
     )
-    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert jwt_svid.audience == audience
-    assert str(jwt_svid.spiffeId) == spiffe_id
+    assert str(jwt_svid.spiffe_id) == spiffe_id
     assert jwt_svid.expiry == expiry
     assert jwt_svid.token == token
 
@@ -353,9 +353,9 @@ def test_parse_and_validate_valid_token_EC():
         key=ec_key_pem,
         headers={'alg': 'ES256', 'typ': 'JOSE', 'kid': 'kid_ec'},
     )
-    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert jwt_svid.audience == audience
-    assert str(jwt_svid.spiffeId) == spiffe_id
+    assert str(jwt_svid.spiffe_id) == spiffe_id
     assert jwt_svid.expiry == expiry
     assert jwt_svid.token == token
 
@@ -395,14 +395,14 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle():
         key=rsa_key_pem,
         headers={'alg': 'RS256', 'kid': 'kid_rsa'},
     )
-    jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, 'spire')
+    jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
     assert jwt_svid1.audience == audience
-    assert str(jwt_svid1.spiffeId) == spiffe_id
+    assert str(jwt_svid1.spiffe_id) == spiffe_id
     assert jwt_svid1.expiry == expiry
     assert jwt_svid1.token == token
 
-    jwt_svid2 = JwtSvid.parse_and_validate(token2, jwt_bundle, 'spire')
+    jwt_svid2 = JwtSvid.parse_and_validate(token2, jwt_bundle, ['spire'])
     assert jwt_svid2.audience == audience
-    assert str(jwt_svid2.spiffeId) == spiffe_id
+    assert str(jwt_svid2.spiffe_id) == spiffe_id
     assert jwt_svid2.expiry == expiry
     assert jwt_svid2.token == token2
