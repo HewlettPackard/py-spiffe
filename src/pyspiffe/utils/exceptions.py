@@ -15,3 +15,12 @@ class X509CertificateError(PySpiffeError):
 
     def __str__(self) -> str:
         return self.message
+
+
+def normalized_exception_message(e: Exception) -> str:
+    """Removes the last point from the exception message."""
+
+    msg = str(e)
+    if msg[-1] != '.':
+        return msg
+    return msg[:-1]

@@ -20,7 +20,6 @@ from pyspiffe.svid.exceptions import (
     StoreCertificateError,
     StorePrivateKeyError,
     LoadPrivateKeyError,
-    normalize_exception_message,
     ParseCertificateError,
     LoadCertificateError,
 )
@@ -30,6 +29,7 @@ from pyspiffe.utils.certificate_utils import (
     load_certificates_bytes_from_file,
     write_certificate_to_file,
 )
+from pyspiffe.utils.exceptions import normalized_exception_message
 
 _UNABLE_TO_LOAD_CERTIFICATE = 'Unable to load certificate'
 _CERTS_FILE_MODE = 0o644
@@ -313,7 +313,7 @@ def _extract_private_key_bytes(
     except Exception as err:
         raise X509SvidError(
             'Could extract private key bytes from object: {}'.format(
-                normalize_exception_message(str(err))
+                normalized_exception_message(err)
             )
         )
 
@@ -338,14 +338,14 @@ def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
     try:
         return load_der_private_key(private_key_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(normalize_exception_message(str(err)))
+        raise ParsePrivateKeyError(normalized_exception_message(err))
 
 
 def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
     try:
         return load_pem_private_key(private_key_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(normalize_exception_message(str(err)))
+        raise ParsePrivateKeyError(normalized_exception_message(err))
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:

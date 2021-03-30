@@ -214,10 +214,3 @@ class LoadPrivateKeyError(X509SvidError):
             additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
-
-
-def normalize_exception_message(msg: str) -> str:
-    """Removes the last point from the string."""
-    if msg[-1] != '.':
-        return msg
-    return msg[:-1]

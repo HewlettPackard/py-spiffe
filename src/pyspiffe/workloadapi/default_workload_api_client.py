@@ -1,7 +1,11 @@
-from typing import Optional, Set, List
+"""
+This module provides a Workload API client.
+"""
+from typing import Optional, Set, List, Any
 
 import grpc
 
+from pyspiffe.utils.exceptions import normalized_exception_message
 from pyspiffe.workloadapi.x509_context import X509Context
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
@@ -59,55 +63,66 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Returns:
             X509Svid: Instance of X509Svid object.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
         """
 
         response = self._call_fetch_x509_svid()
 
         svid = response.svids[0]
 
-        cert = svid.x509_svid
-        key = svid.x509_svid_key
-        return X509Svid.parse_raw(cert, key)
+        return self._create_x509_svid(svid)
 
     def fetch_x509_svids(self) -> List[X509Svid]:
         """Fetches all X509-SVIDs.
 
         Returns:
             X509Svid: List of of X509Svid object.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
         """
 
         response = self._call_fetch_x509_svid()
 
         result = []
         for svid in response.svids:
-            cert = svid.x509_svid
-            key = svid.x509_svid_key
-            result.append(X509Svid.parse_raw(cert, key))
+            result.append(self._create_x509_svid(svid))
 
         return result
 
     def fetch_x509_context(self) -> X509Context:
-        """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain)
+        """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain).
 
         Returns:
             X509Context: An object containing a List of X509Svids and a X509BundleSet.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
+
+            FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
+                                  response payload cannot be processed to be converted to a X509Bundle objects.
         """
         response = self._call_fetch_x509_svid()
 
         svids = []
         bundle_set = X509BundleSet()
         for svid in response.svids:
-            cert = svid.x509_svid
-            key = svid.x509_svid_key
-            x509_svid = X509Svid.parse_raw(cert, key)
+            x509_svid = self._create_x509_svid(svid)
             svids.append(x509_svid)
 
             trust_domain = x509_svid.spiffe_id().trust_domain()
-            bundle_set.put(X509Bundle.parse_raw(trust_domain, svid.bundle))
+            bundle_set.put(self._create_x509_bundle(trust_domain, svid.bundle))
 
         for td in response.federated_bundles:
             bundle_set.put(
-                X509Bundle.parse_raw(TrustDomain(td), response.federated_bundles[td])
+                self._create_x509_bundle(
+                    TrustDomain(td), response.federated_bundles[td]
+                )
             )
 
         return X509Context(svids, bundle_set)
@@ -117,12 +132,18 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Returns:
             X509BundleSet: Set of X509Bundle objects.
+
+        Raises:
+            FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
+                                  response payload cannot be processed to be converted to a X509Bundle objects.
         """
         response = self._call_fetch_x509_bundles()
 
         bundle_set = X509BundleSet()
         for td in response.bundles:
-            bundle_set.put(X509Bundle.parse_raw(TrustDomain(td), response.bundles[td]))
+            bundle_set.put(
+                self._create_x509_bundle(TrustDomain(td), response.bundles[td])
+            )
 
         return bundle_set
 
@@ -193,9 +214,9 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             )
             item = next(response)
         except Exception:
-            raise FetchX509SvidError('X.509 SVID response is invalid.')
+            raise FetchX509SvidError('X.509 SVID response is invalid')
         if len(item.svids) == 0:
-            raise FetchX509SvidError('X.509 SVID response is empty.')
+            raise FetchX509SvidError('X.509 SVID response is empty')
         return item
 
     def _call_fetch_x509_bundles(self) -> workload_pb2.X509BundlesResponse:
@@ -205,7 +226,23 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             )
             item = next(response)
         except Exception:
-            raise FetchX509BundleError('X.509 Bundles response is invalid.')
+            raise FetchX509BundleError('X.509 Bundles response is invalid')
         if len(item.bundles) == 0:
-            raise FetchX509BundleError('X.509 Bundles response is empty.')
+            raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
+
+    @staticmethod
+    def _create_x509_svid(svid: Any) -> X509Svid:
+        cert = svid.x509_svid
+        key = svid.x509_svid_key
+        try:
+            return X509Svid.parse_raw(cert, key)
+        except Exception as e:
+            raise FetchX509SvidError(normalized_exception_message(e))
+
+    @staticmethod
+    def _create_x509_bundle(trust_domain: TrustDomain, bundle: Any) -> X509Bundle:
+        try:
+            return X509Bundle.parse_raw(trust_domain, bundle)
+        except Exception as e:
+            raise FetchX509BundleError(normalized_exception_message(e))

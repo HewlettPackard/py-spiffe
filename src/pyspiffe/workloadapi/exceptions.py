@@ -24,22 +24,26 @@ class WorkloadApiError(PySpiffeError):
 class FetchX509SvidError(WorkloadApiError):
     """Error raised when there is an error fetching X.509 SVIDs."""
 
-    def __init__(self, message: str) -> None:
+    _MESSAGE = 'Error fetching X.509 SVID: {}.'
+
+    def __init__(self, additional_information: str) -> None:
         """Creates an instance of FetchX509SvidError.
 
         Args:
-            message: Message describing the error.
+            additional_information: Additional information about the error.
         """
-        super().__init__(message)
+        super().__init__(self._MESSAGE.format(additional_information))
 
 
 class FetchX509BundleError(WorkloadApiError):
     """Error raised when there is an error fetching X.509 Bundles."""
 
-    def __init__(self, message: str) -> None:
+    _MESSAGE = 'Error fetching X.509 Bundles: {}.'
+
+    def __init__(self, additional_information: str) -> None:
         """Creates an instance of FetchX509BundleError.
 
         Args:
-            message: Message describing the error.
+            additional_information: Additional information about the error.
         """
-        super().__init__(message)
+        super().__init__(self._MESSAGE.format(additional_information))
