@@ -3,28 +3,24 @@ from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.workloadapi.x509_context import X509Context
 from test.utils.utils import read_file_bytes
 
+
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
+_CHAIN = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
+_KEY = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
+_SVID1 = X509Svid.parse_raw(_CHAIN, _KEY)
+_SVID2 = X509Svid.parse_raw(_CHAIN, _KEY)
+_BUNDLE_SET = X509BundleSet()
 
 
 def test_default_svid():
-    chain_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    default_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
-    other_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
-
-    svids = [default_svid, other_svid]
-    bundle_set = X509BundleSet()
-
-    x509_context = X509Context(svids, bundle_set)
-
-    assert x509_context.default_svid() == default_svid
+    svids = [_SVID1, _SVID2]
+    x509_context = X509Context(svids, _BUNDLE_SET)
+    assert x509_context.default_svid() == _SVID1
 
 
 def test_x509_bundle_set():
-    bundle_set = X509BundleSet()
-    x509_context = X509Context(None, bundle_set)
-    assert x509_context.x509_bundle_set() == bundle_set
+    x509_context = X509Context(None, _BUNDLE_SET)
+    assert x509_context.x509_bundle_set() == _BUNDLE_SET
 
 
 def test_default_svid_emtpy_list():
@@ -33,15 +29,6 @@ def test_default_svid_emtpy_list():
 
 
 def test_x509_svids():
-    chain_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    default_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
-    other_svid = X509Svid.parse_raw(chain_bytes, key_bytes)
-
-    svids = [default_svid, other_svid]
-    bundle_set = X509BundleSet()
-
-    x509_context = X509Context(svids, bundle_set)
-
+    svids = [_SVID1, _SVID2]
+    x509_context = X509Context(svids, _BUNDLE_SET)
     assert x509_context.x509_svids() == svids

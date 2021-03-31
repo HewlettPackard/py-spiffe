@@ -110,20 +110,13 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         response = self._call_fetch_x509_svid()
 
         svids = []
-        bundle_set = X509BundleSet()
+        bundle_set = self._create_bundle_set(response.federated_bundles)
         for svid in response.svids:
             x509_svid = self._create_x509_svid(svid)
             svids.append(x509_svid)
 
             trust_domain = x509_svid.spiffe_id().trust_domain()
             bundle_set.put(self._create_x509_bundle(trust_domain, svid.bundle))
-
-        for td in response.federated_bundles:
-            bundle_set.put(
-                self._create_x509_bundle(
-                    TrustDomain(td), response.federated_bundles[td]
-                )
-            )
 
         return X509Context(svids, bundle_set)
 
@@ -138,14 +131,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                                   response payload cannot be processed to be converted to a X509Bundle objects.
         """
         response = self._call_fetch_x509_bundles()
-
-        bundle_set = X509BundleSet()
-        for td in response.bundles:
-            bundle_set.put(
-                self._create_x509_bundle(TrustDomain(td), response.bundles[td])
-            )
-
-        return bundle_set
+        return self._create_bundle_set(response.bundles)
 
     def fetch_jwt_svid(
         self, audiences: Set[str], subject: Optional[str] = None
@@ -230,6 +216,13 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         if len(item.bundles) == 0:
             raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
+
+    def _create_bundle_set(self, resp_bundles: Any) -> X509BundleSet:
+        x509_bundles = [
+            self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
+            for td in resp_bundles
+        ]
+        return X509BundleSet.of(x509_bundles)
 
     @staticmethod
     def _create_x509_svid(svid: Any) -> X509Svid:

@@ -9,32 +9,33 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
 from test.utils.utils import read_file_bytes
 
+_WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
 _TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
+_CHAIN1 = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
+_KEY1 = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
+_CHAIN2 = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
+_KEY2 = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
+_BUNDLE = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
+_FEDERATED_BUNDLE = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
+_CORRUPTED = read_file_bytes(_TEST_CERTS_PATH.format('corrupted'))
 
 
 def test_fetch_x509_svid_success(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
                         ),
                     ]
                 )
@@ -42,7 +43,7 @@ def test_fetch_x509_svid_success(mocker):
         )
     )
 
-    svid = client.fetch_x509_svid()
+    svid = _WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
     assert len(svid.cert_chain()) == 2
@@ -51,14 +52,12 @@ def test_fetch_x509_svid_success(mocker):
 
 
 def test_fetch_x509_svid_empty_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svid()
+        _WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
         str(exception.value)
@@ -67,12 +66,12 @@ def test_fetch_x509_svid_empty_response(mocker):
 
 
 def test_fetch_x509_svid_invalid_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([])
+    )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svid()
+        _WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
         str(exception.value)
@@ -81,14 +80,12 @@ def test_fetch_x509_svid_invalid_response(mocker):
 
 
 def test_fetch_x509_svid_raise_exception(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svid()
+        _WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
         str(exception.value)
@@ -97,27 +94,20 @@ def test_fetch_x509_svid_raise_exception(mocker):
 
 
 def test_fetch_x509_svid_corrupted_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('corrupted'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
+                            x509_svid=_CORRUPTED,
+                            x509_svid_key=_KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
                         ),
                     ]
                 )
@@ -126,7 +116,7 @@ def test_fetch_x509_svid_corrupted_response(mocker):
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svid()
+        _WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
         str(exception.value)
@@ -135,27 +125,20 @@ def test_fetch_x509_svid_corrupted_response(mocker):
 
 
 def test_fetch_x509_svids_success(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
                         ),
                     ]
                 )
@@ -163,7 +146,7 @@ def test_fetch_x509_svids_success(mocker):
         )
     )
 
-    svids = client.fetch_x509_svids()
+    svids = _WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert len(svids) == 2
 
@@ -181,14 +164,12 @@ def test_fetch_x509_svids_success(mocker):
 
 
 def test_fetch_x509_svids_empty_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svids()
+        _WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
         str(exception.value)
@@ -197,12 +178,12 @@ def test_fetch_x509_svids_empty_response(mocker):
 
 
 def test_fetch_x509_svids_invalid_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([])
+    )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svids()
+        _WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
         str(exception.value)
@@ -211,14 +192,12 @@ def test_fetch_x509_svids_invalid_response(mocker):
 
 
 def test_fetch_x509_svids_raise_exception(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svids()
+        _WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
         str(exception.value)
@@ -227,27 +206,20 @@ def test_fetch_x509_svids_raise_exception(mocker):
 
 
 def test_fetch_x509_svids_corrupted_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('corrupted'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
+                            x509_svid=_CORRUPTED,
+                            x509_svid_key=_KEY2,
                         ),
                     ]
                 )
@@ -256,7 +228,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_svids()
+        _WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
         str(exception.value)
@@ -265,35 +237,25 @@ def test_fetch_x509_svids_corrupted_response(mocker):
 
 
 def test_fetch_x509_context_success(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
     federated_bundles = dict()
-    federated_bundles['domain.test'] = federated_bundle
+    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
+                            bundle=_BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
+                            bundle=_BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -302,7 +264,7 @@ def test_fetch_x509_context_success(mocker):
         )
     )
 
-    x509_context = client.fetch_x509_context()
+    x509_context = _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     svids = x509_context.x509_svids()
     bundle_set = x509_context.x509_bundle_set()
@@ -333,14 +295,12 @@ def test_fetch_x509_context_success(mocker):
 
 
 def test_fetch_x509_context_empty_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
         str(exception.value)
@@ -349,12 +309,12 @@ def test_fetch_x509_context_empty_response(mocker):
 
 
 def test_fetch_x509_context_invalid_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([])
+    )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
         str(exception.value)
@@ -363,14 +323,12 @@ def test_fetch_x509_context_invalid_response(mocker):
 
 
 def test_fetch_x509_context_raise_exception(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
         str(exception.value)
@@ -379,35 +337,25 @@ def test_fetch_x509_context_raise_exception(mocker):
 
 
 def test_fetch_x509_context_corrupted_svid(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('corrupted'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
     federated_bundles = dict()
-    federated_bundles['domain.test'] = federated_bundle
+    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_CORRUPTED,
+                            bundle=_BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
+                            bundle=_BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -417,46 +365,33 @@ def test_fetch_x509_context_corrupted_svid(mocker):
     )
 
     with (pytest.raises(FetchX509SvidError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: Error parsing private key: Could not deserialize key data. '
-        'The data may be in an incorrect format or it may be encrypted with an unsupported '
-        'algorithm.'
+    assert 'Error fetching X.509 SVID: Error parsing private key' in str(
+        exception.value
     )
 
 
 def test_fetch_x509_context_corrupted_bundle(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('corrupted'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
     federated_bundles = dict()
-    federated_bundles['domain.test'] = federated_bundle
+    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
+                            bundle=_CORRUPTED,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
+                            bundle=_CORRUPTED,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -466,7 +401,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
         str(exception.value)
@@ -475,35 +410,25 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_context_corrupted_federated_bundle(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-    chain1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-    key1_bytes = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-
-    chain2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-    key2_bytes = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('corrupted'))
-
     federated_bundles = dict()
-    federated_bundles['domain.test'] = federated_bundle
+    federated_bundles['domain.test'] = _CORRUPTED
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=chain1_bytes,
-                            x509_svid_key=key1_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
+                            bundle=_BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=chain2_bytes,
-                            x509_svid_key=key2_bytes,
-                            bundle=bundle,
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
+                            bundle=_BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -513,7 +438,7 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_context()
+        _WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
         str(exception.value)
@@ -522,16 +447,11 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
 
 
 def test_fetch_x509_bundles_success(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
     bundles = dict()
-    bundles['example.org'] = bundle
-    bundles['domain.test'] = federated_bundle
+    bundles['example.org'] = _BUNDLE
+    bundles['domain.test'] = _FEDERATED_BUNDLE
 
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509BundlesResponse(
@@ -541,7 +461,7 @@ def test_fetch_x509_bundles_success(mocker):
         )
     )
 
-    bundle_set = client.fetch_x509_bundles()
+    bundle_set = _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
     assert bundle
@@ -555,14 +475,12 @@ def test_fetch_x509_bundles_success(mocker):
 
 
 def test_fetch_x509_bundles_empty_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter([workload_pb2.X509BundlesResponse(bundles=[])])
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_bundles()
+        _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
         str(exception.value)
@@ -571,14 +489,12 @@ def test_fetch_x509_bundles_empty_response(mocker):
 
 
 def test_fetch_x509_bundles_invalid_response(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter([])
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_bundles()
+        _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
         str(exception.value)
@@ -587,14 +503,12 @@ def test_fetch_x509_bundles_invalid_response(mocker):
 
 
 def test_fetch_x509_bundles_raise_exception(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_bundles()
+        _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
         str(exception.value)
@@ -603,16 +517,11 @@ def test_fetch_x509_bundles_raise_exception(mocker):
 
 
 def test_fetch_x509_bundles_corrupted_bundle(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('corrupted'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
     bundles = dict()
-    bundles['example.org'] = bundle
-    bundles['domain.test'] = federated_bundle
+    bundles['example.org'] = _CORRUPTED
+    bundles['domain.test'] = _FEDERATED_BUNDLE
 
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509BundlesResponse(
@@ -623,7 +532,7 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker):
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_bundles()
+        _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
         str(exception.value)
@@ -632,16 +541,11 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
-    client = DefaultWorkloadApiClient('unix:///dummy.path')
-
-    bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-    federated_bundle = read_file_bytes(_TEST_BUNDLE_PATH.format('corrupted'))
-
     bundles = dict()
-    bundles['example.org'] = bundle
-    bundles['domain.test'] = federated_bundle
+    bundles['example.org'] = _BUNDLE
+    bundles['domain.test'] = _CORRUPTED
 
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509BundlesResponse(
@@ -652,7 +556,7 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
     )
 
     with (pytest.raises(FetchX509BundleError)) as exception:
-        client.fetch_x509_bundles()
+        _WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
         str(exception.value)

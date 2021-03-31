@@ -27,7 +27,7 @@ class WorkloadApiClient(ABC):
         """Fetches all X509-SVIDs.
 
         Returns:
-            X509Svid: List of of X509Svid object.
+            A list of of X509Svid objects.
         """
 
     @abstractmethod
