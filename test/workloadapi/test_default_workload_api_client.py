@@ -55,34 +55,6 @@ def test_instantiate_bad_socket_path():
     )
 
 
-# TODO: Implement using WorkloadApi Mock: move JWT related stuff to a separate test file
-def test_fetch_jwt_svid_aud():
-    wlapi = get_client()
-    audiences = ['foo', 'bar']
-    wlapi.fetch_jwt_svid(audiences=audiences)
-
-
-# TODO: Implement using WorkloadApi Mock
-def test_fetch_jwt_svid_aud_sub():
-    wlapi = get_client()
-    audiences = ['foo', 'bar']
-    wlapi.fetch_jwt_svid(audiences=audiences, subject='spiffe://TODO')
-
-
-# TODO: Implement using WorkloadApi Mock
-def test_fetch_jwt_bundles():
-    wlapi = get_client()
-    wlapi.fetch_jwt_bundles()
-
-
-# TODO: Implement using WorkloadApi Mock
-def test_validate_jwt_svid():
-    wlapi = get_client()
-    token = 'TODO'
-    audiences = 'foo'
-    wlapi.validate_jwt_svid(token=token, audience=audiences)
-
-
 # Utility functions
 def get_client():
     return DefaultWorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')
