@@ -1,3 +1,4 @@
+from typing import Optional, List
 from abc import ABC, abstractmethod
 from typing import Optional, Set, List
 
@@ -48,13 +49,13 @@ class WorkloadApiClient(ABC):
 
     @abstractmethod
     def fetch_jwt_svid(
-        self, audiences: Set[str], subject: Optional[str] = None
+        self, audiences: List[str], subject: Optional[str] = None
     ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
-            audiences: Set of audiences for the JWT.
-            subject: SPIFFE ID Subject for the JWT.
+            audiences: List of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT SVID.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
