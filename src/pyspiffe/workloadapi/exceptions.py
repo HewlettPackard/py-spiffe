@@ -59,3 +59,15 @@ class FetchJwtSvidError(WorkloadApiError):
             message: Describes the error.
         """
         super().__init__(message)
+
+
+class FetchJwtSvidError(WorkloadApiError):
+    """Error raised when there is an error fetching JWT SVIDs."""
+
+    def __init__(self, message: str) -> None:
+        """Creates an instance of FetchJwtSvidError.
+
+        Args:
+            message: Describes the error.
+        """
+        super().__init__(message)
