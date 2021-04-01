@@ -92,7 +92,7 @@ def test_fecth_jwt_svid_fetch_error():
     with pytest.raises(FetchJwtSvidError) as exception:
         client.fetch_jwt_svid(audiences=audience)
 
-    assert str(exception.value).startswith('JWT SVID response is invalid.')
+    assert str(exception.value).startswith('Error fetching JWT SVID')
 
 
 def test_fetch_jwt_svid_wrong_token(mocker):
@@ -117,7 +117,7 @@ def test_fetch_jwt_svid_wrong_token(mocker):
     with pytest.raises(FetchJwtSvidError) as exception:
         client.fetch_jwt_svid(audiences=audience)
 
-    assert str(exception.value).startswith('JWT SVID received from agent is invalid.')
+    assert str(exception.value).startswith('Error fetching JWT SVID')
 
 
 def test_fetch_jwt_svid_no_token_returned(mocker):
@@ -129,7 +129,7 @@ def test_fetch_jwt_svid_no_token_returned(mocker):
     with pytest.raises(FetchJwtSvidError) as exception:
         client.fetch_jwt_svid(audiences=audience)
 
-    assert str(exception.value) == 'JWT SVID response is empty.'
+    assert str(exception.value).startswith('Error fetching JWT SVID')
 
 
 """

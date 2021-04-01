@@ -52,22 +52,12 @@ class FetchX509BundleError(WorkloadApiError):
 class FetchJwtSvidError(WorkloadApiError):
     """Error raised when there is an error fetching JWT SVIDs."""
 
-    def __init__(self, message: str) -> None:
+    _MESSAGE = 'Error fetching JWT SVID: {}.'
+
+    def __init__(self, additional_information: str = 'none') -> None:
         """Creates an instance of FetchJwtSvidError.
 
         Args:
-            message: Describes the error.
+            additional_information: Additional information about the error.
         """
-        super().__init__(message)
-
-
-class FetchJwtSvidError(WorkloadApiError):
-    """Error raised when there is an error fetching JWT SVIDs."""
-
-    def __init__(self, message: str) -> None:
-        """Creates an instance of FetchJwtSvidError.
-
-        Args:
-            message: Describes the error.
-        """
-        super().__init__(message)
+        super().__init__(self._MESSAGE.format(additional_information))

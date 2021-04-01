@@ -161,9 +161,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             svid = response.svids[0].svid
             return JwtSvid.parse_insecure(svid, audiences)
         except JwtSvidError as e:
-            raise FetchJwtSvidError(
-                'JWT SVID received from agent is invalid. ' + str(e)
-            )
+            raise FetchJwtSvidError(str(e))
 
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust
@@ -270,7 +268,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             response = self._spiffe_workload_api_stub.FetchJWTSVID(request)
             item = next(response)
         except Exception as e:
-            raise FetchJwtSvidError('JWT SVID response is invalid. ' + str(e))
+            raise FetchJwtSvidError(str(e))
         if len(item.svids) == 0:
             raise FetchJwtSvidError('JWT SVID response is empty.')
         return item
