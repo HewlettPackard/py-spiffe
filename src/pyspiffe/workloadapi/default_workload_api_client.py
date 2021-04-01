@@ -100,7 +100,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Args:
             audiences: List of audiences for the JWT SVID.
-            subject: Subject for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
