@@ -8,8 +8,13 @@ SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exception:
         DefaultWorkloadApiClient()
+
+    assert (
+        str(exception.value)
+        == 'Invalid DefaultWorkloadApiClient configuration: SPIFFE endpoint socket: socket must be set.'
+    )
 
 
 # With SPIFFE_ENDPOINT_SOCKET, and no path passed, succeeds
@@ -29,30 +34,28 @@ def test_instantiate_socket_path():
 # With bad SPIFFE_ENDPOINT_SOCKET, and no path passed, throws exception
 def test_instantiate_default_with_bad_var():
     os.environ[SPIFFE_SOCKET_ENV] = '/invalid'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exception:
         DefaultWorkloadApiClient()
+
+    assert (
+        str(exception.value)
+        == 'Invalid DefaultWorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set.'
+    )
     del os.environ[SPIFFE_SOCKET_ENV]
 
 
 # With bad socket path passed
 def test_instantiate_bad_socket_path():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exception:
         DefaultWorkloadApiClient(spiffe_socket='/invalid')
 
-
-# TODO: Implement using WorkloadApi Mock
-def test_fetch_jx509_context():
-    wlapi = get_client()
-    wlapi.fetch_x509_context()
-
-
-# TODO: Implement using WorkloadApi Mock
-def test_fetch_jx509_bundles():
-    wlapi = get_client()
-    wlapi.fetch_x509_bundles()
+    assert (
+        str(exception.value)
+        == 'Invalid DefaultWorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set.'
+    )
 
 
-# TODO: Implement using WorkloadApi Mock
+# TODO: Implement using WorkloadApi Mock: move JWT related stuff to a separate test file
 def test_fetch_jwt_svid_aud():
     wlapi = get_client()
     audiences = ['foo', 'bar']

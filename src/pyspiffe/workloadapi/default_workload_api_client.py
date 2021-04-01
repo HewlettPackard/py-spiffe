@@ -1,7 +1,13 @@
-from typing import Optional, Set, Tuple
+"""
+This module provides a Workload API client.
+"""
+from typing import Optional, Set, List, Any
 
 import grpc
 
+from pyspiffe.utils.exceptions import normalized_exception_message
+from pyspiffe.workloadapi.x509_context import X509Context
+from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.config import ConfigSetter
@@ -9,7 +15,8 @@ from pyspiffe.proto.spiffe import (
     workload_pb2_grpc,
     workload_pb2,
 )
-from pyspiffe.workloadapi.exceptions import FetchX509SvidError
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
 from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
@@ -42,9 +49,9 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             self._config = ConfigSetter(
                 spiffe_endpoint_socket=spiffe_socket
             ).get_config()
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
-                'SPIFFE socket argument or environment variable invalid in DefaultWorkloadApiClient.'
+                'Invalid DefaultWorkloadApiClient configuration: {}'.format(str(e))
             )
 
         self._spiffe_workload_api_stub = workload_pb2_grpc.SpiffeWorkloadAPIStub(
@@ -52,45 +59,79 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         )
 
     def fetch_x509_svid(self) -> X509Svid:
-        """Fetches a SPIFFE X.509-SVID.
+        """Fetches the default X509-SVID, i.e. the first in the list returned by the Workload API.
 
         Returns:
             X509Svid: Instance of X509Svid object.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
         """
 
-        try:
-            response = self._spiffe_workload_api_stub.FetchX509SVID(
-                workload_pb2.X509SVIDRequest()
-            )
-            item = next(response)
-        except Exception:
-            raise FetchX509SvidError('X.509 SVID response is invalid.')
+        response = self._call_fetch_x509_svid()
 
-        if len(item.svids) == 0:
-            raise FetchX509SvidError('X.509 SVID response is empty.')
+        svid = response.svids[0]
 
-        svid = item.svids[0]
+        return self._create_x509_svid(svid)
 
-        cert = svid.x509_svid
-        key = svid.x509_svid_key
-        return X509Svid.parse_raw(cert, key)
-
-    def fetch_x509_context(self) -> Tuple[X509Svid, X509BundleSet]:
-        """Fetches an X.509 context (X.509 SVID and X.509 Bundles)
+    def fetch_x509_svids(self) -> List[X509Svid]:
+        """Fetches all X509-SVIDs.
 
         Returns:
-            (X509Svid, X509BundleSet): A tuple containing a X509Svid and a X509BundleSet.
+            X509Svid: List of of X509Svid object.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
         """
-        pass
+
+        response = self._call_fetch_x509_svid()
+
+        result = []
+        for svid in response.svids:
+            result.append(self._create_x509_svid(svid))
+
+        return result
+
+    def fetch_x509_context(self) -> X509Context:
+        """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain).
+
+        Returns:
+            X509Context: An object containing a List of X509Svids and a X509BundleSet.
+
+        Raises:
+            FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
+                                response payload cannot be processed to be converted to a X509Svid object.
+
+            FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
+                                  response payload cannot be processed to be converted to a X509Bundle objects.
+        """
+        response = self._call_fetch_x509_svid()
+
+        svids = []
+        bundle_set = self._create_bundle_set(response.federated_bundles)
+        for svid in response.svids:
+            x509_svid = self._create_x509_svid(svid)
+            svids.append(x509_svid)
+
+            trust_domain = x509_svid.spiffe_id().trust_domain()
+            bundle_set.put(self._create_x509_bundle(trust_domain, svid.bundle))
+
+        return X509Context(svids, bundle_set)
 
     def fetch_x509_bundles(self) -> X509BundleSet:
         """Fetches X.509 bundles, keyed by trust domain.
 
         Returns:
             X509BundleSet: Set of X509Bundle objects.
-        """
 
-        pass
+        Raises:
+            FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
+                                  response payload cannot be processed to be converted to a X509Bundle objects.
+        """
+        response = self._call_fetch_x509_bundles()
+        return self._create_bundle_set(response.bundles)
 
     def fetch_jwt_svid(
         self, audiences: Set[str], subject: Optional[str] = None
@@ -151,3 +192,50 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         )
 
         return grpc.intercept_channel(grpc_insecure_channel, spiffe_client_interceptor)
+
+    def _call_fetch_x509_svid(self) -> workload_pb2.X509SVIDResponse:
+        try:
+            response = self._spiffe_workload_api_stub.FetchX509SVID(
+                workload_pb2.X509SVIDRequest()
+            )
+            item = next(response)
+        except Exception:
+            raise FetchX509SvidError('X.509 SVID response is invalid')
+        if len(item.svids) == 0:
+            raise FetchX509SvidError('X.509 SVID response is empty')
+        return item
+
+    def _call_fetch_x509_bundles(self) -> workload_pb2.X509BundlesResponse:
+        try:
+            response = self._spiffe_workload_api_stub.FetchX509Bundles(
+                workload_pb2.X509BundlesRequest()
+            )
+            item = next(response)
+        except Exception:
+            raise FetchX509BundleError('X.509 Bundles response is invalid')
+        if len(item.bundles) == 0:
+            raise FetchX509BundleError('X.509 Bundles response is empty')
+        return item
+
+    def _create_bundle_set(self, resp_bundles: Any) -> X509BundleSet:
+        x509_bundles = [
+            self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
+            for td in resp_bundles
+        ]
+        return X509BundleSet.of(x509_bundles)
+
+    @staticmethod
+    def _create_x509_svid(svid: Any) -> X509Svid:
+        cert = svid.x509_svid
+        key = svid.x509_svid_key
+        try:
+            return X509Svid.parse_raw(cert, key)
+        except Exception as e:
+            raise FetchX509SvidError(normalized_exception_message(e))
+
+    @staticmethod
+    def _create_x509_bundle(trust_domain: TrustDomain, bundle: Any) -> X509Bundle:
+        try:
+            return X509Bundle.parse_raw(trust_domain, bundle)
+        except Exception as e:
+            raise FetchX509BundleError(normalized_exception_message(e))
