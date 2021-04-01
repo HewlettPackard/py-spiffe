@@ -1,6 +1,8 @@
-from typing import Optional, List
+"""
+This module contains the Workload API abstraction.
+"""
 from abc import ABC, abstractmethod
-from typing import Optional, Set, List
+from typing import Optional, List
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet

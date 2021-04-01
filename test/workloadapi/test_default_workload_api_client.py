@@ -54,6 +54,7 @@ def test_instantiate_bad_socket_path():
         == 'Invalid DefaultWorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set.'
     )
 
+
 # Utility functions
 def get_client():
     return DefaultWorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')

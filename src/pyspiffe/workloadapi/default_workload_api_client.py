@@ -1,4 +1,7 @@
-from typing import Optional, Tuple, List
+"""
+This module contains the default Workload API connection.
+"""
+from typing import Optional, List, Any
 
 import grpc
 
