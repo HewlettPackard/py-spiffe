@@ -47,3 +47,17 @@ class FetchX509BundleError(WorkloadApiError):
             additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
+
+
+class FetchJwtSvidError(WorkloadApiError):
+    """Error raised when there is an error fetching JWT SVIDs."""
+
+    _MESSAGE = 'Error fetching JWT SVID: {}.'
+
+    def __init__(self, additional_information: str = 'none') -> None:
+        """Creates an instance of FetchJwtSvidError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
