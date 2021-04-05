@@ -1,7 +1,7 @@
 """
 This module provides a Workload API client.
 """
-from typing import Optional, List, Any
+from typing import Optional, List, Set, Any
 
 import grpc
 
@@ -24,6 +24,7 @@ from pyspiffe.workloadapi.exceptions import (
 from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
+from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.exceptions import JwtSvidError
 
 from pyspiffe.workloadapi.workload_api_client import (
@@ -139,24 +140,24 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return self._create_bundle_set(response.bundles)
 
     def fetch_jwt_svid(
-        self, audiences: List[str], subject: Optional[str] = None
+        self, audiences: Set[str], subject: Optional[SpiffeId] = None
     ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
-            audiences: List of audiences for the JWT SVID.
-            subject: SPIFFE ID subject for the JWT.
+            audiences: Set of audiences for the JWT SVID.
+            subject: SpiffeID subject for the JWT.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
         Raises:
             ValueError: In case audience is empty.
-            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from agent.
+            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from Workload API.
         """
         if not audiences:
             raise ValueError('Parameter audiences cannot be empty.')
         try:
-            response = self._call_fetch_jwt_svids(audiences, subject)
+            response = self._call_fetch_jwt_svids(audiences, str(subject))
             svid = response.svids[0].svid
             return JwtSvid.parse_insecure(svid, audiences)
         except JwtSvidError as e:
@@ -255,13 +256,12 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise FetchX509BundleError(normalized_exception_message(e))
 
     def _call_fetch_jwt_svids(
-        self, audience: List[str], spiffe_id: Optional[str] = None
+        self, audience: Set[str], spiffe_id: Optional[str] = None
     ) -> workload_pb2.JWTSVIDResponse:
 
         try:
             request = workload_pb2.JWTSVIDRequest()
-            for aud in audience:
-                request.audience.append(aud)
+            request.audience.extend(audience)
             if spiffe_id:
                 request.spiffe_id = spiffe_id
             response = self._spiffe_workload_api_stub.FetchJWTSVID(request)
@@ -269,5 +269,5 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         except Exception as e:
             raise FetchJwtSvidError(str(e))
         if len(item.svids) == 0:
-            raise FetchJwtSvidError('JWT SVID response is empty.')
+            raise FetchJwtSvidError('JWT SVID response is empty')
         return item

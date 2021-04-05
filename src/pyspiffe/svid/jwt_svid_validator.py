@@ -3,7 +3,7 @@ This module manages the validations of JWT tokens.
 """
 
 import datetime
-from typing import List, Dict, Any
+from typing import List, Set, Dict, Any
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -72,21 +72,21 @@ class JwtSvidValidator(object):
             raise InvalidTypeError(typ)
 
     def validate_claims(
-        self, payload: Dict[str, Any], expected_audience: List[str]
+        self, payload: Dict[str, Any], expected_audience: Set[str]
     ) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
-            payload: token playload.
-            expected_audience: audience as a list of strings used to validate the 'aud' claim.
+            payload: Token playload.
+            expected_audience: Audience as a Set of strings used to validate the 'aud' claim.
 
         Returns:
             None
 
         Raises:
-            InvalidClaimError: in case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
-            TokenExpiredError: in case token is expired.
-            ValueError: in case expected_audience is empty.
+            InvalidClaimError: In case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
+            TokenExpiredError: In case token is expired.
+            ValueError: In case expected_audience is empty.
         """
         for claim in self._REQUIRED_CLAIMS:
             if not payload.get(claim):
@@ -101,11 +101,11 @@ class JwtSvidValidator(object):
         Note: If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
 
         Args:
-            expiration_date: date to check if it is expired.
+            expiration_date: Date to check if it is expired.
 
         Raises:
-            TokenExpiredError: in case it is expired.
-            InvalidClaimError: in case expiration_date is not provided.
+            TokenExpiredError: In case it is expired.
+            InvalidClaimError: In case expiration_date is not provided.
         """
         if not expiration_date:
             raise InvalidClaimError("expiration_date cannot be empty")
@@ -115,17 +115,17 @@ class JwtSvidValidator(object):
             raise TokenExpiredError()
 
     def _validate_aud(
-        self, audience_claim: List[str], expected_audience: List[str]
+        self, audience_claim: List[str], expected_audience: Set[str]
     ) -> None:
         """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
 
         Args:
-            audience_claim: list of token's audience claim to be validated.
-            expected_audience: list of the claims expected to be present in the token's audience claim.
+            audience_claim: List of token's audience claim to be validated.
+            expected_audience: Set of the claims expected to be present in the token's audience claim.
 
         Raises:
-            InvalidClaimError: in expected_audience is not a subset of audience_claim or it is empty.
-            ValueError: in case expected_audience is empty.
+            InvalidClaimError: In expected_audience is not a subset of audience_claim or it is empty.
+            ValueError: In case expected_audience is empty.
         """
         if not expected_audience:
             raise ValueError(
