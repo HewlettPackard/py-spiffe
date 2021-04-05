@@ -67,13 +67,13 @@ class X509Svid(object):
             private_key: A Private Key object.
         """
 
-        if spiffe_id is None:
+        if not spiffe_id:
             raise ValueError('spiffe_id cannot be None.')
 
         if not cert_chain:
             raise ValueError('cert_chain cannot be empty.')
 
-        if private_key is None:
+        if not private_key:
             raise ValueError('private_key cannot be None.')
 
         self._spiffe_id = spiffe_id
@@ -312,7 +312,7 @@ def _extract_private_key_bytes(
         )
     except Exception as err:
         raise X509SvidError(
-            'Could extract private key bytes from object: {}'.format(
+            'Could not extract private key bytes from object: {}.'.format(
                 normalized_exception_message(err)
             )
         )

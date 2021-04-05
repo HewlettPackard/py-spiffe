@@ -10,11 +10,51 @@ from pyspiffe.svid.exceptions import (
     ParsePrivateKeyError,
     LoadCertificateError,
     LoadPrivateKeyError,
+    StoreCertificateError,
+    StorePrivateKeyError,
+    X509SvidError,
 )
 from pyspiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
+
+
+def test_create_x509_svid(mocker):
+    fake_spiffe_id = mocker.Mock()
+    fake_cert_chain = [mocker.Mock()]
+    fake_private_key = mocker.Mock()
+
+    res = X509Svid(
+        spiffe_id=fake_spiffe_id,
+        cert_chain=fake_cert_chain,
+        private_key=fake_private_key,
+    )
+
+    assert res.spiffe_id() == fake_spiffe_id
+    assert len(res.cert_chain()) == len(fake_cert_chain)
+    assert res.private_key() == fake_private_key
+
+
+def test_create_x509_svid_no_spiffe_id(mocker):
+    with pytest.raises(ValueError) as exc_info:
+        X509Svid(spiffe_id=None, cert_chain=[mocker.Mock()], private_key=mocker.Mock())
+
+    assert str(exc_info.value) == 'spiffe_id cannot be None.'
+
+
+def test_create_x509_svid_no_cert_chain(mocker):
+    with pytest.raises(ValueError) as exc_info:
+        X509Svid(spiffe_id=mocker.Mock(), cert_chain=[], private_key=mocker.Mock())
+
+    assert str(exc_info.value) == 'cert_chain cannot be empty.'
+
+
+def test_create_x509_svid_no_private_key(mocker):
+    with pytest.raises(ValueError) as exc_info:
+        X509Svid(spiffe_id=mocker.Mock(), cert_chain=[mocker.Mock()], private_key=None)
+
+    assert str(exc_info.value) == 'private_key cannot be None.'
 
 
 def test_parse_raw_chain_and_ec_key():
@@ -311,6 +351,23 @@ def test_load_non_existent_key_bytes():
     )
 
 
+def test_load_cannot_read_key_bytes(mocker):
+    mocker.patch(
+        'pyspiffe.svid.x509_svid.load_certificates_bytes_from_file',
+        return_value=b'bytes',
+        autospect=True,
+    )
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+
+    with pytest.raises(LoadPrivateKeyError) as exception:
+        X509Svid.load('chain_path', 'key-no-exists', serialization.Encoding.PEM)
+
+    assert (
+        str(exception.value)
+        == 'Error loading private key from file: Private key file could not be read: Error msg.'
+    )
+
+
 def test_save_chain_and_ec_key_as_pem(tmpdir):
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('2-key.pem')
@@ -363,14 +420,63 @@ def test_save_non_supported_encoding():
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     # create the X509Svid to be saved
-    x509_svid = X509Svid.parse(chain_bytes, key_bytes)
+    mock_x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
     with pytest.raises(ValueError) as err:
-        X509Svid.save(x509_svid, 'chain_file', 'key_file', serialization.Encoding.Raw)
+        X509Svid.save(
+            mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.Raw
+        )
 
     assert (
         str(err.value)
         == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
+    )
+
+
+def test_save_error_writing_x509_svid_to_file(mocker):
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mock_x509_svid = mocker.Mock(X509Svid)
+
+    with pytest.raises(StoreCertificateError) as exception:
+        X509Svid.save(
+            mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.PEM
+        )
+
+    assert (
+        str(exception.value)
+        == 'Error saving certificate to file: Error writing X.509 SVID to file: Error msg.'
+    )
+
+
+def test_save_error_writing_private_key_to_file(mocker):
+    mocker.patch('pyspiffe.svid.x509_svid._write_x509_svid_to_file', autospect=True)
+    mock_x509_svid = mocker.Mock(X509Svid)
+    mock_private_key = mocker.Mock()
+    mock_private_key.private_bytes.side_effect = Exception('Error msg')
+    mock_x509_svid.private_key.return_value = mock_private_key
+
+    with pytest.raises(X509SvidError) as exception:
+        X509Svid.save(
+            mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.PEM
+        )
+
+    assert (
+        str(exception.value)
+        == 'Could not extract private key bytes from object: Error msg.'
+    )
+
+
+def test_save_error_extracting_private_key(mocker):
+    mocker.patch('pyspiffe.svid.x509_svid._write_x509_svid_to_file', autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    x509_svid = mocker.Mock(X509Svid)
+
+    with pytest.raises(StorePrivateKeyError) as exception:
+        X509Svid.save(x509_svid, 'chain_file', 'key_file', serialization.Encoding.PEM)
+
+    assert (
+        str(exception.value)
+        == 'Error saving private key to file: Could not write private key bytes to file: Error msg.'
     )
 
 

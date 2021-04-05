@@ -9,6 +9,7 @@ from pyspiffe.bundle.x509_bundle.exceptions import (
     X509BundleError,
     ParseX509BundleError,
     LoadX509BundleError,
+    SaveX509BundleError,
 )
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
@@ -156,6 +157,18 @@ def test_load_bundle_empty_trust_domain():
     assert str(exception.value) == 'Trust domain cannot be empty.'
 
 
+def test_load_bundle_invalid_encoding():
+    bundle_path = _TEST_CERTS_PATH.format('certs.pem')
+
+    with pytest.raises(ValueError) as exception:
+        X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.Raw)
+
+    assert (
+        str(exception.value)
+        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
+    )
+
+
 def test_save_bundle_pem_encoded(tmpdir):
     bundle_bytes = read_bytes('certs.pem')
     # create the X509Bundle to be saved
@@ -222,6 +235,19 @@ def test_save_non_supported_encoding(tmpdir):
     )
 
 
+def test_save_error_writing_bundle_to_file(mocker):
+    mock_x509_bundle = mocker.Mock(X509Bundle)
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+
+    with pytest.raises(SaveX509BundleError) as err:
+        X509Bundle.save(mock_x509_bundle, 'bundle_path', serialization.Encoding.PEM)
+
+    assert (
+        str(err.value)
+        == 'Error saving X.509 bundle: Error writing X.509 bundle to file: Error msg.'
+    )
+
+
 def test_add_and_remove_authority():
     bundle = X509Bundle(trust_domain, None)
     pem_certs = pem.parse_file(_TEST_CERTS_PATH.format('certs.pem'))
@@ -257,6 +283,12 @@ def test_add_and_remove_authority():
     # removing an authority that is not present, do nothing
     bundle.remove_authority(x509_cert_1)
     bundle.remove_authority(x509_cert_2)
+
+
+def test_not_equal_when_different_objects():
+    x509_bundle_1 = X509Bundle(trust_domain)
+
+    assert x509_bundle_1 != trust_domain
 
 
 def read_bytes(filename):

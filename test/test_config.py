@@ -75,6 +75,10 @@ def test_path_scheme_is_valid_tcp():
             'SPIFFE endpoint socket: unsupported scheme.',
         ),
         (
+            'unix://example.org',
+            'SPIFFE endpoint socket: path must be set.',
+        ),
+        (
             'unix://authority/path/to/socket',
             'SPIFFE endpoint socket: authority is not allowed.',
         ),

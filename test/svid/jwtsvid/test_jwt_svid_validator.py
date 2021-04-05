@@ -12,6 +12,7 @@ from pyspiffe.svid.exceptions import (
     InvalidClaimError,
     InvalidAlgorithmError,
     InvalidTypeError,
+    MissingClaimError,
 )
 
 
@@ -31,7 +32,7 @@ from pyspiffe.svid.exceptions import (
                     ).utctimetuple()
                 ),
                 'aud': 'None',
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             None,
             INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
@@ -44,7 +45,7 @@ from pyspiffe.svid.exceptions import (
                     ).utctimetuple()
                 ),
                 'aud': ['test'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             [],
             INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
@@ -68,34 +69,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                         datetime.datetime.utcnow() + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
-                'aud': None,
-                'sub': 'spiffeid://somwhere.over.the',
-            },
-            ['even more things'],
-            str(InvalidClaimError('aud')),
-        ),
-        (
-            {
-                'exp': timegm(
-                    (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-                    ).utctimetuple()
-                ),
-                'aud': [],
-                'sub': 'spiffeid://somwhere.over.the',
-            },
-            ['even more things'],
-            str(InvalidClaimError('aud')),
-        ),
-        (
-            {
-                'exp': timegm(
-                    (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-                    ).utctimetuple()
-                ),
                 'aud': [''],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             [''],
             str(InvalidClaimError('audience_claim cannot be empty')),
@@ -108,7 +83,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                     ).utctimetuple()
                 ),
                 'aud': ['', '', ''],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['test'],
             str(InvalidClaimError('audience_claim cannot be empty')),
@@ -121,7 +96,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             [''],
             str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
@@ -134,7 +109,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['something', 'matters'],
             str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
@@ -147,7 +122,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['else', 'matters'],
             str(InvalidClaimError(AUDIENCE_NOT_MATCH_ERROR)),
@@ -168,7 +143,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
             {
                 'exp': '1611075778',
                 'aud': ['something', 'more things', 'even more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['something'],
         ),
@@ -180,7 +155,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['even more things'],
         ),
@@ -192,7 +167,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['even more things'],
         ),
@@ -204,7 +179,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['more things'],
         ),
@@ -219,21 +194,27 @@ def test_token_expired_validate_claim(test_input_claim, test_input_audience):
 @pytest.mark.parametrize(
     'test_input_claim, test_input_audience, expected',
     [
-        ({'aud': 'ttt', 'exp': 'ttt'}, [], str(InvalidClaimError('sub'))),
-        ({'sub': 'ttt', 'exp': 'ttt'}, ['ttt'], str(InvalidClaimError('aud'))),
-        ({'sub': 'ttt', 'aud': 'ttt'}, ['ttt'], str(InvalidClaimError('exp'))),
         (
-            {'sub': 'ttt', 'aud': 'ttt', 'exp': ''},
+            {'aud': None, 'exp': 'ttt', 'sub': 'spiffeid://somewhere.over.the'},
             [],
-            str(InvalidClaimError('exp')),
+            str(MissingClaimError('aud')),
         ),
-        ({}, [], str(InvalidClaimError('aud'))),
+        (
+            {'aud': [], 'exp': 'ttt', 'sub': 'spiffeid://somewhere.over.the'},
+            [],
+            str(MissingClaimError('aud')),
+        ),
+        ({'aud': 'ttt', 'exp': 'ttt'}, [], str(MissingClaimError('sub'))),
+        ({'sub': 'ttt', 'exp': 'ttt'}, ['ttt'], str(MissingClaimError('aud'))),
+        ({'sub': 'ttt', 'aud': 'ttt'}, ['ttt'], str(MissingClaimError('exp'))),
+        ({'sub': 'ttt', 'aud': 'ttt', 'exp': ''}, [], str(MissingClaimError('exp'))),
+        ({}, [], str(MissingClaimError('aud'))),
     ],
 )
 def test_missing_required_claim_validate_claims(
     test_input_claim, test_input_audience, expected
 ):
-    with pytest.raises(InvalidClaimError) as exception:
+    with pytest.raises(MissingClaimError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
     assert str(exception.value) == expected
@@ -250,7 +231,7 @@ def test_missing_required_claim_validate_claims(
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['something'],
         ),
@@ -262,7 +243,7 @@ def test_missing_required_claim_validate_claims(
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['something', 'more things'],
         ),
@@ -274,7 +255,7 @@ def test_missing_required_claim_validate_claims(
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
-                'sub': 'spiffeid://somwhere.over.the',
+                'sub': 'spiffeid://somewhere.over.the',
             },
             ['something', 'more things'],
         ),
@@ -286,7 +267,7 @@ def test_valid_input_validate_claims(test_input_claim, test_input_audience):
 
 
 """
-    validate_header tests
+    validate_headers tests
 """
 
 
@@ -295,22 +276,22 @@ def test_valid_input_validate_claims(test_input_claim, test_input_audience):
     [
         (
             None,
-            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
+            INVALID_INPUT_ERROR.format('header cannot be empty'),
         ),
         (
             '',
-            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
+            INVALID_INPUT_ERROR.format('header cannot be empty'),
         ),
         (
-            {'tttt': 'eee'},
+            {'ttt': 'eee'},
             INVALID_INPUT_ERROR.format('header alg cannot be empty'),
         ),
         ({'alg': ''}, INVALID_INPUT_ERROR.format('header alg cannot be empty')),
     ],
 )
-def test_invalid_input_validate_header(test_input_header, expected):
+def test_validate_headers_invalid_input(test_input_header, expected):
     with pytest.raises(ValueError) as exception:
-        JwtSvidValidator().validate_header(test_input_header)
+        JwtSvidValidator().validate_headers(test_input_header)
 
     assert str(exception.value) == expected
 
@@ -322,9 +303,9 @@ def test_invalid_input_validate_header(test_input_header, expected):
         ({'alg': 'RS256 RS384'}, str(InvalidAlgorithmError('RS256 RS384'))),
     ],
 )
-def test_invalid_algorithm_validate_header(test_input_header, expected):
+def test_validate_headers_invalid_algorithm(test_input_header, expected):
     with pytest.raises(InvalidAlgorithmError) as exception:
-        JwtSvidValidator().validate_header(test_input_header)
+        JwtSvidValidator().validate_headers(test_input_header)
 
     assert str(exception.value) == expected
 
@@ -335,9 +316,9 @@ def test_invalid_algorithm_validate_header(test_input_header, expected):
         ({'alg': 'RS256', 'typ': 'xxx'}, str(InvalidTypeError('xxx'))),
     ],
 )
-def test_invalid_type_validate_header(test_input_header, expected):
+def test_validate_headers_invalid_type(test_input_header, expected):
     with pytest.raises(InvalidTypeError) as exception:
-        JwtSvidValidator().validate_header(test_input_header)
+        JwtSvidValidator().validate_headers(test_input_header)
 
     assert str(exception.value) == expected
 
@@ -351,7 +332,7 @@ def test_invalid_type_validate_header(test_input_header, expected):
         ({'alg': 'PS256'}),
     ],
 )
-def test_valid_validate_header(test_input_header):
-    JwtSvidValidator().validate_header(test_input_header)
+def test_validate_headers_valid_headers(test_input_header):
+    JwtSvidValidator().validate_headers(test_input_header)
 
     assert True

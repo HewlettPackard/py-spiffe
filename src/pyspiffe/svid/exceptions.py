@@ -37,12 +37,26 @@ class InvalidTokenError(JwtSvidError):
 
 
 class InvalidClaimError(JwtSvidError):
-    """Error raised when an invalid value is found in the JWT token claims (e.g  missing required claims, invalid claims values, etc)."""
+    """Error raised when an invalid value is found in the JWT token claims."""
 
     _MESSAGE = 'Invalid claim value: {}.'
 
     def __init__(self, additional_information: str) -> None:
-        """Creates an instace of InvalidClaimError adding the provided additional_information to the error message.
+        """Creates an instance of InvalidClaimError adding the provided additional_information to the error message.
+
+        Args:
+            additional_information: Contains additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
+
+
+class MissingClaimError(JwtSvidError):
+    """Error raised when missing required claims in the JWT token."""
+
+    _MESSAGE = 'Missing required claim: {}.'
+
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of MissingClaimError adding the provided additional_information to the error message.
 
         Args:
             additional_information: Contains additional information about the error.

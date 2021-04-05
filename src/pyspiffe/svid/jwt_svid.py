@@ -70,7 +70,7 @@ class JwtSvid(object):
         try:
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
-            validator.validate_header(token_header)
+            validator.validate_headers(token_header)
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, expected_audience)
             spiffe_id = SpiffeId.parse(claims['sub'])
@@ -114,7 +114,7 @@ class JwtSvid(object):
         try:
             token_header = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
-            validator.validate_header(token_header)
+            validator.validate_headers(token_header)
             key_id = token_header.get('kid')
             signing_key = jwt_bundle.get_jwt_authority(key_id)
             if not signing_key:

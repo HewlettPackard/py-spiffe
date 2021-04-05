@@ -81,7 +81,25 @@ def test_load_certificates_bytes_from_der_file():
     assert _extract_spiffe_id(certs[0]) == _EXPECTED_SPIFFE_ID
 
 
-def test_save_certificate_to_file_as_pem(tmpdir):
+def test_load_certificates_bytes_from_file_raise_file_not_found():
+    with pytest.raises(X509CertificateError) as exception:
+        load_certificates_bytes_from_file('path_not_found')
+
+    assert str(exception.value) == 'Certificates file not found: path_not_found'
+
+
+def test_load_certificates_bytes_from_file_raise_exception(mocker):
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+
+    with pytest.raises(X509CertificateError) as exception:
+        load_certificates_bytes_from_file('path')
+
+    assert str(exception.value).startswith(
+        'Certificates file could not be read: Error msg'
+    )
+
+
+def test_write_certificate_to_file_as_pem(tmpdir):
     certs_file_path = _TEST_CERTS_PATH.format('1-chain.der')
     certs_bytes = load_certificates_bytes_from_file(certs_file_path)
     certs = parse_der_certificates(certs_bytes)
@@ -96,6 +114,20 @@ def test_save_certificate_to_file_as_pem(tmpdir):
 
     assert isinstance(saved_cert, Certificate)
     assert _extract_spiffe_id(saved_cert) == _EXPECTED_SPIFFE_ID
+
+
+def test_write_certificate_to_file_raise_error(mocker):
+    mock_cert = mocker.Mock()
+    mock_cert.public_bytes.side_effect = Exception('Fake Error')
+    des_file = mocker.Mock()
+
+    with pytest.raises(X509CertificateError) as exc_info:
+        write_certificate_to_file(mock_cert, des_file, serialization.Encoding.PEM)
+
+    assert (
+        str(exc_info.value)
+        == 'Error writing certificate to file: Could not get bytes from object: Fake Error'
+    )
 
 
 def test_extract_der_bytes_from_certificate():
@@ -119,6 +151,26 @@ def test_extract_pem_bytes_from_certificate():
 
     assert isinstance(cert, Certificate)
     assert _extract_spiffe_id(cert) == _EXPECTED_SPIFFE_ID
+
+
+def test_serialize_certificate(mocker):
+    mock_cert = mocker.Mock()
+    fake_bytes = b'some_bytes'
+    mock_cert.public_bytes.return_value = fake_bytes
+
+    res = serialize_certificate(mock_cert, serialization.Encoding.PEM)
+
+    assert res == fake_bytes
+
+
+def test_serialize_certificate_raise_error(mocker):
+    mock_cert = mocker.Mock()
+    mock_cert.public_bytes.side_effect = Exception('Fake Error')
+
+    with pytest.raises(X509CertificateError) as exc_info:
+        serialize_certificate(mock_cert, serialization.Encoding.PEM)
+
+    assert str(exc_info.value) == 'Could not get bytes from object: Fake Error'
 
 
 def _read_bytes(filename):

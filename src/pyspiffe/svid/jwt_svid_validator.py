@@ -13,6 +13,7 @@ from pyspiffe.svid.exceptions import (
     InvalidClaimError,
     InvalidAlgorithmError,
     InvalidTypeError,
+    MissingClaimError,
 )
 
 AUDIENCE_NOT_MATCH_ERROR = 'audience does not match expected value'
@@ -43,31 +44,33 @@ class JwtSvidValidator(object):
     def __init__(self) -> None:
         pass
 
-    def validate_header(self, header: Dict[str, str]) -> None:
-        """Validates token header by verifing if header specifies supported algortihms and token type. Type is optional but in case it is present, it must be set to the supported values.
+    def validate_headers(self, headers: Dict[str, str]) -> None:
+        """Validates token headers by verifying if headers specifies supported algorithms and token type.
+
+        Type is optional but in case it is present, it must be set to one of the supported values (JWT or JOSE).
 
         Args:
-            header: token header.
+            headers: Token headers.
 
         Returns:
             None.
 
         Raises:
-            ValueError: in case header is not specified.
-            InvalidAlgorithmError: in case specified 'alg' is not supported as specified by the SPIFFE standard.
-            InvalidTypeError: in case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
+            ValueError: In case header is not specified.
+            InvalidAlgorithmError: In case specified 'alg' is not supported as specified by the SPIFFE standard.
+            InvalidTypeError: In case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
         """
-        if not header:
-            raise ValueError(INVALID_INPUT_ERROR.format('header alg cannot be empty'))
+        if not headers:
+            raise ValueError(INVALID_INPUT_ERROR.format('header cannot be empty'))
 
-        alg = header.get('alg')
+        alg = headers.get('alg')
         if not alg:
             raise ValueError(INVALID_INPUT_ERROR.format('header alg cannot be empty'))
 
         if alg not in self._SUPPORTED_ALGORITHMS:
             raise InvalidAlgorithmError(alg)
 
-        typ = header.get('typ')
+        typ = headers.get('typ')
         if typ and typ not in self._SUPPORTED_TYPES:
             raise InvalidTypeError(typ)
 
@@ -77,27 +80,28 @@ class JwtSvidValidator(object):
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
-            payload: Token playload.
+            payload: Token payload.
             expected_audience: Audience as a Set of strings used to validate the 'aud' claim.
 
         Returns:
             None
 
         Raises:
-            InvalidClaimError: In case a required claim is not present in payload or expected_audience is not a subset of audience_claim.
+            MissingClaimError: In case a required claim is not present.
+            InvalidClaimError: In case a claim contains an invalid value or expected_audience is not a subset of audience_claim.
             TokenExpiredError: In case token is expired.
             ValueError: In case expected_audience is empty.
         """
         for claim in self._REQUIRED_CLAIMS:
             if not payload.get(claim):
-                raise InvalidClaimError(claim)
-        aud = payload.get('aud')
-        if aud is not None:
-            self._validate_exp(str(payload.get('exp')))
-            self._validate_aud(aud, expected_audience)
+                raise MissingClaimError(claim)
+
+        self._validate_exp(str(payload.get('exp')))
+        self._validate_aud(payload.get('aud', []), expected_audience)
 
     def _validate_exp(self, expiration_date: str) -> None:
         """Verifies expiration.
+
         Note: If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
 
         Args:
@@ -105,10 +109,7 @@ class JwtSvidValidator(object):
 
         Raises:
             TokenExpiredError: In case it is expired.
-            InvalidClaimError: In case expiration_date is not provided.
         """
-        if not expiration_date:
-            raise InvalidClaimError("expiration_date cannot be empty")
         int_date = int(expiration_date)
         utctime = timegm(datetime.datetime.utcnow().utctimetuple())
         if int_date < utctime:

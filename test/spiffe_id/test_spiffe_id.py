@@ -117,13 +117,6 @@ def test_parse_spiffe_id_from_invalid_uri_string(spiffe_id_str, expected):
     assert str(exception.value) == expected
 
 
-def test_not_equal_spiffe_ids():
-    trust_domain = TrustDomain('domain.test')
-    spiffeid_1 = SpiffeId.of(trust_domain, 'path1')
-    spiffeid_2 = SpiffeId.of(trust_domain, 'path2')
-    assert spiffeid_1 != spiffeid_2
-
-
 def test_equal_spiffe_id():
     trust_domain = TrustDomain('domain.test')
     spiffeid_1 = SpiffeId.of(trust_domain, 'path1')  # path1 is normalized as /path1
@@ -136,6 +129,19 @@ def test_equal_spiffe_id_with_multiple_paths():
     spiffeid_1 = SpiffeId.of(trust_domain, ['PATH1', 'PATH2'])
     spiffeid_2 = SpiffeId.of(trust_domain, ['/PATH1', '/PATH2'])
     assert spiffeid_1 == spiffeid_2
+
+
+def test_not_equal_spiffe_ids():
+    trust_domain = TrustDomain('domain.test')
+    spiffeid_1 = SpiffeId.of(trust_domain, 'path1')
+    spiffeid_2 = SpiffeId.of(trust_domain, 'path2')
+    assert spiffeid_1 != spiffeid_2
+
+
+def test_not_equal_when_different_objects():
+    trust_domain = TrustDomain('domain.test')
+    spiffeid_1 = SpiffeId.of(trust_domain, 'path1')
+    assert spiffeid_1 != trust_domain
 
 
 def test_trust_domain_none():
@@ -182,3 +188,8 @@ def test_is_not_member_of():
     spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
     trust_domain = TrustDomain('other.test')
     assert not spiffe_id.is_member_of(trust_domain)
+
+
+def test_str_when_no_path():
+    spiffe_id = SpiffeId.parse('spiffe://domain.test')
+    assert str(spiffe_id) == 'spiffe://domain.test'
