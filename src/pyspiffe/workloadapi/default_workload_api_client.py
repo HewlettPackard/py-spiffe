@@ -146,13 +146,13 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Args:
             audiences: Set of audiences for the JWT SVID.
-            subject: SpiffeID subject for the JWT.
+            subject: SPIFFE ID subject for the JWT.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
         Raises:
             ValueError: In case audience is empty.
-            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from Workload API.
+            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from the Workload API.
         """
         if not audiences:
             raise ValueError('Parameter audiences cannot be empty.')

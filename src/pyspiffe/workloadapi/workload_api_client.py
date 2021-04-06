@@ -58,7 +58,7 @@ class WorkloadApiClient(ABC):
 
         Args:
             audiences: Set of audiences for the JWT SVID.
-            subject: SpiffeId subject for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT SVID.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
