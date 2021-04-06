@@ -1,9 +1,13 @@
+"""
+This module contains the Workload API abstraction.
+"""
 from abc import ABC, abstractmethod
-from typing import Optional, Set, List
+from typing import Optional, List, Set
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.svid.jwt_svid import JwtSvid
+from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.workloadapi.x509_context import X509Context
 
@@ -48,13 +52,13 @@ class WorkloadApiClient(ABC):
 
     @abstractmethod
     def fetch_jwt_svid(
-        self, audiences: Set[str], subject: Optional[str] = None
+        self, audiences: Set[str], subject: Optional[SpiffeId] = None
     ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
-            audiences: Set of audiences for the JWT.
-            subject: SPIFFE ID Subject for the JWT.
+            audiences: Set of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT SVID.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
