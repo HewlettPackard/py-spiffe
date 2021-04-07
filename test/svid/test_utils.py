@@ -50,24 +50,26 @@ def create_jwt(
     alg: str,
     audience: List[str],
     spiffe_id: str,
+    expiry: int = 0,
 ):
     """This function returns a JWT token for the specified parameters.
 
     Args:
         private_key_pem: A private_key_pem string to encode the token.
         kid: The key id to be set in the header's 'kid'.
-        #TODO: search the best word
         alg: A string specifying the algorithm to use for encoding and to be set in header's 'alg'.
         audience: The audience list to be set to 'aud' claim.
         spiffe_id: The spiffe_id to be set to 'sub' claim.
+        expiry: The expiration date for the token.
 
     Returns:
         Returns the JWT token for the specified input.
 
     """
-    expiry = timegm(
-        (datetime.datetime.utcnow() + datetime.timedelta(hours=4)).utctimetuple()
-    )
+    if expiry == 0:
+        expiry = timegm(
+            (datetime.datetime.utcnow() + datetime.timedelta(hours=4)).utctimetuple()
+        )
     token = jwt.encode(
         {
             'aud': audience,
