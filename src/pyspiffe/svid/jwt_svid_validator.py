@@ -44,13 +44,13 @@ class JwtSvidValidator(object):
     def __init__(self) -> None:
         pass
 
-    def validate_headers(self, headers: Dict[str, str]) -> None:
+    def validate_header(self, parameters: Dict[str, str]) -> None:
         """Validates token headers by verifying if headers specifies supported algorithms and token type.
 
         Type is optional but in case it is present, it must be set to one of the supported values (JWT or JOSE).
 
         Args:
-            headers: Token headers.
+            parameters: Header parameters.
 
         Returns:
             None.
@@ -60,17 +60,17 @@ class JwtSvidValidator(object):
             InvalidAlgorithmError: In case specified 'alg' is not supported as specified by the SPIFFE standard.
             InvalidTypeError: In case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
         """
-        if not headers:
+        if not parameters:
             raise ValueError(INVALID_INPUT_ERROR.format('header cannot be empty'))
 
-        alg = headers.get('alg')
+        alg = parameters.get('alg')
         if not alg:
             raise ValueError(INVALID_INPUT_ERROR.format('header alg cannot be empty'))
 
         if alg not in self._SUPPORTED_ALGORITHMS:
             raise InvalidAlgorithmError(alg)
 
-        typ = headers.get('typ')
+        typ = parameters.get('typ')
         if typ and typ not in self._SUPPORTED_TYPES:
             raise InvalidTypeError(typ)
 

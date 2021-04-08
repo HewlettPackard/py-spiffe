@@ -68,9 +68,9 @@ class JwtSvid(object):
         if not token:
             raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
         try:
-            token_header = jwt.get_unverified_header(token)
+            header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
-            validator.validate_headers(token_header)
+            validator.validate_header(header_params)
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, expected_audience)
             spiffe_id = SpiffeId.parse(claims['sub'])
@@ -112,10 +112,10 @@ class JwtSvid(object):
         if not jwt_bundle:
             raise ValueError(INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty'))
         try:
-            token_header = jwt.get_unverified_header(token)
+            header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
-            validator.validate_headers(token_header)
-            key_id = token_header.get('kid')
+            validator.validate_header(header_params)
+            key_id = header_params.get('kid')
             signing_key = jwt_bundle.get_jwt_authority(key_id)
             if not signing_key:
                 raise AuthorityNotFoundError(key_id)
@@ -127,7 +127,7 @@ class JwtSvid(object):
 
             claims = jwt.decode(
                 token,
-                algorithms=token_header.get('alg'),
+                algorithms=header_params.get('alg'),
                 key=public_key_pem,
                 audience=audience,
                 options={
