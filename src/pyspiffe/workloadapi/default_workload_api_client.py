@@ -1,7 +1,7 @@
 """
 This module provides a Workload API client.
 """
-from typing import Optional, List, Set, Any
+from typing import Optional, List, Set, Mapping
 
 import grpc
 
@@ -196,7 +196,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         return self._config.spiffe_endpoint_socket
 
-    def _get_spiffe_grpc_channel(self):
+    def _get_spiffe_grpc_channel(self) -> grpc.Channel:
         grpc_insecure_channel = grpc.insecure_channel(
             self._config.spiffe_endpoint_socket
         )
@@ -232,7 +232,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
 
-    def _create_bundle_set(self, resp_bundles: Any) -> X509BundleSet:
+    def _create_bundle_set(self, resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
         x509_bundles = [
             self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
             for td in resp_bundles
@@ -240,7 +240,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return X509BundleSet.of(x509_bundles)
 
     @staticmethod
-    def _create_x509_svid(svid: Any) -> X509Svid:
+    def _create_x509_svid(svid: workload_pb2.X509SVID) -> X509Svid:
         cert = svid.x509_svid
         key = svid.x509_svid_key
         try:
@@ -249,7 +249,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise FetchX509SvidError(normalized_exception_message(e))
 
     @staticmethod
-    def _create_x509_bundle(trust_domain: TrustDomain, bundle: Any) -> X509Bundle:
+    def _create_x509_bundle(trust_domain: TrustDomain, bundle: bytes) -> X509Bundle:
         try:
             return X509Bundle.parse_raw(trust_domain, bundle)
         except Exception as e:
