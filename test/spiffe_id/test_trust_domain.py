@@ -60,6 +60,12 @@ def test_compare_different_trust_domains():
     assert not trust_domain1 == trust_domain2
 
 
+def test_not_equal_when_different_objects():
+    trust_domain = TrustDomain('domain.test')
+    td_list = list([trust_domain])
+    assert trust_domain != td_list
+
+
 def test_exceeds_maximum_length():
     name = "a" * 256
 

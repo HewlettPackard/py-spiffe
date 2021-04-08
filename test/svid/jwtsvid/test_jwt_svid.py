@@ -11,8 +11,8 @@ from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     JwtSvidError,
-    InvalidClaimError,
     InvalidTokenError,
+    MissingClaimError,
 )
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 from test.svid.test_utils import get_keys_pems, create_jwt
@@ -66,7 +66,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS256', 'typ': 'JOSE'},
             ),
             ["spire"],
-            str(InvalidClaimError('aud')),
+            str(MissingClaimError('aud')),
         ),  # no aud
         (
             jwt.encode(
@@ -78,7 +78,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 headers={'alg': 'ES384', 'typ': 'JWT'},
             ),
             ["spire"],
-            str(InvalidClaimError('exp')),
+            str(MissingClaimError('exp')),
         ),  # no exp
         (
             jwt.encode(
@@ -94,7 +94,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 headers={'alg': 'RS512', 'typ': 'JWT'},
             ),
             ["spire"],
-            str(InvalidClaimError('sub')),
+            str(MissingClaimError('sub')),
         ),  # no sub
         (
             jwt.encode(
