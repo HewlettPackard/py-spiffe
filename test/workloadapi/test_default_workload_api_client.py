@@ -1,6 +1,7 @@
 import os
 import pytest
 
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
@@ -9,7 +10,7 @@ WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         DefaultWorkloadApiClient()
 
     assert (
@@ -35,7 +36,7 @@ def test_instantiate_socket_path():
 # With bad SPIFFE_ENDPOINT_SOCKET, and no path passed, throws exception
 def test_instantiate_default_with_bad_var():
     os.environ[SPIFFE_SOCKET_ENV] = '/invalid'
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         DefaultWorkloadApiClient()
 
     assert (
@@ -47,7 +48,7 @@ def test_instantiate_default_with_bad_var():
 
 # With bad socket path passed
 def test_instantiate_bad_socket_path():
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         DefaultWorkloadApiClient(spiffe_socket='/invalid')
 
     assert (

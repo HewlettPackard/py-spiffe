@@ -13,6 +13,7 @@ from pyspiffe.bundle.x509_bundle.exceptions import (
 )
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.exceptions import ArgumentError
 
 _TEST_CERTS_PATH = 'test/bundle/x509bundle/certs/{}'
 trust_domain = TrustDomain('domain.test')
@@ -160,7 +161,7 @@ def test_load_bundle_empty_trust_domain():
 def test_load_bundle_invalid_encoding():
     bundle_path = _TEST_CERTS_PATH.format('certs.pem')
 
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.Raw)
 
     assert (
@@ -226,7 +227,7 @@ def test_save_non_supported_encoding(tmpdir):
 
     bundle_path = tmpdir.join('bundle.pem')
 
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ArgumentError) as err:
         X509Bundle.save(x509_bundle, bundle_path, serialization.Encoding.Raw)
 
     assert (

@@ -7,7 +7,7 @@ from typing import Set
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
-
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.bundle.x509_bundle.exceptions import (
     X509BundleError,
     SaveX509BundleError,
@@ -158,8 +158,8 @@ class X509Bundle(object):
         if encoding == serialization.Encoding.DER:
             return cls.parse_raw(trust_domain, bundle_bytes)
 
-        raise ValueError(
-            'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(encoding)
+        raise ArgumentError(
+            'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
         )
 
     @classmethod
@@ -177,15 +177,15 @@ class X509Bundle(object):
             encoding: Bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER
 
         Raises:
-            ValueError: In case the encoding is not either PEM or DER (from serialization.Encoding)
+            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding)
             X509BundleError: In case the authorities in the bundle cannot be converted to bytes.
             SaveX509BundleError: In the case the file path in bundle_path cannot be open to write, or there is an error
                                 writing the authorities bytes to the file.
         """
 
         if encoding not in [encoding.PEM, encoding.DER]:
-            raise ValueError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
+            raise ArgumentError(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
                     encoding
                 )
             )

@@ -15,7 +15,7 @@ class X509BundleError(PySpiffeError):
             message: Message describing the error.
         """
 
-        self.message = message
+        super().__init__(message)
 
     def __str__(self) -> str:
         return self.message
@@ -24,7 +24,7 @@ class X509BundleError(PySpiffeError):
 class ParseX509BundleError(X509BundleError):
     """Error raised when an X.509 bundle could not be parsed from bytes."""
 
-    _MESSAGE = 'Error parsing X.509 bundle: {}.'
+    _MESSAGE = 'Error parsing X.509 bundle: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of ParseX509BundleError.
@@ -38,7 +38,7 @@ class ParseX509BundleError(X509BundleError):
 class LoadX509BundleError(X509BundleError):
     """Error raised when an X.509 bundle could not be loaded from file."""
 
-    _MESSAGE = 'Error loading X.509 bundle: {}.'
+    _MESSAGE = 'Error loading X.509 bundle: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of LoadX509BundleError.
@@ -52,7 +52,7 @@ class LoadX509BundleError(X509BundleError):
 class SaveX509BundleError(X509BundleError):
     """Error raised when an X.509 bundle could not be save to file."""
 
-    _MESSAGE = 'Error saving X.509 bundle: {}.'
+    _MESSAGE = 'Error saving X.509 bundle: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of SaveX509BundleError.

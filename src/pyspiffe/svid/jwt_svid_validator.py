@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
-
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     InvalidClaimError,
@@ -56,16 +56,18 @@ class JwtSvidValidator(object):
             None.
 
         Raises:
-            ValueError: In case header is not specified.
+            ArgumentError: In case header is not specified.
             InvalidAlgorithmError: In case specified 'alg' is not supported as specified by the SPIFFE standard.
             InvalidTypeError: In case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
         """
         if not parameters:
-            raise ValueError(INVALID_INPUT_ERROR.format('header cannot be empty'))
+            raise ArgumentError(INVALID_INPUT_ERROR.format('header cannot be empty'))
 
         alg = parameters.get('alg')
         if not alg:
-            raise ValueError(INVALID_INPUT_ERROR.format('header alg cannot be empty'))
+            raise ArgumentError(
+                INVALID_INPUT_ERROR.format('header alg cannot be empty')
+            )
 
         if alg not in self._SUPPORTED_ALGORITHMS:
             raise InvalidAlgorithmError(alg)
@@ -90,7 +92,7 @@ class JwtSvidValidator(object):
             MissingClaimError: In case a required claim is not present.
             InvalidClaimError: In case a claim contains an invalid value or expected_audience is not a subset of audience_claim.
             TokenExpiredError: In case token is expired.
-            ValueError: In case expected_audience is empty.
+            ArgumentError: In case expected_audience is empty.
         """
         for claim in self._REQUIRED_CLAIMS:
             if not payload.get(claim):
@@ -126,10 +128,10 @@ class JwtSvidValidator(object):
 
         Raises:
             InvalidClaimError: In expected_audience is not a subset of audience_claim or it is empty.
-            ValueError: In case expected_audience is empty.
+            ArgumentError: In case expected_audience is empty.
         """
         if not expected_audience:
-            raise ValueError(
+            raise ArgumentError(
                 INVALID_INPUT_ERROR.format('expected_audience cannot be empty')
             )
 

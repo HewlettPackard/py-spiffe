@@ -5,6 +5,7 @@ from cryptography.hazmat.backends import default_backend
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError
+from pyspiffe.exceptions import ArgumentError
 
 # Default trust domain to run test cases.
 trust_domain = TrustDomain("spiffe://any.domain")
@@ -64,7 +65,7 @@ def test_get_jwt_authority_invalid_key_id_not_found():
 def test_get_jwt_authority_invalid_input():
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         jwt_bundle.get_jwt_authority('')
 
     assert str(exception.value) == 'key_id cannot be empty.'

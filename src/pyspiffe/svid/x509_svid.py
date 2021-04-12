@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, ed448, rsa, ec, d
 from cryptography.hazmat.primitives.serialization import load_der_private_key
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import Certificate
-
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.exceptions import (
     InvalidLeafCertificateError,
@@ -29,7 +29,7 @@ from pyspiffe.utils.certificate_utils import (
     load_certificates_bytes_from_file,
     write_certificate_to_file,
 )
-from pyspiffe.utils.exceptions import normalized_exception_message
+
 
 _UNABLE_TO_LOAD_CERTIFICATE = 'Unable to load certificate'
 _CERTS_FILE_MODE = 0o644
@@ -68,13 +68,13 @@ class X509Svid(object):
         """
 
         if not spiffe_id:
-            raise ValueError('spiffe_id cannot be None.')
+            raise ArgumentError('spiffe_id cannot be None')
 
         if not cert_chain:
-            raise ValueError('cert_chain cannot be empty.')
+            raise ArgumentError('cert_chain cannot be empty')
 
         if not private_key:
-            raise ValueError('private_key cannot be None.')
+            raise ArgumentError('private_key cannot be None')
 
         self._spiffe_id = spiffe_id
         self._cert_chain = cert_chain
@@ -202,7 +202,7 @@ class X509Svid(object):
             leaf certificate in the chain.
 
         Raises:
-            ValueError: In case the encoding is not either PEM or DER (from serialization.Encoding).
+            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding).
             X509SvidError: In case the file path in certs_chain_path or in private_key_path does not exists or cannot be open.
             ParseCertificateError: In case the chain of certificates cannot be parsed from the bytes read from certs_chain_path.
             ParsePrivateKeyError: In case the private key cannot be parsed from the bytes read from private_key_path.
@@ -228,8 +228,8 @@ class X509Svid(object):
         if encoding == serialization.Encoding.DER:
             return cls.parse_raw(chain_bytes, key_bytes)
 
-        raise ValueError(
-            'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(encoding)
+        raise ArgumentError(
+            'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
         )
 
     @classmethod
@@ -254,7 +254,7 @@ class X509Svid(object):
                                             serialization.Encoding.PEM or serialization.Encoding.DER.
 
         Raises:
-            ValueError: In case the encoding is not either PEM or DER (from serialization.Encoding).
+            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding).
             X509SvidError: In case the certs chain or the private key in the X509Svid cannot be converted to bytes.
             StorePrivateKeyError: In the case there is an error storing the private key to the file.
             StoreCertificateError: In the case the file path in certs_chain_path cannot be open to write,
@@ -262,8 +262,8 @@ class X509Svid(object):
         """
 
         if encoding not in [encoding.PEM, encoding.DER]:
-            raise ValueError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\'.'.format(
+            raise ArgumentError(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
                     encoding
                 )
             )
@@ -312,9 +312,7 @@ def _extract_private_key_bytes(
         )
     except Exception as err:
         raise X509SvidError(
-            'Could not extract private key bytes from object: {}.'.format(
-                normalized_exception_message(err)
-            )
+            'Could not extract private key bytes from object: {}'.format(str(err))
         )
 
 
@@ -338,14 +336,14 @@ def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
     try:
         return load_der_private_key(private_key_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(normalized_exception_message(err))
+        raise ParsePrivateKeyError(str(err))
 
 
 def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
     try:
         return load_pem_private_key(private_key_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(normalized_exception_message(err))
+        raise ParsePrivateKeyError(str(err))
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:

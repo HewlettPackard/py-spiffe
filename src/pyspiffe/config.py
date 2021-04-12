@@ -5,6 +5,7 @@ import os
 import ipaddress
 from urllib.parse import ParseResult, urlparse
 from typing import List, Optional, Tuple, Dict, cast
+from pyspiffe.exceptions import ArgumentError
 
 
 _SPIFFE_ENDPOINT_SOCKET = 'SPIFFE_ENDPOINT_SOCKET'
@@ -50,7 +51,7 @@ class ConfigSetter:
                 the SPIFFE_ENDPOINT_SOCKET environment variable must be set.
 
         Raises:
-            ValueError: If any configuration variable has an invalid format.
+            ArgumentError: If any configuration variable has an invalid format.
         """
         self._apply_default_config()
         self._apply_environment_variables()
@@ -78,24 +79,24 @@ class ConfigSetter:
     def _validate(self) -> None:
         endpoint_socket = self._raw_config[_SPIFFE_ENDPOINT_SOCKET]
         if not endpoint_socket:
-            raise ValueError('SPIFFE endpoint socket: socket must be set.')
+            raise ArgumentError('SPIFFE endpoint socket: socket must be set')
 
         parsed_socket = urlparse(endpoint_socket)
 
         if not parsed_socket.scheme:
-            raise ValueError('SPIFFE endpoint socket: scheme must be set.')
+            raise ArgumentError('SPIFFE endpoint socket: scheme must be set')
 
         if parsed_socket.scheme == 'unix':
             self._validate_unix_socket(parsed_socket)
         elif parsed_socket.scheme == 'tcp':
             self._validate_tcp_socket(parsed_socket)
         else:
-            raise ValueError('SPIFFE endpoint socket: unsupported scheme.')
+            raise ArgumentError('SPIFFE endpoint socket: unsupported scheme')
 
     @classmethod
     def _validate_unix_socket(cls, socket: ParseResult) -> None:
         if not socket.path:
-            raise ValueError('SPIFFE endpoint socket: path must be set.')
+            raise ArgumentError('SPIFFE endpoint socket: path must be set')
 
         cls._validate_forbidden_components(
             socket, cls._UNIX_FORBIDDEN_SOCKET_COMPONENTS
@@ -106,7 +107,7 @@ class ConfigSetter:
         try:
             ipaddress.ip_address(socket.hostname)
         except ValueError:
-            raise ValueError('SPIFFE endpoint socket: host must be an IP address.')
+            raise ArgumentError('SPIFFE endpoint socket: host must be an IP address')
 
         cls._validate_forbidden_components(socket, cls._TCP_FORBIDDEN_SOCKET_COMPONENTS)
 
@@ -117,8 +118,8 @@ class ConfigSetter:
         for component, description in components:
             has_component = component in dir(socket) and getattr(socket, component)
             if has_component:
-                raise ValueError(
-                    'SPIFFE endpoint socket: {} is not allowed.'.format(
+                raise ArgumentError(
+                    'SPIFFE endpoint socket: {} is not allowed'.format(
                         description or component
                     )
                 )

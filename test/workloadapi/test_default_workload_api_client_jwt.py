@@ -6,6 +6,7 @@ from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIEN
 
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.workloadapi.exceptions import FetchJwtSvidError, ValidateJwtSvidError
 
 
@@ -72,7 +73,7 @@ def test_fetch_jwt_svid_aud(mocker):
     ],
 )
 def test_fetch_jwt_svid_no_audience(test_input_audience, expected):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         WORKLOAD_API_CLIENT.fetch_jwt_svid(audiences=test_input_audience)
 
     assert str(exception.value) == expected
@@ -148,16 +149,16 @@ def test_validate_jwt_svid(mocker):
 @pytest.mark.parametrize(
     'test_input_token, test_input_audience, expected',
     [
-        (None, 'audience', 'Token cannot be empty'),
-        ('', 'audience', 'Token cannot be empty'),
-        ('token', None, 'Audience cannot be empty'),
-        ('token', '', 'Audience cannot be empty'),
+        (None, 'audience', 'Token cannot be empty.'),
+        ('', 'audience', 'Token cannot be empty.'),
+        ('token', None, 'Audience cannot be empty.'),
+        ('token', '', 'Audience cannot be empty.'),
     ],
 )
 def test_validate_jwt_svid_invalid_input(
     test_input_token, test_input_audience, expected
 ):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         WORKLOAD_API_CLIENT.validate_jwt_svid(
             token=test_input_token,
             audience=test_input_audience,

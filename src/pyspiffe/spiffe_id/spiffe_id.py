@@ -6,6 +6,7 @@ from typing import Any, Union, List, Dict
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.exceptions import ArgumentError
 
 from rfc3987 import parse
 
@@ -27,7 +28,7 @@ class SpiffeId(object):
             An instance of a compliant SPIFFE ID (SpiffeId type).
 
         Raises:
-            ValueError: If the string spiffe_id doesn't comply the the SPIFFE standard.
+            ArgumentError: If the string spiffe_id doesn't comply the the SPIFFE standard.
 
         Examples:
             >>> spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
@@ -38,7 +39,7 @@ class SpiffeId(object):
         """
 
         if not spiffe_id:
-            raise ValueError('SPIFFE ID cannot be empty.')
+            raise ArgumentError('SPIFFE ID cannot be empty.')
 
         uri = cls.parse_and_validate_uri(spiffe_id)
 
@@ -61,7 +62,7 @@ class SpiffeId(object):
             An instance of a compliant SPIFFE ID (SpiffeId type).
 
         Raises:
-            ValueError: If the trust_domain is None or is not instance of the class TrustDomain.
+            ArgumentError: If the trust_domain is None or is not instance of the class TrustDomain.
 
         Examples:
             >>> spiffe_id_1 = SpiffeId.of(TrustDomain('example.org'), 'path')
@@ -75,11 +76,11 @@ class SpiffeId(object):
         """
 
         if trust_domain is None:
-            raise ValueError('SPIFFE ID: trust domain cannot be empty.')
+            raise ArgumentError('SPIFFE ID: trust domain cannot be empty')
 
         if not isinstance(trust_domain, TrustDomain):
-            raise ValueError(
-                'SPIFFE ID: trust_domain argument must be a TrustDomain instance.'
+            raise ArgumentError(
+                'SPIFFE ID: trust_domain argument must be a TrustDomain instance'
             )
 
         result = SpiffeId()
@@ -132,37 +133,37 @@ class SpiffeId(object):
     @staticmethod
     def parse_and_validate_uri(spiffe_id: str) -> Dict:
         if len(spiffe_id) > SPIFFE_ID_MAXIMUM_LENGTH:
-            raise ValueError(
-                'SPIFFE ID: maximum length is {} bytes.'.format(
-                    SPIFFE_ID_MAXIMUM_LENGTH
-                )
+            raise ArgumentError(
+                'SPIFFE ID: maximum length is {} bytes'.format(SPIFFE_ID_MAXIMUM_LENGTH)
             )
-
-        uri = parse(spiffe_id.strip(), rule='URI')
+        try:
+            uri = parse(spiffe_id.strip(), rule='URI')
+        except ValueError as err:
+            raise ArgumentError(str(err))
 
         scheme = uri.get('scheme')
         if scheme.lower() != SPIFFE_SCHEME:
-            raise ValueError('SPIFFE ID: invalid scheme: expected spiffe.')
+            raise ArgumentError('SPIFFE ID: invalid scheme: expected spiffe')
 
         query = uri.get('query')
         if query:
-            raise ValueError('SPIFFE ID: query is not allowed.')
+            raise ArgumentError('SPIFFE ID: query is not allowed')
 
         fragment = uri.get('fragment')
         if fragment:
-            raise ValueError('SPIFFE ID: fragment is not allowed.')
+            raise ArgumentError('SPIFFE ID: fragment is not allowed')
 
         authority = uri.get('authority')
         if not authority:
-            raise ValueError('SPIFFE ID: trust domain cannot be empty.')
+            raise ArgumentError('SPIFFE ID: trust domain cannot be empty')
 
         # has user@info:
         if '@' in authority:
-            raise ValueError('SPIFFE ID: userinfo is not allowed.')
+            raise ArgumentError('SPIFFE ID: userinfo is not allowed')
 
         # has domain:port
         if ':' in authority:
-            raise ValueError('SPIFFE ID: port is not allowed.')
+            raise ArgumentError('SPIFFE ID: port is not allowed')
 
         return uri
 
