@@ -61,3 +61,17 @@ class FetchJwtSvidError(WorkloadApiError):
             additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
+
+
+class ValidateJwtSvidError(WorkloadApiError):
+    """Error raised when a JWT-SVID cannot be validated by the Workload API."""
+
+    _MESSAGE = 'JWT SVID is not valid: {}.'
+
+    def __init__(self, additional_information: str = 'none') -> None:
+        """Creates an instance of ValidateJwtSvidError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))

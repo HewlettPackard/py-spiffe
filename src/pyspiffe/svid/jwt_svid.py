@@ -4,7 +4,7 @@ This module manages JWT SVID objects.
 
 import jwt
 from jwt import PyJWTError
-from typing import Dict, Set
+from typing import Dict, List
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
@@ -23,7 +23,7 @@ class JwtSvid(object):
     def __init__(
         self,
         spiffe_id: SpiffeId,
-        audience: Set[str],
+        audience: List[str],
         expiry: int,
         claims: Dict[str, str],
         token: str,
@@ -32,7 +32,7 @@ class JwtSvid(object):
 
         Args:
             spiffe_id: A valid spiffeId instance.
-            audience: Set of audience expected to be in the 'aud' claims.
+            audience: The intended recipients of JWT-SVID as present in the 'aud' claims.
             expiry: Date and time in UTC specifying expiry date of the JwtSvid.
             claims: Key-value pairs with all the claims present in the token.
             token: Encoded token.
@@ -44,13 +44,13 @@ class JwtSvid(object):
         self.token = token
 
     @classmethod
-    def parse_insecure(cls, token: str, expected_audience: Set[str]) -> 'JwtSvid':
+    def parse_insecure(cls, token: str, expected_audience: List[str]) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
         and expiry from 'exp' claim. The JWT-SVID signature is not verified.
 
         Args:
             token: A token as a string that is parsed and validated.
-            expected_audience: Audience as a set of strings used to validate the 'aud' claim.
+            expected_audience: Audience as a list of strings used to validate the 'aud' claim.
 
         Returns:
             An instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
@@ -80,7 +80,7 @@ class JwtSvid(object):
 
     @classmethod
     def parse_and_validate(
-        cls, token: str, jwt_bundle: JwtBundle, audience: Set[str]
+        cls, token: str, jwt_bundle: JwtBundle, audience: List[str]
     ) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
 
@@ -89,7 +89,7 @@ class JwtSvid(object):
         Args:
             token: A token as a string that is parsed and validated.
             jwt_bundle: An instance of JwtBundle that provides the JWT authorities to verify the signature.
-            audience: A set of strings used to validate the 'aud' claim.
+            audience: A list of strings used to validate the 'aud' claim.
 
         Returns:
             An instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
@@ -111,6 +111,7 @@ class JwtSvid(object):
 
         if not jwt_bundle:
             raise ValueError(INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty'))
+
         try:
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -138,6 +139,7 @@ class JwtSvid(object):
             )
 
             spiffe_id = SpiffeId.parse(claims.get('sub', None))
+
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))

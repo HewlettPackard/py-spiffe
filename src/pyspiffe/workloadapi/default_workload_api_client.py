@@ -1,7 +1,7 @@
 """
 This module provides a Workload API client.
 """
-from typing import Optional, List, Set, Mapping
+from typing import Optional, List, Mapping
 
 import grpc
 
@@ -20,6 +20,7 @@ from pyspiffe.workloadapi.exceptions import (
     FetchX509SvidError,
     FetchX509BundleError,
     FetchJwtSvidError,
+    ValidateJwtSvidError,
 )
 from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
@@ -140,19 +141,19 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return self._create_bundle_set(response.bundles)
 
     def fetch_jwt_svid(
-        self, audiences: Set[str], subject: Optional[SpiffeId] = None
+        self, audiences: List[str], subject: Optional[SpiffeId] = None
     ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
-            audiences: Set of audiences for the JWT SVID.
+            audiences: List of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
         Raises:
             ValueError: In case audience is empty.
-            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from the Workload API.
+            FetchJwtSvidError: In case there is an error in fetching the JWT-SVID from the Workload API.
         """
         if not audiences:
             raise ValueError('Parameter audiences cannot be empty.')
@@ -174,8 +175,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         pass
 
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
-        """Validates the JWT-SVID token. The parsed and validated JWT-SVID is
-        returned.
+        """Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.
 
         Args:
             token: JWT to validate.
@@ -184,8 +184,22 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         Returns:
             JwtSvid: If the token and audience could be validated.
         """
+        if not token:
+            raise ValueError('Token cannot be empty')
+        if not audience:
+            raise ValueError('Audience cannot be empty')
 
-        pass
+        try:
+            request = workload_pb2.ValidateJWTSVIDRequest(
+                audience=audience,
+                svid=token,
+            )
+
+            self._spiffe_workload_api_stub.ValidateJWTSVID(request)
+        except Exception as e:
+            raise ValidateJwtSvidError(str(e))
+
+        return JwtSvid.parse_insecure(token, [audience])
 
     def get_spiffe_endpoint_socket(self) -> str:
         """Returns the spiffe endpoint socket config for this WorkloadApiClient.
@@ -256,7 +270,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise FetchX509BundleError(normalized_exception_message(e))
 
     def _call_fetch_jwt_svids(
-        self, audience: Set[str], spiffe_id: Optional[str] = None
+        self, audience: List[str], spiffe_id: Optional[str] = None
     ) -> workload_pb2.JWTSVIDResponse:
 
         try:

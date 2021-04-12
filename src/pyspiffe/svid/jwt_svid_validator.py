@@ -3,7 +3,7 @@ This module manages the validations of JWT tokens.
 """
 
 import datetime
-from typing import List, Set, Dict, Any
+from typing import List, Dict, Any
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -75,13 +75,13 @@ class JwtSvidValidator(object):
             raise InvalidTypeError(typ)
 
     def validate_claims(
-        self, payload: Dict[str, Any], expected_audience: Set[str]
+        self, payload: Dict[str, Any], expected_audience: List[str]
     ) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
             payload: Token payload.
-            expected_audience: Audience as a Set of strings used to validate the 'aud' claim.
+            expected_audience: Audience as a list of strings used to validate the 'aud' claim.
 
         Returns:
             None
@@ -116,7 +116,7 @@ class JwtSvidValidator(object):
             raise TokenExpiredError()
 
     def _validate_aud(
-        self, audience_claim: List[str], expected_audience: Set[str]
+        self, audience_claim: List[str], expected_audience: List[str]
     ) -> None:
         """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
 

@@ -5,6 +5,7 @@ import jwt
 import datetime
 from calendar import timegm
 from typing import Union, List
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
@@ -44,15 +45,45 @@ def get_keys_pems(private_key: _PRIVATE_KEY_TYPES):
     return private_key_pem, public_key_pem
 
 
+DEFAULT_TRUST_DOMAIN = TrustDomain('test.com')
+"""Default Trust Domain to be used when creating a default test JWT. Trust Domain=test.com/"""
+
+DEFAULT_SPIFFE_ID = 'spiffe://test.com/'
+"""Default SPIFFE ID to be used when creating a default test JWT. SPIFFE ID=spiffe://test.com/"""
+
+DEFAULT_ALG = 'RS256'
+"""Default algorithm to be used when creating a default test JWT. Alg=RS256."""
+
+DEFAULT_KEY_ID = 'kid1'
+"""Default Key ID to be used when creating a default test JWT. kid=kid1."""
+
+DEFAULT_AUDIENCE: List[str] = ['spire', 'test', 'valid']
+"""Default audience to be used when creating a default test JWT. Audience=['spire', 'test', 'valid']."""
+
+DEFAULT_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+"""Default Key to be used when creating a default test JWT. An RSA key"""
+
+DEFAULT_KEY_PEM = get_keys_pems(DEFAULT_KEY)[0]
+
+DEFAULT_EXPIRY = timegm(
+    (datetime.datetime.utcnow() + datetime.timedelta(hours=4)).utctimetuple()
+)
+"""Default expiration time to be used when creating a default test JWT. Exp is set to four hours from now."""
+
+
 def create_jwt(
-    private_key_pem: str,
-    kid: str,
-    alg: str,
-    audience: List[str],
-    spiffe_id: str,
-    expiry: int = 0,
+    private_key_pem: str = DEFAULT_KEY_PEM,
+    kid: str = DEFAULT_KEY_ID,
+    alg: str = DEFAULT_ALG,
+    audience: List[str] = None,
+    spiffe_id: str = DEFAULT_SPIFFE_ID,
+    expiry: int = DEFAULT_EXPIRY,
 ):
-    """This function returns a JWT token for the specified parameters.
+    """Helper function that returns a JWT token for the specified parameters.
+
+    Calling create_jwt() without any parameter creates a default JWT using:
+    a default RSA Key, 'kid1' as kid, 'RS256' as alg, ['spire', 'test', 'valid'] as aud,
+    spiffe://test.com/ as SPIFFE ID and a 4 hours period of validity.
 
     Args:
         private_key_pem: A private_key_pem string to encode the token.
@@ -66,10 +97,8 @@ def create_jwt(
         Returns the JWT token for the specified input.
 
     """
-    if expiry == 0:
-        expiry = timegm(
-            (datetime.datetime.utcnow() + datetime.timedelta(hours=4)).utctimetuple()
-        )
+    audience = audience if audience else DEFAULT_AUDIENCE
+
     token = jwt.encode(
         {
             'aud': audience,
