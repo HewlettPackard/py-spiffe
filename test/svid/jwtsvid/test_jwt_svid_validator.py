@@ -52,7 +52,7 @@ from pyspiffe.svid.exceptions import (
         ),
     ],
 )
-def test_invalid_input_validate_claims(test_input_claim, test_input_audience, expected):
+def test_validate_claims_invalid_input(test_input_claim, test_input_audience, expected):
     with pytest.raises(ValueError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
@@ -129,7 +129,7 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
         ),
     ],
 )
-def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expected):
+def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expected):
     with pytest.raises(InvalidClaimError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
@@ -185,7 +185,7 @@ def test_invalid_aud_validate_claim(test_input_claim, test_input_audience, expec
         ),
     ],
 )
-def test_token_expired_validate_claim(test_input_claim, test_input_audience):
+def test_validate_claims_token_expired(test_input_claim, test_input_audience):
     with pytest.raises(TokenExpiredError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
     assert str(exception.value) == str(TokenExpiredError())
@@ -211,7 +211,7 @@ def test_token_expired_validate_claim(test_input_claim, test_input_audience):
         ({}, set(), str(MissingClaimError('aud'))),
     ],
 )
-def test_missing_required_claim_validate_claims(
+def test_validate_claims_missing_required_claim(
     test_input_claim, test_input_audience, expected
 ):
     with pytest.raises(MissingClaimError) as exception:
@@ -261,8 +261,9 @@ def test_missing_required_claim_validate_claims(
         ),
     ],
 )
-def test_valid_input_validate_claims(test_input_claim, test_input_audience):
+def test_validate_claims_valid_input(test_input_claim, test_input_audience):
     JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
+
     assert True
 
 

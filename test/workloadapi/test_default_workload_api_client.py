@@ -4,6 +4,7 @@ import pytest
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
+WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
 
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
