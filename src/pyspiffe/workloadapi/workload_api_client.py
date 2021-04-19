@@ -9,6 +9,8 @@ from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.x509_svid import X509Svid
+from pyspiffe.workloadapi.cancel_handler import CancelHandler
+from pyspiffe.workloadapi.watcher import Watcher
 from pyspiffe.workloadapi.x509_context import X509Context
 
 WORKLOAD_API_HEADER_KEY = 'workload.spiffe.io'
@@ -32,6 +34,34 @@ class WorkloadApiClient(ABC):
 
         Returns:
             A list of of X509Svid objects.
+        """
+
+    @abstractmethod
+    def watch_x509_context(
+        self, watcher: Watcher, retry_connect: bool
+    ) -> CancelHandler:
+        """Watches for X.509 context updates.
+
+           A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
+           updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
+           the next update based on the SVIDs TTL.
+
+           In case of an error, if `retry_connect` is True and the error was not grpc.StatusCode.CANCELLED
+           or grpc.StatusCode.INVALID_ARGUMENT, it will attempt to establish a new connection
+           to the Workload API, using an exponential backoff policy to perform the retries, starting with a delay of 0.1 seconds,
+           incrementing it then to 0.2, 0.4, 0.8, 1.6 and so on (until the max backoff of 60 seconds). It retries indefinitely.
+
+        Args:
+            watcher: A Watcher object holding two Callables:
+                     `on_success`: to be executed when a new update is fetched from the Workload API,
+                     `on_error`: to be executed when there is an error.
+
+            retry_connect: Enable retries when the connection with the Workload API returns an error.
+                           Default: True
+
+        Returns:
+            CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
+                           the Workload API.
         """
 
     @abstractmethod
@@ -85,3 +115,7 @@ class WorkloadApiClient(ABC):
         Returns:
             JwtSvid: If the token and audience could be validated.
         """
+
+    @abstractmethod
+    def close(self) -> None:
+        """Closes the WorkloadClient along with the current connections. """
