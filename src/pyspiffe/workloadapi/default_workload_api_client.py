@@ -9,7 +9,6 @@ from typing import Optional, List, Set, Mapping, Iterator, Callable
 import grpc
 
 from pyspiffe.workloadapi.cancel_handler import CancelHandler
-from pyspiffe.workloadapi.watcher import Watcher
 from pyspiffe.workloadapi.x509_context import X509Context
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
@@ -134,9 +133,16 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return self._create_x509_svid(svid)
 
     def watch_x509_context(
-        self, watcher: Watcher, retry_connect: bool = True
+        self,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
     ) -> CancelHandler:
         """Watches for X.509 context updates.
+
+           This method returns immediately and spawns a new thread to handle the connection with the Workload API. That thread
+           will keep running until the client calls the method `cancel` on the returned CancelHandler, or in case
+           `retry_connect` is false and there is an error returned by the Workload API.
 
            A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
            updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
@@ -150,9 +156,11 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
            # TODO: make the backoff policy configurable
 
         Args:
-            watcher: A Watcher object holding two Callables:
-                     `on_success`: to be executed when a new update is fetched from the Workload API,
-                     `on_error`: to be executed when there is an error.
+            on_success: a Callable accepting a X509Context as argument and returning None, to be executed when a new update
+                        is fetched from the Workload API,
+
+            on_error: a Callable accepting an Exception as argument and returning None, to be executed when there is
+                      an error on the connection with the Workload API.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
                            Default: True
@@ -168,7 +176,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         # start listening for updates in a separate thread
         t = threading.Thread(
             target=self._call_watch_x509_context,
-            args=(cancel_handler, retry_handler, watcher, retry_connect),
+            args=(cancel_handler, retry_handler, on_success, on_error, retry_connect),
         )
         t.setDaemon(True)
         t.start()
@@ -393,7 +401,8 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         self,
         cancel_handler: CancelHandler,
         retry_handler: _RetryHandler,
-        watcher: Watcher,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
         retry_connect: bool,
     ) -> None:
 
@@ -405,7 +414,12 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         cancel_handler.set_handler(lambda: response_iterator.cancel())
 
         self._handle_x509_context_response(
-            cancel_handler, retry_handler, response_iterator, watcher, retry_connect
+            cancel_handler,
+            retry_handler,
+            response_iterator,
+            on_success,
+            on_error,
+            retry_connect,
         )
 
     def _handle_x509_context_response(
@@ -413,37 +427,44 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         cancel_handler: CancelHandler,
         retry_handler: _RetryHandler,
         response_iterator: Iterator[workload_pb2.X509SVIDResponse],
-        watcher: Watcher,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
         retry_connect: bool,
     ) -> None:
         try:
             for item in response_iterator:
                 x509_context = self._process_x509_context(item)
                 retry_handler.reset()
-                watcher.on_success(x509_context)
+                on_success(x509_context)
 
         except grpc.RpcError as grpc_err:
             self._handle_grpc_error(
-                cancel_handler, retry_handler, grpc_err, watcher, retry_connect
+                cancel_handler,
+                retry_handler,
+                grpc_err,
+                on_success,
+                on_error,
+                retry_connect,
             )
         except Exception as err:
             error = FetchX509SvidError(format(str(err)))
-            watcher.on_error(error)
+            on_error(error)
 
     def _handle_grpc_error(
         self,
         cancel_handler: CancelHandler,
         retry_handler: _RetryHandler,
         grpc_error: grpc.RpcError,
-        watcher: Watcher,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
         retry_connect: bool,
     ):
         grpc_error_code = grpc_error.code()
         error = FetchX509SvidError(str(grpc_error_code))
-        watcher.on_error(error)
+        on_error(error)
 
         if retry_connect and grpc_error_code not in _NON_RETRYABLE_CODES:
             retry_handler.do_retry(
                 self._call_watch_x509_context,
-                [cancel_handler, retry_handler, watcher, retry_connect],
+                [cancel_handler, retry_handler, on_success, on_error, retry_connect],
             )

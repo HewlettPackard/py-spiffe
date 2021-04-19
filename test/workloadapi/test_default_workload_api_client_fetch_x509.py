@@ -10,7 +10,7 @@ from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
-from pyspiffe.workloadapi.watcher import Watcher
+from pyspiffe.workloadapi.x509_context import X509Context
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
 
@@ -607,12 +607,11 @@ def test_watch_x509_context_success(mocker):
     done = threading.Event()
     response_holder = ResponseHolder()
 
-    watcher = Watcher(
-        on_success=lambda r: handle_success(r, response_holder, done),
-        on_error=lambda e: handle_error(e, response_holder, done),
+    _WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: handle_error(e, response_holder, done),
+        True,
     )
-
-    _WORKLOAD_API_CLIENT.watch_x509_context(watcher, True)
 
     while not done.isSet():
         done.wait()
@@ -652,12 +651,11 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
 
     response_holder = ResponseHolder()
 
-    watcher = Watcher(
-        on_success=lambda r: handle_success(r, response_holder, done),
-        on_error=lambda err: assert_error(err, expected_error),
+    _WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: assert_error(e, expected_error),
+        True,
     )
-
-    _WORKLOAD_API_CLIENT.watch_x509_context(watcher, retry_connect=True)
 
     while not done.isSet():
         done.wait()
@@ -697,12 +695,11 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
 
     response_holder = ResponseHolder()
 
-    watcher = Watcher(
-        on_success=lambda r: handle_success(r, response_holder, done),
-        on_error=lambda e: handle_error(e, response_holder, done),
+    _WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: handle_error(e, response_holder, done),
+        True,
     )
-
-    _WORKLOAD_API_CLIENT.watch_x509_context(watcher, retry_connect=True)
 
     while not done.isSet():
         done.wait()
@@ -711,16 +708,20 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
     assert str(response_holder.error) == str(expected_error)
 
 
-def assert_error(error, expected):
+def assert_error(error: Exception, expected: Exception):
     assert str(error) == str(expected)
 
 
-def handle_error(error, response_holder: ResponseHolder, event: threading.Event):
+def handle_error(
+    error: Exception, response_holder: ResponseHolder, event: threading.Event
+):
     response_holder.error = error
     event.set()
 
 
-def handle_success(response, response_holder: ResponseHolder, event: threading.Event):
+def handle_x509_context_success(
+    response: X509Context, response_holder: ResponseHolder, event: threading.Event
+):
     response_holder.success = response
     event.set()
 

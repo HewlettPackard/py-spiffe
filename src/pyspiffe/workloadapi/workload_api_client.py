@@ -2,7 +2,7 @@
 This module contains the Workload API abstraction.
 """
 from abc import ABC, abstractmethod
-from typing import Optional, List, Set
+from typing import Optional, List, Set, Callable
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
@@ -10,7 +10,6 @@ from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.workloadapi.cancel_handler import CancelHandler
-from pyspiffe.workloadapi.watcher import Watcher
 from pyspiffe.workloadapi.x509_context import X509Context
 
 WORKLOAD_API_HEADER_KEY = 'workload.spiffe.io'
@@ -38,9 +37,16 @@ class WorkloadApiClient(ABC):
 
     @abstractmethod
     def watch_x509_context(
-        self, watcher: Watcher, retry_connect: bool
+        self,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
     ) -> CancelHandler:
         """Watches for X.509 context updates.
+
+           This method returns immediately and spawns a new thread to handle the connection with the Workload API. That thread
+           will keep running until the client calls the method `cancel` on the returned CancelHandler, or in case
+           `retry_connect` is false and there is an error returned by the Workload API.
 
            A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
            updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
@@ -52,9 +58,11 @@ class WorkloadApiClient(ABC):
            incrementing it then to 0.2, 0.4, 0.8, 1.6 and so on (until the max backoff of 60 seconds). It retries indefinitely.
 
         Args:
-            watcher: A Watcher object holding two Callables:
-                     `on_success`: to be executed when a new update is fetched from the Workload API,
-                     `on_error`: to be executed when there is an error.
+            on_success: a Callable accepting a X509Context as argument and returning None, to be executed when a new update
+                        is fetched from the Workload API,
+
+            on_error: a Callable accepting an Exception as argument and returning None, to be executed when there is
+                      an error on the connection with the Workload API.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
                            Default: True
