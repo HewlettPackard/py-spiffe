@@ -1,6 +1,7 @@
 import pytest
 
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.exceptions import ArgumentError
 
 
 @pytest.mark.parametrize(
@@ -32,7 +33,7 @@ def test_valid_trust_domain(test_input, expected):
     ],
 )
 def test_invalid_trust_domain(test_input, expected):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         TrustDomain(test_input)
 
     assert str(exception.value) == expected
@@ -69,7 +70,7 @@ def test_not_equal_when_different_objects():
 def test_exceeds_maximum_length():
     name = "a" * 256
 
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         TrustDomain("{}".format(name))
 
     assert str(exception.value) == 'Trust domain cannot be longer than 255 bytes.'

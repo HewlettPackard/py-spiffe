@@ -14,7 +14,7 @@ class JwtBundleError(PySpiffeError):
             message: Message describing the error.
         """
 
-        self.message = message
+        super().__init__(message)
 
     def __str__(self) -> str:
         return self.message

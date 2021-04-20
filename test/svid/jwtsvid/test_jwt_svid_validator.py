@@ -7,6 +7,7 @@ from pyspiffe.svid.jwt_svid_validator import (
     INVALID_INPUT_ERROR,
     AUDIENCE_NOT_MATCH_ERROR,
 )
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.svid.exceptions import (
     TokenExpiredError,
     InvalidClaimError,
@@ -35,7 +36,7 @@ from pyspiffe.svid.exceptions import (
                 'sub': 'spiffeid://somewhere.over.the',
             },
             None,
-            INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
+            INVALID_INPUT_ERROR.format('expected_audience cannot be empty.'),
         ),
         (
             {
@@ -48,12 +49,12 @@ from pyspiffe.svid.exceptions import (
                 'sub': 'spiffeid://somewhere.over.the',
             },
             set(),
-            INVALID_INPUT_ERROR.format('expected_audience cannot be empty'),
+            INVALID_INPUT_ERROR.format('expected_audience cannot be empty.'),
         ),
     ],
 )
-def test_validate_claims_invalid_input(test_input_claim, test_input_audience, expected):
-    with pytest.raises(ValueError) as exception:
+def test_invalid_input_validate_claims(test_input_claim, test_input_audience, expected):
+    with pytest.raises(ArgumentError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
     assert str(exception.value) == expected
@@ -277,21 +278,21 @@ def test_validate_claims_valid_input(test_input_claim, test_input_audience):
     [
         (
             None,
-            INVALID_INPUT_ERROR.format('header cannot be empty'),
+            INVALID_INPUT_ERROR.format('header cannot be empty.'),
         ),
         (
             '',
-            INVALID_INPUT_ERROR.format('header cannot be empty'),
+            INVALID_INPUT_ERROR.format('header cannot be empty.'),
         ),
         (
             {'ttt': 'eee'},
-            INVALID_INPUT_ERROR.format('header alg cannot be empty'),
+            INVALID_INPUT_ERROR.format('header alg cannot be empty.'),
         ),
-        ({'alg': ''}, INVALID_INPUT_ERROR.format('header alg cannot be empty')),
+        ({'alg': ''}, INVALID_INPUT_ERROR.format('header alg cannot be empty.')),
     ],
 )
 def test_validate_header_invalid_input(test_input_header, expected):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         JwtSvidValidator().validate_header(test_input_header)
 
     assert str(exception.value) == expected

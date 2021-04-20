@@ -2,6 +2,7 @@ import pytest
 
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from pyspiffe.exceptions import ArgumentError
 
 
 @pytest.mark.parametrize(
@@ -111,7 +112,7 @@ def test_parse_spiffe_id_valid_uri(spiffe_id_str, expected_trust_domain, expecte
     ],
 )
 def test_parse_spiffe_id_from_invalid_uri_string(spiffe_id_str, expected):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         SpiffeId.parse(spiffe_id_str)
 
     assert str(exception.value) == expected
@@ -145,14 +146,14 @@ def test_not_equal_when_different_objects():
 
 
 def test_trust_domain_none():
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         SpiffeId.of(None, 'path')
 
     assert str(exception.value) == 'SPIFFE ID: trust domain cannot be empty.'
 
 
 def test_of_empty_trust_domain():
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         SpiffeId.of('', 'path')
 
     assert (
@@ -164,7 +165,7 @@ def test_of_empty_trust_domain():
 def test_exceeds_maximum_length():
     path = 'a' * 2028
 
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         SpiffeId.parse('spiffe://example.org/{}'.format(path))
 
     assert str(exception.value) == 'SPIFFE ID: maximum length is 2048 bytes.'

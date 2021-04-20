@@ -1,6 +1,7 @@
+import os
 import pytest
 from pyspiffe.config import ConfigSetter
-import os
+from pyspiffe.exceptions import ArgumentError
 
 
 @pytest.fixture(autouse=True)
@@ -12,7 +13,7 @@ def restore_env_vars():
 
 
 def test_socket_must_be_set():
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         ConfigSetter()
 
     assert str(exception.value) == 'SPIFFE endpoint socket: socket must be set.'
@@ -129,7 +130,7 @@ def test_path_scheme_is_valid_tcp():
     ],
 )
 def test_invalid_endpoint_socket(test_input, expected):
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ArgumentError) as exception:
         ConfigSetter(spiffe_endpoint_socket=test_input)
 
     assert str(exception.value) == expected

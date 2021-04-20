@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed4
 
 from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError
+from pyspiffe.exceptions import ArgumentError
 
 _PUBLIC_KEY_TYPES = Union[
     dsa.DSAPublicKey,
@@ -60,10 +61,10 @@ class JwtBundle(object):
             None if the key_id is not found.
 
         Raises:
-            ValueError: When key_id is not valid (empty or None).
+            ArgumentError: When key_id is not valid (empty or None).
         """
         if not key_id:
-            raise ValueError('key_id cannot be empty.')
+            raise ArgumentError('key_id cannot be empty')
 
         with self.lock:
             return self._jwt_authorities.get(key_id)

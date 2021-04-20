@@ -6,6 +6,7 @@ import jwt
 from jwt import PyJWTError
 from typing import Dict, List
 from pyspiffe.svid import INVALID_INPUT_ERROR
+from pyspiffe.exceptions import ArgumentError
 from cryptography.hazmat.primitives import serialization
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
@@ -57,7 +58,7 @@ class JwtSvid(object):
             from 'exp' claim.
 
         Raises:
-            ValueError: When the token is blank or cannot be parsed, or in case header is not specified or in case expected_audience is empty or
+            ArgumentError: When the token is blank or cannot be parsed, or in case header is not specified or in case expected_audience is empty or
                 if the SPIFFE ID in the 'sub' claim doesn't comply with the SPIFFE standard.
             InvalidAlgorithmError: In case specified 'alg' is not supported as specified by the SPIFFE standard.
             InvalidTypeError: If 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
@@ -66,7 +67,7 @@ class JwtSvid(object):
             InvalidTokenError: If token is malformed and fails to decode.
         """
         if not token:
-            raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
+            raise ArgumentError(INVALID_INPUT_ERROR.format('token cannot be empty'))
         try:
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -100,18 +101,19 @@ class JwtSvid(object):
                             when the algorithm is not supported, when the header 'kid' is missing,
                             when the signature cannot be verified, or
                             when the 'aud' claim has an audience that is not in the audience list provided as parameter.
-            ValueError:     When the token is blank or cannot be parsed.
+            ArgumentError:     When the token is blank or cannot be parsed.
             BundleNotFoundError:    If the bundle for the trust domain of the spiffe id from the 'sub'
                                     cannot be found the jwt_bundle_source.
             AuthorityNotFoundError: If the authority cannot be found in the bundle using the value from the 'kid' header.
             InvalidTokenError: In case token is malformed and fails to decode.
         """
         if not token:
-            raise ValueError(INVALID_INPUT_ERROR.format('token cannot be empty'))
+            raise ArgumentError(INVALID_INPUT_ERROR.format('token cannot be empty'))
 
         if not jwt_bundle:
-            raise ValueError(INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty'))
-
+            raise ArgumentError(
+                INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty')
+            )
         try:
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -143,5 +145,5 @@ class JwtSvid(object):
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
-        except ValueError as value_err:
+        except ArgumentError as value_err:
             raise InvalidTokenError(str(value_err))

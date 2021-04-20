@@ -45,7 +45,7 @@ def test_parse_der_corrupted_certificate():
     with pytest.raises(X509CertificateError) as exception:
         parse_der_certificates(certs_bytes)
 
-    assert str(exception.value) == 'Unable to parse DER X.509 certificate'
+    assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
 
 
 def test_parse_pem_corrupted_certificate():
@@ -54,7 +54,7 @@ def test_parse_pem_corrupted_certificate():
     with pytest.raises(X509CertificateError) as exception:
         parse_pem_certificates(certs_bytes)
 
-    assert str(exception.value) == 'Unable to parse PEM X.509 certificate'
+    assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
 
 
 def test_load_certificates_bytes_from_pem_file():
@@ -85,7 +85,7 @@ def test_load_certificates_bytes_from_file_raise_file_not_found():
     with pytest.raises(X509CertificateError) as exception:
         load_certificates_bytes_from_file('path_not_found')
 
-    assert str(exception.value) == 'Certificates file not found: path_not_found'
+    assert str(exception.value) == 'Certificates file not found: path_not_found.'
 
 
 def test_load_certificates_bytes_from_file_raise_exception(mocker):
@@ -94,9 +94,7 @@ def test_load_certificates_bytes_from_file_raise_exception(mocker):
     with pytest.raises(X509CertificateError) as exception:
         load_certificates_bytes_from_file('path')
 
-    assert str(exception.value).startswith(
-        'Certificates file could not be read: Error msg'
-    )
+    assert str(exception.value) == 'Certificates file could not be read: Error msg.'
 
 
 def test_write_certificate_to_file_as_pem(tmpdir):
@@ -126,7 +124,7 @@ def test_write_certificate_to_file_raise_error(mocker):
 
     assert (
         str(exc_info.value)
-        == 'Error writing certificate to file: Could not get bytes from object: Fake Error'
+        == 'Error writing certificate to file: Could not get bytes from object: Fake Error.'
     )
 
 
@@ -170,7 +168,7 @@ def test_serialize_certificate_raise_error(mocker):
     with pytest.raises(X509CertificateError) as exc_info:
         serialize_certificate(mock_cert, serialization.Encoding.PEM)
 
-    assert str(exc_info.value) == 'Could not get bytes from object: Fake Error'
+    assert str(exc_info.value) == 'Could not get bytes from object: Fake Error.'
 
 
 def _read_bytes(filename):

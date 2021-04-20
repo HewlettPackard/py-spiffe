@@ -7,8 +7,9 @@ from typing import Any, cast
 
 
 from pyspiffe.spiffe_id import SPIFFE_SCHEME
+from pyspiffe.exceptions import ArgumentError
 
-EMPTY_DOMAIN_ERROR = 'Trust domain cannot be empty.'
+EMPTY_DOMAIN_ERROR = 'Trust domain cannot be empty'
 """str: Default error message for empty Trust Domains."""
 
 SCHEME_SUFFIX = '://'
@@ -28,7 +29,7 @@ class TrustDomain(object):
             name: The name of the Trust Domain.
 
         Raises:
-            ValueError: If the name of the trust domain is empty, has a port, or contains an invalid scheme.
+            ArgumentError: If the name of the trust domain is empty, has a port, or contains an invalid scheme.
 
         Examples:
             >>> trust_domain = TrustDomain('Domain.Test')
@@ -60,11 +61,11 @@ class TrustDomain(object):
 
     def __set_name(self, name: str) -> None:
         if not name:
-            raise ValueError(EMPTY_DOMAIN_ERROR)
+            raise ArgumentError(EMPTY_DOMAIN_ERROR)
 
         if len(name) > TRUST_DOMAIN_MAXIMUM_LENGTH:
-            raise ValueError(
-                'Trust domain cannot be longer than {} bytes.'.format(
+            raise ArgumentError(
+                'Trust domain cannot be longer than {} bytes'.format(
                     TRUST_DOMAIN_MAXIMUM_LENGTH
                 )
             )
@@ -84,10 +85,10 @@ class TrustDomain(object):
     @staticmethod
     def validate_uri(uri: ParseResult) -> None:
         if uri.scheme != SPIFFE_SCHEME:
-            raise ValueError(
-                'Trust domain: invalid scheme: expected {}.'.format(SPIFFE_SCHEME)
+            raise ArgumentError(
+                'Trust domain: invalid scheme: expected {}'.format(SPIFFE_SCHEME)
             )
         if not uri.hostname:
-            raise ValueError(EMPTY_DOMAIN_ERROR)
+            raise ArgumentError(EMPTY_DOMAIN_ERROR)
         if uri.port:
-            raise ValueError('Trust domain: port is not allowed.')
+            raise ArgumentError('Trust domain: port is not allowed')

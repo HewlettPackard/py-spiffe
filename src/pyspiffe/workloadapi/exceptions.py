@@ -15,7 +15,7 @@ class WorkloadApiError(PySpiffeError):
             message: Message describing the error.
         """
 
-        self.message = message
+        super().__init__(message)
 
     def __str__(self) -> str:
         return self.message
@@ -24,7 +24,7 @@ class WorkloadApiError(PySpiffeError):
 class FetchX509SvidError(WorkloadApiError):
     """Error raised when there is an error fetching X.509 SVIDs."""
 
-    _MESSAGE = 'Error fetching X.509 SVID: {}.'
+    _MESSAGE = 'Error fetching X.509 SVID: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of FetchX509SvidError.
@@ -38,7 +38,7 @@ class FetchX509SvidError(WorkloadApiError):
 class FetchX509BundleError(WorkloadApiError):
     """Error raised when there is an error fetching X.509 Bundles."""
 
-    _MESSAGE = 'Error fetching X.509 Bundles: {}.'
+    _MESSAGE = 'Error fetching X.509 Bundles: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of FetchX509BundleError.
@@ -52,7 +52,7 @@ class FetchX509BundleError(WorkloadApiError):
 class FetchJwtSvidError(WorkloadApiError):
     """Error raised when there is an error fetching JWT SVIDs."""
 
-    _MESSAGE = 'Error fetching JWT SVID: {}.'
+    _MESSAGE = 'Error fetching JWT SVID: {}'
 
     def __init__(self, additional_information: str = 'none') -> None:
         """Creates an instance of FetchJwtSvidError.

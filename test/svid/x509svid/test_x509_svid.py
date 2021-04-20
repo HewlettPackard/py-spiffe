@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
 
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.svid.exceptions import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
@@ -37,21 +38,21 @@ def test_create_x509_svid(mocker):
 
 
 def test_create_x509_svid_no_spiffe_id(mocker):
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=None, cert_chain=[mocker.Mock()], private_key=mocker.Mock())
 
     assert str(exc_info.value) == 'spiffe_id cannot be None.'
 
 
 def test_create_x509_svid_no_cert_chain(mocker):
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[], private_key=mocker.Mock())
 
     assert str(exc_info.value) == 'cert_chain cannot be empty.'
 
 
 def test_create_x509_svid_no_private_key(mocker):
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[mocker.Mock()], private_key=None)
 
     assert str(exc_info.value) == 'private_key cannot be None.'
@@ -422,7 +423,7 @@ def test_save_non_supported_encoding():
     # create the X509Svid to be saved
     mock_x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ArgumentError) as err:
         X509Svid.save(
             mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.Raw
         )
@@ -483,7 +484,7 @@ def test_save_error_extracting_private_key(mocker):
 def test_load_non_supported_encoding():
     chain_path = _TEST_CERTS_PATH.format('2-chain.pem')
     key_path = _TEST_CERTS_PATH.format('2-key.pem')
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(ArgumentError) as err:
         X509Svid.load(chain_path, key_path, serialization.Encoding.OpenSSH)
 
     assert (
