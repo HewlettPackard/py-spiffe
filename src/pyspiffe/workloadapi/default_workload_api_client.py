@@ -47,10 +47,10 @@ _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUM
 class _RetryHandler:
     def __init__(
         self,
-        max_retries=0,
-        base_backoff_in_seconds=0.1,
-        backoff_factor=2,
-        max_delay_in_seconds=60,
+        max_retries: int = 0,
+        base_backoff_in_seconds: float = 0.1,
+        backoff_factor: int = 2,
+        max_delay_in_seconds: int = 60,
     ) -> None:
         self._max_retries = max_retries
         self._base_backoff = base_backoff_in_seconds
