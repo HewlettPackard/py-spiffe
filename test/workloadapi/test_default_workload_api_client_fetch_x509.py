@@ -613,7 +613,7 @@ def test_watch_x509_context_success(mocker):
         True,
     )
 
-    while not done.isSet():
+    while not done.is_set():
         done.wait()
 
     assert not response_holder.error
@@ -657,7 +657,7 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
         True,
     )
 
-    while not done.isSet():
+    while not done.is_set():
         done.wait()
 
     x509_context = response_holder.success
@@ -701,7 +701,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
         True,
     )
 
-    while not done.isSet():
+    while not done.is_set():
         done.wait()
 
     assert not response_holder.success
