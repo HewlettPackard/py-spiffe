@@ -613,8 +613,7 @@ def test_watch_x509_context_success(mocker):
         True,
     )
 
-    while not done.is_set():
-        done.wait()
+    done.wait(5)  # add timeout to prevent test from hanging
 
     assert not response_holder.error
     x509_context = response_holder.success
@@ -657,8 +656,7 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
         True,
     )
 
-    while not done.is_set():
-        done.wait()
+    done.wait(5)  # add timeout to prevent test from hanging
 
     x509_context = response_holder.success
     svid1 = x509_context.default_svid()
@@ -701,8 +699,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
         True,
     )
 
-    while not done.is_set():
-        done.wait()
+    done.wait(5)  # add timeout to prevent test from hanging
 
     assert not response_holder.success
     assert str(response_holder.error) == str(expected_error)
