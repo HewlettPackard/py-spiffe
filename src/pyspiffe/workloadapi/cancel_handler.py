@@ -11,6 +11,7 @@ class CancelHandler:
 
     def cancel(self) -> bool:
         """Executes the function set on the on_cancel and returns the result.
+
         In case the on_cancel is None, it returns False.
         """
         with self._lock:
@@ -19,5 +20,6 @@ class CancelHandler:
             return self._on_cancel()
 
     def set_handler(self, on_cancel: Callable[[], bool]) -> None:
+        """Sets the cancel function on the handler."""
         with self._lock:
             self._on_cancel = on_cancel
