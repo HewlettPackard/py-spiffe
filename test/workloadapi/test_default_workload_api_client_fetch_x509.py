@@ -119,7 +119,7 @@ def test_fetch_x509_svid_corrupted_response(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 SVID: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -231,7 +231,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 SVID: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -404,7 +404,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -441,7 +441,7 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -535,7 +535,7 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
     )
 
 
@@ -559,5 +559,5 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
     )

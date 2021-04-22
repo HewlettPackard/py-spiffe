@@ -1,6 +1,7 @@
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
 
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
@@ -8,10 +9,22 @@ from pyspiffe.utils.certificate_utils import (
     parse_pem_certificates,
     parse_der_certificates,
     load_certificates_bytes_from_file,
-    write_certificate_to_file,
+    write_certificates_to_file,
     serialize_certificate,
+    load_private_key_from_file,
+    write_private_key_to_file,
+    parse_der_private_key,
+    parse_pem_private_key,
 )
-from pyspiffe.utils.exceptions import X509CertificateError
+from pyspiffe.utils.exceptions import (
+    X509CertificateError,
+    ParseCertificateError,
+    LoadCertificateError,
+    StoreCertificateError,
+    StorePrivateKeyError,
+    ParsePrivateKeyError,
+    LoadPrivateKeyError,
+)
 
 _EXPECTED_SPIFFE_ID = SpiffeId.parse('spiffe://example.org/service')
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
@@ -42,7 +55,7 @@ def test_parse_pem_certificates():
 def test_parse_der_corrupted_certificate():
     certs_bytes = _read_bytes('corrupted')
 
-    with pytest.raises(X509CertificateError) as exception:
+    with pytest.raises(ParseCertificateError) as exception:
         parse_der_certificates(certs_bytes)
 
     assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
@@ -51,7 +64,7 @@ def test_parse_der_corrupted_certificate():
 def test_parse_pem_corrupted_certificate():
     certs_bytes = _read_bytes('corrupted')
 
-    with pytest.raises(X509CertificateError) as exception:
+    with pytest.raises(ParseCertificateError) as exception:
         parse_pem_certificates(certs_bytes)
 
     assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
@@ -82,22 +95,28 @@ def test_load_certificates_bytes_from_der_file():
 
 
 def test_load_certificates_bytes_from_file_raise_file_not_found():
-    with pytest.raises(X509CertificateError) as exception:
+    with pytest.raises(LoadCertificateError) as exception:
         load_certificates_bytes_from_file('path_not_found')
 
-    assert str(exception.value) == 'Certificates file not found: path_not_found.'
+    assert (
+        str(exception.value)
+        == 'Error loading certificate from file: Certificates file not found: path_not_found.'
+    )
 
 
 def test_load_certificates_bytes_from_file_raise_exception(mocker):
     mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
 
-    with pytest.raises(X509CertificateError) as exception:
+    with pytest.raises(LoadCertificateError) as exception:
         load_certificates_bytes_from_file('path')
 
-    assert str(exception.value) == 'Certificates file could not be read: Error msg.'
+    assert (
+        str(exception.value)
+        == 'Error loading certificate from file: Certificates file could not be read: Error msg.'
+    )
 
 
-def test_write_certificate_to_file_as_pem(tmpdir):
+def test_write_certificates_to_file_as_pem(tmpdir):
     certs_file_path = _TEST_CERTS_PATH.format('1-chain.der')
     certs_bytes = load_certificates_bytes_from_file(certs_file_path)
     certs = parse_der_certificates(certs_bytes)
@@ -105,7 +124,7 @@ def test_write_certificate_to_file_as_pem(tmpdir):
     # temp files to store the certs and private_key
     cert_dest_file = tmpdir.join('cert.pem')
 
-    write_certificate_to_file(certs[0], cert_dest_file, serialization.Encoding.PEM)
+    write_certificates_to_file(cert_dest_file, serialization.Encoding.PEM, certs)
 
     certs_bytes = load_certificates_bytes_from_file(cert_dest_file)
     saved_cert = parse_pem_certificates(certs_bytes)[0]
@@ -114,17 +133,18 @@ def test_write_certificate_to_file_as_pem(tmpdir):
     assert _extract_spiffe_id(saved_cert) == _EXPECTED_SPIFFE_ID
 
 
-def test_write_certificate_to_file_raise_error(mocker):
+def test_write_certificates_to_file_raise_error(mocker):
+    mocker.patch('builtins.open', autospect=True)
     mock_cert = mocker.Mock()
     mock_cert.public_bytes.side_effect = Exception('Fake Error')
     des_file = mocker.Mock()
 
-    with pytest.raises(X509CertificateError) as exc_info:
-        write_certificate_to_file(mock_cert, des_file, serialization.Encoding.PEM)
+    with pytest.raises(StoreCertificateError) as exc_info:
+        write_certificates_to_file(des_file, serialization.Encoding.PEM, [mock_cert])
 
     assert (
         str(exc_info.value)
-        == 'Error writing certificate to file: Could not get bytes from object: Fake Error.'
+        == 'Error saving certificate to file: Error writing X.509 SVID to file: Could not get bytes from object: Fake Error.'
     )
 
 
@@ -169,6 +189,127 @@ def test_serialize_certificate_raise_error(mocker):
         serialize_certificate(mock_cert, serialization.Encoding.PEM)
 
     assert str(exc_info.value) == 'Could not get bytes from object: Fake Error.'
+
+
+def test_load_private_key_from_file(tmpdir):
+    key_bytes = _read_bytes('1-key.der')
+    private_key = parse_der_private_key(key_bytes)
+
+    # temp file to store the private_key
+    key_dest_file = tmpdir.join('key.der')
+
+    write_private_key_to_file(key_dest_file, serialization.Encoding.DER, private_key)
+
+    key_bytes = load_private_key_from_file(key_dest_file)
+    saved_key = parse_der_private_key(key_bytes)
+
+    assert isinstance(saved_key, ec.EllipticCurvePrivateKey)
+
+
+def test_load_private_key_from_file_raise_error_file_not_found(mocker):
+    mocker.patch('builtins.open', side_effect=FileNotFoundError(), autospect=True)
+
+    with pytest.raises(LoadPrivateKeyError) as exc_info:
+        load_private_key_from_file('key_path')
+
+    assert (
+        str(exc_info.value)
+        == 'Error loading private key from file: Private key file not found: key_path.'
+    )
+
+
+def test_load_private_key_from_file_raise_error(mocker):
+    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospect=True)
+
+    with pytest.raises(LoadPrivateKeyError) as exc_info:
+        load_private_key_from_file('key_path')
+
+    assert (
+        str(exc_info.value)
+        == 'Error loading private key from file: Private key file could not be read: Fake Error.'
+    )
+
+
+def test_write_private_key_to_file(tmpdir):
+    key_bytes = _read_bytes('1-key.der')
+    private_key = parse_der_private_key(key_bytes)
+
+    # temp file to store the private_key
+    key_dest_file = tmpdir.join('key.der')
+
+    write_private_key_to_file(key_dest_file, serialization.Encoding.DER, private_key)
+
+    key_bytes = load_private_key_from_file(key_dest_file)
+    saved_key = parse_der_private_key(key_bytes)
+
+    assert isinstance(saved_key, ec.EllipticCurvePrivateKey)
+
+
+def test_write_private_key_to_file_raise_error(mocker):
+    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospect=True)
+    mock_private_key = mocker.Mock()
+
+    with pytest.raises(StorePrivateKeyError) as exc_info:
+        write_private_key_to_file(
+            'private_key_path',
+            serialization.Encoding.PEM,
+            mock_private_key,
+        )
+
+    assert (
+        str(exc_info.value)
+        == 'Error saving private key to file: Could not write private key bytes to file: Fake Error.'
+    )
+
+
+def test_write_private_key_to_file_raise_error_cannot_extract_bytes(mocker):
+    mocker.patch('builtins.open', autospect=True)
+    mock_private_key = mocker.Mock()
+    mock_private_key.private_bytes.side_effect = Exception('Fake Error')
+
+    with pytest.raises(StorePrivateKeyError) as exc_info:
+        write_private_key_to_file(
+            'private_key_path',
+            serialization.Encoding.PEM,
+            mock_private_key,
+        )
+
+    assert (
+        str(exc_info.value)
+        == 'Error saving private key to file: Could not write private key bytes to file: Could not extract private key bytes from object: Fake Error.'
+    )
+
+
+def test_parse_der_private_key():
+    key_bytes = _read_bytes('1-key.der')
+    private_key = parse_der_private_key(key_bytes)
+
+    assert isinstance(private_key, ec.EllipticCurvePrivateKey)
+
+
+def test_parse_der_private_key_raise_error():
+    key_bytes = b'some bytes'
+
+    with pytest.raises(ParsePrivateKeyError) as exc_info:
+        parse_der_private_key(key_bytes)
+
+    assert str(exc_info.value).startswith('Error parsing private key:')
+
+
+def test_parse_pem_private_key():
+    key_bytes = _read_bytes('2-key.pem')
+    private_key = parse_pem_private_key(key_bytes)
+
+    assert isinstance(private_key, ec.EllipticCurvePrivateKey)
+
+
+def test_parse_pem_private_key_raise_error():
+    key_bytes = b'some bytes'
+
+    with pytest.raises(ParsePrivateKeyError) as exc_info:
+        parse_pem_private_key(key_bytes)
+
+    assert str(exc_info.value).startswith('Error parsing private key:')
 
 
 def _read_bytes(filename):

@@ -4,22 +4,14 @@ This module has utility pub/private key functions for testing usage.
 import jwt
 import datetime
 from calendar import timegm
-from typing import Union, List
+from typing import List
+from pyspiffe.utils.certificate_utils import PRIVATE_KEY_TYPES
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 
-_PRIVATE_KEY_TYPES = Union[
-    dsa.DSAPrivateKey,
-    rsa.RSAPrivateKey,
-    ec.EllipticCurvePrivateKey,
-    ed25519.Ed25519PrivateKey,
-    ed448.Ed448PrivateKey,
-]
-
-
-def get_keys_pems(private_key: _PRIVATE_KEY_TYPES):
+def get_keys_pems(private_key: PRIVATE_KEY_TYPES):
     """This function returns private and public pem byte strings for the given private_key.
 
     Args:

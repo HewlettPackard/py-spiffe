@@ -1,47 +1,28 @@
 """
 This module manages X.509 SVID objects.
 """
-import os
-from typing import List, Union
+from typing import List
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ed25519, ed448, rsa, ec, dsa
-from cryptography.hazmat.primitives.serialization import load_der_private_key
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import Certificate
 from pyspiffe.exceptions import ArgumentError
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.svid.exceptions import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
-    ParsePrivateKeyError,
-    X509SvidError,
-    StoreCertificateError,
-    StorePrivateKeyError,
-    LoadPrivateKeyError,
-    ParseCertificateError,
-    LoadCertificateError,
 )
 from pyspiffe.utils.certificate_utils import (
     parse_der_certificates,
     parse_pem_certificates,
     load_certificates_bytes_from_file,
-    write_certificate_to_file,
+    load_private_key_from_file,
+    write_certificates_to_file,
+    write_private_key_to_file,
+    parse_pem_private_key,
+    parse_der_private_key,
+    PRIVATE_KEY_TYPES,
 )
-
-
-_UNABLE_TO_LOAD_CERTIFICATE = 'Unable to load certificate'
-_CERTS_FILE_MODE = 0o644
-_PRIVATE_KEY_FILE_MODE = 0o600
-
-_PRIVATE_KEY_TYPES = Union[
-    ed25519.Ed25519PrivateKey,
-    ed448.Ed448PrivateKey,
-    rsa.RSAPrivateKey,
-    dsa.DSAPrivateKey,
-    ec.EllipticCurvePrivateKey,
-]
 
 __all__ = ['X509Svid']
 
@@ -57,7 +38,7 @@ class X509Svid(object):
         self,
         spiffe_id: SpiffeId,
         cert_chain: List[Certificate],
-        private_key: _PRIVATE_KEY_TYPES,
+        private_key: PRIVATE_KEY_TYPES,
     ) -> None:
         """Creates a X509Svid instance.
 
@@ -88,7 +69,7 @@ class X509Svid(object):
         """Returns the X.509 chain of certificates."""
         return self._cert_chain.copy()
 
-    def private_key(self) -> _PRIVATE_KEY_TYPES:
+    def private_key(self) -> PRIVATE_KEY_TYPES:
         """Returns the private key."""
         return self._private_key
 
@@ -127,22 +108,17 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        try:
-            chain = parse_der_certificates(certs_chain_bytes)
-        except Exception as e:
-            raise ParseCertificateError(str(e))
-
+        chain = parse_der_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = _parse_der_private_key(private_key_bytes)
+        private_key = parse_der_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
 
         return X509Svid(spiffe_id, chain, private_key)
 
     @classmethod
     def parse(cls, certs_chain_bytes: bytes, private_key_bytes: bytes) -> 'X509Svid':
-        """Parses the X.509 SVID from PEM blocks containing certificate chain and key
-        bytes.
+        """Parses the X.509 SVID from PEM blocks containing certificate chain and key bytes.
 
         The private key must be a PKCS#8 PEM block.
 
@@ -168,14 +144,10 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        try:
-            chain = parse_pem_certificates(certs_chain_bytes)
-        except Exception as e:
-            raise ParseCertificateError(str(e))
-
+        chain = parse_pem_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = _parse_pem_private_key(private_key_bytes)
+        private_key = parse_pem_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
 
         return X509Svid(spiffe_id, chain, private_key)
@@ -215,12 +187,8 @@ class X509Svid(object):
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
 
-        try:
-            chain_bytes = load_certificates_bytes_from_file(certs_chain_path)
-        except Exception as e:
-            raise LoadCertificateError(str(e))
-
-        key_bytes = _load_private_key_bytes(private_key_path)
+        chain_bytes = load_certificates_bytes_from_file(certs_chain_path)
+        key_bytes = load_private_key_from_file(private_key_path)
 
         if encoding == serialization.Encoding.PEM:
             return cls.parse(chain_bytes, key_bytes)
@@ -268,82 +236,8 @@ class X509Svid(object):
                 )
             )
 
-        _write_x509_svid_to_file(certs_chain_path, encoding, x509_svid)
-
-        private_key_bytes = _extract_private_key_bytes(
-            encoding, x509_svid.private_key()
-        )
-        _write_private_key_to_file(private_key_path, private_key_bytes)
-
-
-def _load_private_key_bytes(private_key_path: str) -> bytes:
-    try:
-        with open(private_key_path, 'rb') as key_file:
-            return key_file.read()
-    except FileNotFoundError:
-        raise LoadPrivateKeyError(
-            'Private key file not found: {}'.format(private_key_path)
-        )
-    except Exception as err:
-        raise LoadPrivateKeyError(
-            'Private key file could not be read: {}'.format(str(err))
-        )
-
-
-def _write_private_key_to_file(private_key_path: str, private_key_bytes: bytes) -> None:
-    try:
-        with open(private_key_path, 'wb') as private_key_file:
-            os.chmod(private_key_file.name, _PRIVATE_KEY_FILE_MODE)
-            private_key_file.write(private_key_bytes)
-    except Exception as err:
-        raise StorePrivateKeyError(
-            'Could not write private key bytes to file: {}'.format(str(err))
-        )
-
-
-def _extract_private_key_bytes(
-    encoding: serialization.Encoding, private_key: _PRIVATE_KEY_TYPES
-) -> bytes:
-    try:
-        return private_key.private_bytes(
-            encoding,
-            serialization.PrivateFormat.PKCS8,
-            serialization.NoEncryption(),
-        )
-    except Exception as err:
-        raise X509SvidError(
-            'Could not extract private key bytes from object: {}'.format(str(err))
-        )
-
-
-def _write_x509_svid_to_file(
-    certs_chain_path: str,
-    encoding: serialization.Encoding,
-    x509_svid: 'X509Svid',
-) -> None:
-    try:
-        with open(certs_chain_path, 'wb') as chain_file:
-            os.chmod(chain_file.name, _CERTS_FILE_MODE)
-            for cert in x509_svid.cert_chain():
-                write_certificate_to_file(cert, chain_file, encoding)
-    except Exception as err:
-        raise StoreCertificateError(
-            'Error writing X.509 SVID to file: {}'.format(str(err))
-        )
-
-
-def _parse_der_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
-    try:
-        return load_der_private_key(private_key_bytes, None, None)
-    except Exception as err:
-        raise ParsePrivateKeyError(str(err))
-
-
-def _parse_pem_private_key(private_key_bytes: bytes) -> _PRIVATE_KEY_TYPES:
-    try:
-        return load_pem_private_key(private_key_bytes, None, None)
-    except Exception as err:
-        raise ParsePrivateKeyError(str(err))
+        write_certificates_to_file(certs_chain_path, encoding, x509_svid.cert_chain())
+        write_private_key_to_file(private_key_path, encoding, x509_svid.private_key())
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
