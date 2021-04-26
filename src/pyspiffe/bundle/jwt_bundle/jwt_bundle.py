@@ -42,7 +42,7 @@ class JwtBundle(object):
         self._jwt_authorities = jwt_authorities.copy() if jwt_authorities else {}
 
     def trust_domain(self) -> TrustDomain:
-        """Returns the trust domain of the bundle. """
+        """Returns the trust domain of the bundle."""
         return self._trust_domain
 
     def jwt_authorities(self) -> Dict[str, _PUBLIC_KEY_TYPES]:

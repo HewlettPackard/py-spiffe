@@ -6,7 +6,7 @@ from pyspiffe.exceptions import PySpiffeError
 
 
 class WorkloadApiError(PySpiffeError):
-    """Top level exception for Workload API module. """
+    """Top level exception for Workload API module."""
 
     def __init__(self, message: str) -> None:
         """Creates an instance of WorkloadApiError.

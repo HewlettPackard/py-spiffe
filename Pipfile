@@ -18,7 +18,7 @@ pem = "~=21.1.0 "
 python_version = "3.6"
 
 [dev-packages]
-black = "==20.8b1"
+black = "==21.4b0"
 mypy = "==0.812"
 mypy-protobuf = "==1.15"
 pre-commit = "==1.18.1"

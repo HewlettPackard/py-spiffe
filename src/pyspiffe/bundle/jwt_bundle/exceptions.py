@@ -5,7 +5,7 @@ from pyspiffe.exceptions import PySpiffeError
 
 
 class JwtBundleError(PySpiffeError):
-    """Top level exception for the JwtBundle module. """
+    """Top level exception for the JwtBundle module."""
 
     def __init__(self, message: str) -> None:
         """Creates an instance of JwtBundleError.
