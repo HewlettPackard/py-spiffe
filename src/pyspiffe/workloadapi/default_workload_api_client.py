@@ -1,10 +1,9 @@
 """
 This module provides a Workload API client.
 """
-from typing import Optional, List, Mapping
 import threading
 import time
-from typing import Optional, List, Set, Mapping, Iterator, Callable
+from typing import Optional, List, Mapping, Iterator, Callable
 
 import grpc
 

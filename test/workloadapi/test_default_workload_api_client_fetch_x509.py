@@ -574,7 +574,7 @@ class ResponseHolder:
 def test_watch_x509_context_success(mocker):
     federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
-    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
@@ -601,7 +601,7 @@ def test_watch_x509_context_success(mocker):
     done = threading.Event()
     response_holder = ResponseHolder()
 
-    _WORKLOAD_API_CLIENT.watch_x509_context(
+    WORKLOAD_API_CLIENT.watch_x509_context(
         lambda r: handle_x509_context_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         retry_connect=True,
@@ -635,7 +635,7 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
         yield_grpc_error_and_then_correct_x509_svid_response()
     )
 
-    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=mock_error_iter
     )
 
@@ -644,7 +644,7 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
 
     response_holder = ResponseHolder()
 
-    _WORKLOAD_API_CLIENT.watch_x509_context(
+    WORKLOAD_API_CLIENT.watch_x509_context(
         lambda r: handle_x509_context_success(r, response_holder, done),
         lambda e: assert_error(e, expected_error),
         True,
@@ -678,7 +678,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = grpc_error
 
-    _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=mock_error_iter
     )
 
@@ -687,7 +687,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
 
     response_holder = ResponseHolder()
 
-    _WORKLOAD_API_CLIENT.watch_x509_context(
+    WORKLOAD_API_CLIENT.watch_x509_context(
         lambda r: handle_x509_context_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         True,
