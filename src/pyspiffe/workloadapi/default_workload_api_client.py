@@ -305,7 +305,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return self._config.spiffe_endpoint_socket
 
     def close(self) -> None:
-        """Closes the WorkloadClient along with the current connections. """
+        """Closes the WorkloadClient along with the current connections."""
         self._channel.close()
 
     def _get_spiffe_grpc_channel(self) -> grpc.Channel:

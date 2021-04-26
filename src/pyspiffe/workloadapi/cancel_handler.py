@@ -3,7 +3,7 @@ from typing import Callable
 
 
 class CancelHandler:
-    """Represents a handler to cancel operations. """
+    """Represents a handler to cancel operations."""
 
     def __init__(self, on_cancel: Callable[[], bool] = None) -> None:
         self._on_cancel = on_cancel

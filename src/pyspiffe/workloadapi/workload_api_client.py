@@ -126,4 +126,4 @@ class WorkloadApiClient(ABC):
 
     @abstractmethod
     def close(self) -> None:
-        """Closes the WorkloadClient along with the current connections. """
+        """Closes the WorkloadClient along with the current connections."""
