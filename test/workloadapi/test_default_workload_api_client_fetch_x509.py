@@ -1,5 +1,4 @@
 import threading
-from unittest.mock import MagicMock
 
 import grpc
 import pytest
@@ -241,8 +240,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
 
 
 def test_fetch_x509_context_success(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -341,8 +339,7 @@ def test_fetch_x509_context_raise_exception(mocker):
 
 
 def test_fetch_x509_context_corrupted_svid(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -377,8 +374,7 @@ def test_fetch_x509_context_corrupted_svid(mocker):
 
 
 def test_fetch_x509_context_corrupted_bundle(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -414,8 +410,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_context_corrupted_federated_bundle(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _CORRUPTED
+    federated_bundles = {'domain.test': _CORRUPTED}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -577,8 +572,7 @@ class ResponseHolder:
 
 
 def test_watch_x509_context_success(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -610,7 +604,7 @@ def test_watch_x509_context_success(mocker):
     _WORKLOAD_API_CLIENT.watch_x509_context(
         lambda r: handle_x509_context_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
-        True,
+        retry_connect=True,
     )
 
     done.wait(5)  # add timeout to prevent test from hanging
@@ -636,7 +630,7 @@ def test_watch_x509_context_success(mocker):
 
 
 def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mocker):
-    mock_error_iter = MagicMock()
+    mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = (
         yield_grpc_error_and_then_correct_x509_svid_response()
     )
@@ -681,7 +675,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
     grpc_error = grpc.RpcError()
     grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
 
-    mock_error_iter = MagicMock()
+    mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = grpc_error
 
     _WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -728,8 +722,7 @@ def yield_grpc_error_and_then_correct_x509_svid_response():
     grpc_error.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
     yield grpc_error
 
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
     response = iter(
         [
             workload_pb2.X509SVIDResponse(

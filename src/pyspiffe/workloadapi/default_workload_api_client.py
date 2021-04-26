@@ -157,13 +157,13 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Args:
             on_success: A Callable accepting a X509Context as argument and returning None, to be executed when a new update
-                        is fetched from the Workload API,
+                        is fetched from the Workload API.
 
             on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
                       an error on the connection with the Workload API.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
-                           Default: True
+                           Default: True.
 
         Returns:
             CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
@@ -171,14 +171,15 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """
 
         cancel_handler = CancelHandler()
-        retry_handler = _RetryHandler()
+
+        retry_handler = _RetryHandler() if retry_connect else None
 
         # start listening for updates in a separate thread
         t = threading.Thread(
             target=self._call_watch_x509_context,
-            args=(cancel_handler, retry_handler, on_success, on_error, retry_connect),
+            args=(cancel_handler, retry_handler, on_success, on_error),
+            daemon=True,
         )
-        t.setDaemon(True)
         t.start()
 
         # this handler is initialized later after the call to the Workload API
@@ -400,10 +401,9 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _call_watch_x509_context(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: _RetryHandler,
+        retry_handler: Optional[_RetryHandler],
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
-        retry_connect: bool,
     ) -> None:
 
         response_iterator = self._spiffe_workload_api_stub.FetchX509SVID(
@@ -419,22 +419,21 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             response_iterator,
             on_success,
             on_error,
-            retry_connect,
         )
 
     def _handle_x509_context_response(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: _RetryHandler,
+        retry_handler: Optional[_RetryHandler],
         response_iterator: Iterator[workload_pb2.X509SVIDResponse],
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
-        retry_connect: bool,
     ) -> None:
         try:
             for item in response_iterator:
                 x509_context = self._process_x509_context(item)
-                retry_handler.reset()
+                if retry_handler:
+                    retry_handler.reset()
                 on_success(x509_context)
 
         except grpc.RpcError as grpc_err:
@@ -444,7 +443,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                 grpc_err,
                 on_success,
                 on_error,
-                retry_connect,
             )
         except Exception as err:
             error = FetchX509SvidError(format(str(err)))
@@ -453,18 +451,17 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _handle_grpc_error(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: _RetryHandler,
+        retry_handler: Optional[_RetryHandler],
         grpc_error: grpc.RpcError,
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
-        retry_connect: bool,
     ):
         grpc_error_code = grpc_error.code()
         error = FetchX509SvidError(str(grpc_error_code))
         on_error(error)
 
-        if retry_connect and grpc_error_code not in _NON_RETRYABLE_CODES:
+        if retry_handler and grpc_error_code not in _NON_RETRYABLE_CODES:
             retry_handler.do_retry(
                 self._call_watch_x509_context,
-                [cancel_handler, retry_handler, on_success, on_error, retry_connect],
+                [cancel_handler, retry_handler, on_success, on_error],
             )
