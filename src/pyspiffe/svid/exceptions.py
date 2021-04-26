@@ -9,7 +9,7 @@ INVALID_VALUE_ERROR = '{} is not supported.'
 
 
 class JwtSvidError(PySpiffeError):
-    """Top level exception for JwtSvid module. """
+    """Top level exception for JwtSvid module."""
 
     def __init__(self, message: str) -> None:
         """Creates an instance of JwtSvidError.
@@ -103,7 +103,7 @@ class InvalidTypeError(JwtSvidError):
 
 
 class X509SvidError(PySpiffeError):
-    """Top level exception for the X509Svid module. """
+    """Top level exception for the X509Svid module."""
 
     def __init__(self, message: str) -> None:
         """Creates an instance of X509SvidError.

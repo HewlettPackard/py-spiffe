@@ -28,7 +28,7 @@ __all__ = ['X509Bundle']
 
 
 class X509Bundle(object):
-    """Represents a collection of trusted X.509 authorities for a trust domain. """
+    """Represents a collection of trusted X.509 authorities for a trust domain."""
 
     def __init__(
         self,
@@ -63,21 +63,21 @@ class X509Bundle(object):
             )
 
     def trust_domain(self) -> TrustDomain:
-        """Returns the trust domain of the bundle. """
+        """Returns the trust domain of the bundle."""
         return self._trust_domain
 
     def x509_authorities(self) -> Set[Certificate]:
-        """Returns a copy of set of X.509 authorities in the bundle. """
+        """Returns a copy of set of X.509 authorities in the bundle."""
         with self.lock:
             return self._x509_authorities.copy()
 
     def add_authority(self, x509_authority: Certificate) -> None:
-        """Adds an X.509 authority to the bundle. """
+        """Adds an X.509 authority to the bundle."""
         with self.lock:
             self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
-        """Removes an X.509 authority from the bundle. """
+        """Removes an X.509 authority from the bundle."""
         with self.lock:
             if not self._x509_authorities:
                 return

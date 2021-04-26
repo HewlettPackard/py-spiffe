@@ -6,7 +6,7 @@ from pyspiffe.exceptions import PySpiffeError
 
 
 class X509BundleError(PySpiffeError):
-    """Top level exception for the X509Bundle module. """
+    """Top level exception for the X509Bundle module."""
 
     def __init__(self, message: str) -> None:
         """Creates an instance of X509BundleError.
