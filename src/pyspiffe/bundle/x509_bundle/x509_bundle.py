@@ -80,6 +80,36 @@ class X509Bundle(object):
                 return
             self._x509_authorities.remove(x509_authority)
 
+    def save(
+        self,
+        bundle_path: str,
+        encoding: serialization.Encoding,
+    ) -> None:
+        """Saves the X.509 bundle to a file in disk.
+
+        Args:
+            bundle_path: Path to the file the set of X.509 authorities will be written to.
+            encoding: Bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER
+
+        Raises:
+            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding)
+            SaveX509BundleError: In the case the file path in bundle_path cannot be open to write, or there is an error
+                                converting or writing the authorities bytes to the file.
+        """
+
+        if encoding not in [encoding.PEM, encoding.DER]:
+            raise ArgumentError(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
+                    encoding
+                )
+            )
+        try:
+            write_certificates_to_file(bundle_path, encoding, self._x509_authorities)
+        except Exception as err:
+            raise SaveX509BundleError(
+                'Error writing X.509 bundle to file: {}'.format(str(err))
+            )
+
     @classmethod
     def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'X509Bundle':
         """Parses an X.509 bundle from an array of bytes containing trusted authorities as PEM blocks.
@@ -162,38 +192,3 @@ class X509Bundle(object):
         raise ArgumentError(
             'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
         )
-
-    @classmethod
-    def save(
-        cls,
-        x509_bundle: 'X509Bundle',
-        bundle_path: str,
-        encoding: serialization.Encoding,
-    ) -> None:
-        """Saves an X.509 bundle to a file in disk.
-
-        Args:
-            x509_bundle: Instance of 'X509Bundle' to be saved to disk
-            bundle_path: Path to the file containing a set of X.509 authorities
-            encoding: Bundle encoding format, either serialization.Encoding.PEM or serialization.Encoding.DER
-
-        Raises:
-            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding)
-            SaveX509BundleError: In the case the file path in bundle_path cannot be open to write, or there is an error
-                                converting or writing the authorities bytes to the file.
-        """
-
-        if encoding not in [encoding.PEM, encoding.DER]:
-            raise ArgumentError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
-                    encoding
-                )
-            )
-        try:
-            write_certificates_to_file(
-                bundle_path, encoding, x509_bundle.x509_authorities()
-            )
-        except Exception as err:
-            raise SaveX509BundleError(
-                'Error writing X.509 bundle to file: {}'.format(str(err))
-            )
