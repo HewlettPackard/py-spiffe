@@ -32,7 +32,7 @@ class JwtSvid(object):
         """Creates a JwtSvid instance.
 
         Args:
-            spiffe_id: A valid spiffeId instance.
+            spiffe_id: A valid SpiffeId instance.
             audience: The intended recipients of JWT-SVID as present in the 'aud' claims.
             expiry: Date and time in UTC specifying expiry date of the JwtSvid.
             claims: Key-value pairs with all the claims present in the token.
@@ -102,7 +102,7 @@ class JwtSvid(object):
                             when the signature cannot be verified, or
                             when the 'aud' claim has an audience that is not in the audience list provided as parameter.
             ArgumentError:     When the token is blank or cannot be parsed.
-            BundleNotFoundError:    If the bundle for the trust domain of the spiffe id from the 'sub'
+            BundleNotFoundError:    If the bundle for the trust domain of the SPIFFE ID from the 'sub'
                                     cannot be found the jwt_bundle_source.
             AuthorityNotFoundError: If the authority cannot be found in the bundle using the value from the 'kid' header.
             InvalidTokenError: In case token is malformed and fails to decode.

@@ -146,7 +146,7 @@ def test_load_bundle_non_existent_file():
 
     assert (
         str(exception.value)
-        == 'Error loading X.509 bundle: Certificates file not found: no-exists.'
+        == 'Error loading X.509 bundle: Error loading certificate from file: Certificates file not found: no-exists.'
     )
 
 
@@ -238,7 +238,11 @@ def test_save_non_supported_encoding(tmpdir):
 
 def test_save_error_writing_bundle_to_file(mocker):
     mock_x509_bundle = mocker.Mock(X509Bundle)
-    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mocker.patch(
+        'pyspiffe.bundle.x509_bundle.x509_bundle.write_certificates_to_file',
+        side_effect=Exception('Error msg'),
+        autospect=True,
+    )
 
     with pytest.raises(SaveX509BundleError) as err:
         X509Bundle.save(mock_x509_bundle, 'bundle_path', serialization.Encoding.PEM)

@@ -7,13 +7,14 @@ from pyspiffe.exceptions import ArgumentError
 from pyspiffe.svid.exceptions import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
-    ParseCertificateError,
-    ParsePrivateKeyError,
+)
+from pyspiffe.utils.exceptions import (
     LoadCertificateError,
     LoadPrivateKeyError,
     StoreCertificateError,
     StorePrivateKeyError,
-    X509SvidError,
+    ParseCertificateError,
+    ParsePrivateKeyError,
 )
 from pyspiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
@@ -108,10 +109,7 @@ def test_parse_raw_missing_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
-    )
+    assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
 
 
 def test_parse_missing_certificate():
@@ -121,10 +119,7 @@ def test_parse_missing_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
-    )
+    assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
 
 
 def test_parse_raw_missing_key():
@@ -160,10 +155,7 @@ def test_parse_raw_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing certificate: Unable to parse DER X.509 certificate.'
-    )
+    assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
 
 
 def test_parse_corrupted_certificate():
@@ -173,10 +165,7 @@ def test_parse_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing certificate: Unable to parse PEM X.509 certificate.'
-    )
+    assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
 
 
 def test_parse_raw_corrupted_private_key():
@@ -435,7 +424,11 @@ def test_save_non_supported_encoding():
 
 
 def test_save_error_writing_x509_svid_to_file(mocker):
-    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mocker.patch(
+        'pyspiffe.svid.x509_svid.write_certificates_to_file',
+        side_effect=StoreCertificateError('Error msg'),
+        autospect=True,
+    )
     mock_x509_svid = mocker.Mock(X509Svid)
 
     with pytest.raises(StoreCertificateError) as exception:
@@ -443,32 +436,30 @@ def test_save_error_writing_x509_svid_to_file(mocker):
             mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.PEM
         )
 
-    assert (
-        str(exception.value)
-        == 'Error saving certificate to file: Error writing X.509 SVID to file: Error msg.'
-    )
+    assert str(exception.value) == 'Error saving certificate to file: Error msg.'
 
 
 def test_save_error_writing_private_key_to_file(mocker):
-    mocker.patch('pyspiffe.svid.x509_svid._write_x509_svid_to_file', autospect=True)
+    mocker.patch('pyspiffe.svid.x509_svid.write_certificates_to_file', autospect=True)
+    mocker.patch(
+        'pyspiffe.svid.x509_svid.write_private_key_to_file',
+        side_effect=StorePrivateKeyError('Error msg'),
+        autospect=True,
+    )
     mock_x509_svid = mocker.Mock(X509Svid)
     mock_private_key = mocker.Mock()
-    mock_private_key.private_bytes.side_effect = Exception('Error msg')
     mock_x509_svid.private_key.return_value = mock_private_key
 
-    with pytest.raises(X509SvidError) as exception:
+    with pytest.raises(StorePrivateKeyError) as exception:
         X509Svid.save(
             mock_x509_svid, 'chain_file', 'key_file', serialization.Encoding.PEM
         )
 
-    assert (
-        str(exception.value)
-        == 'Could not extract private key bytes from object: Error msg.'
-    )
+    assert str(exception.value) == 'Error saving private key to file: Error msg.'
 
 
 def test_save_error_extracting_private_key(mocker):
-    mocker.patch('pyspiffe.svid.x509_svid._write_x509_svid_to_file', autospect=True)
+    mocker.patch('pyspiffe.svid.x509_svid.write_certificates_to_file', autospect=True)
     mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
     x509_svid = mocker.Mock(X509Svid)
 
