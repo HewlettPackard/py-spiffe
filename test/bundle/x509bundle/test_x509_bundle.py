@@ -176,7 +176,7 @@ def test_save_bundle_pem_encoded(tmpdir):
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
     bundle_path = tmpdir.join('bundle.pem')
-    X509Bundle.save(x509_bundle, bundle_path, serialization.Encoding.PEM)
+    x509_bundle.save(bundle_path, serialization.Encoding.PEM)
 
     saved_bundle = X509Bundle.load(
         trust_domain, bundle_path, serialization.Encoding.PEM
@@ -201,7 +201,7 @@ def test_save_bundle_der_encoded(tmpdir):
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
     bundle_path = tmpdir.join('bundle.pem')
-    X509Bundle.save(x509_bundle, bundle_path, serialization.Encoding.DER)
+    x509_bundle.save(bundle_path, serialization.Encoding.DER)
 
     saved_bundle = X509Bundle.load(
         trust_domain, bundle_path, serialization.Encoding.DER
@@ -228,7 +228,7 @@ def test_save_non_supported_encoding(tmpdir):
     bundle_path = tmpdir.join('bundle.pem')
 
     with pytest.raises(ArgumentError) as err:
-        X509Bundle.save(x509_bundle, bundle_path, serialization.Encoding.Raw)
+        x509_bundle.save(bundle_path, serialization.Encoding.Raw)
 
     assert (
         str(err.value)
@@ -237,15 +237,18 @@ def test_save_non_supported_encoding(tmpdir):
 
 
 def test_save_error_writing_bundle_to_file(mocker):
-    mock_x509_bundle = mocker.Mock(X509Bundle)
+    bundle_bytes = read_bytes('certs.pem')
+    # create the X509Bundle to be saved
+    x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
+
+    # mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
     mocker.patch(
         'pyspiffe.bundle.x509_bundle.x509_bundle.write_certificates_to_file',
         side_effect=Exception('Error msg'),
         autospect=True,
     )
-
     with pytest.raises(SaveX509BundleError) as err:
-        X509Bundle.save(mock_x509_bundle, 'bundle_path', serialization.Encoding.PEM)
+        x509_bundle.save('bundle_path', serialization.Encoding.PEM)
 
     assert (
         str(err.value)

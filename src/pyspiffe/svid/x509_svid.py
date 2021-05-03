@@ -77,6 +77,42 @@ class X509Svid(object):
         """Returns the SpiffeId."""
         return self._spiffe_id
 
+    def save(
+        self,
+        certs_chain_path: str,
+        private_key_path: str,
+        encoding: serialization.Encoding,
+    ) -> None:
+        """Saves the X.509 SVID certs chain and private key in PEM or DER encoded files on disk.
+
+        The private key is stored without encryption, but the file is set with filemode = '0600' (only owner has read/write permission).
+
+        Args:
+            certs_chain_path: Path to the file the chain of certificates will be written to.
+                              The certs_chain file is configured with a filemode = '0644'.
+            private_key_path: Path the file the private key will be written to.
+                              The private_key file is configured with a filemode = '0600'.
+            encoding: The encoding used to serialize the certs and private key, can be
+                                            serialization.Encoding.PEM or serialization.Encoding.DER.
+
+        Raises:
+            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding).
+            X509SvidError: In case the certs chain or the private key in the X509Svid cannot be converted to bytes.
+            StorePrivateKeyError: In the case there is an error storing the private key to the file.
+            StoreCertificateError: In the case the file path in certs_chain_path cannot be open to write,
+                                  or there is an error storing the certificates to the file.
+        """
+
+        if encoding not in [encoding.PEM, encoding.DER]:
+            raise ArgumentError(
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
+                    encoding
+                )
+            )
+
+        write_certificates_to_file(certs_chain_path, encoding, self._cert_chain)
+        write_private_key_to_file(private_key_path, encoding, self._private_key)
+
     @classmethod
     def parse_raw(
         cls, certs_chain_bytes: bytes, private_key_bytes: bytes
@@ -199,45 +235,6 @@ class X509Svid(object):
         raise ArgumentError(
             'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
         )
-
-    @classmethod
-    def save(
-        cls,
-        x509_svid: 'X509Svid',
-        certs_chain_path: str,
-        private_key_path: str,
-        encoding: serialization.Encoding,
-    ) -> None:
-        """Saves the X.509 SVID certs chain and private key in PEM or DER encoded files on disk.
-
-        The private key is stored without encryption, but the file is set with filemode = '0600' (only owner has read/write permission).
-
-        Args:
-            x509_svid: the 'X509Svid' that has the certs_chain and private_key to be saved on disk.
-            certs_chain_path: Path to the file containing one or more X.509 certificates as PEM blocks.
-                                    The certs_chain file is configured with a filemode = '0644'.
-            private_key_path: Path the file containing a PKCS#8 PEM block.
-                                    The private_key file is configured with a filemode = '0600'.
-            encoding: The encoding used to serialize the certs and private key, can be
-                                            serialization.Encoding.PEM or serialization.Encoding.DER.
-
-        Raises:
-            ArgumentError: In case the encoding is not either PEM or DER (from serialization.Encoding).
-            X509SvidError: In case the certs chain or the private key in the X509Svid cannot be converted to bytes.
-            StorePrivateKeyError: In the case there is an error storing the private key to the file.
-            StoreCertificateError: In the case the file path in certs_chain_path cannot be open to write,
-                                  or there is an error storing the certificates to the file.
-        """
-
-        if encoding not in [encoding.PEM, encoding.DER]:
-            raise ArgumentError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
-                    encoding
-                )
-            )
-
-        write_certificates_to_file(certs_chain_path, encoding, x509_svid.cert_chain())
-        write_private_key_to_file(private_key_path, encoding, x509_svid.private_key())
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
