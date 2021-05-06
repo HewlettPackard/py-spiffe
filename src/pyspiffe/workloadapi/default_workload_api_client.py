@@ -6,12 +6,13 @@ import time
 from typing import Optional, List, Mapping, Iterator, Callable
 
 import grpc
-
 from pyspiffe.workloadapi.cancel_handler import CancelHandler
 from pyspiffe.workloadapi.x509_context import X509Context
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
+from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from pyspiffe.bundle.jwt_bundle.exceptions import ParseJWTBundleError
 from pyspiffe.config import ConfigSetter
 from pyspiffe.exceptions import ArgumentError
 from pyspiffe.proto.spiffe import (
@@ -23,6 +24,7 @@ from pyspiffe.workloadapi.exceptions import (
     FetchX509SvidError,
     FetchX509BundleError,
     FetchJwtSvidError,
+    FetchJwtBundleError,
     ValidateJwtSvidError,
 )
 from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
@@ -263,7 +265,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             JwtSvid: Instance of JwtSvid object.
         Raises:
             ArgumentError: In case audience is empty.
-            FetchJwtSvidError: In case there is an error in fetching the JWTSVID from the Workload API.
+            FetchJwtSvidError: In case there is an error in fetching the JWT-SVID from the Workload API.
         """
         if not audiences:
             raise ArgumentError('Parameter audiences cannot be empty')
@@ -275,14 +277,34 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             raise FetchJwtSvidError(str(e))
 
     def fetch_jwt_bundles(self) -> JwtBundleSet:
-        """Fetches the JWT bundles for JWT-SVID validation, keyed by trust
-        domain.
+        """Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
 
         Returns:
             JwtBundleSet: Set of JwtBundle objects.
+
+        Raises:
+            FetchJwtBundleError: In case there is an error in fetching the JWT-Bundle from the Workload API or
+                                in case the set of jwt_authorities cannot be parsed from the Workload API Response.
         """
 
-        pass
+        try:
+            response = self._spiffe_workload_api_stub.FetchJWTBundles(
+                workload_pb2.JWTBundlesRequest()
+            )
+
+            jwt_bundles = {
+                TrustDomain(td): JwtBundle.parse(TrustDomain(td), jwk_set)
+                for td, jwk_set in response.bundles.items()
+            }
+        except ParseJWTBundleError as pe:
+            raise FetchJwtBundleError(str(pe))
+        except Exception:
+            raise FetchJwtBundleError('JWT Bundles response is invalid')
+
+        if not jwt_bundles:
+            raise FetchJwtBundleError('JWT Bundles response is empty')
+
+        return JwtBundleSet(jwt_bundles)
 
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.

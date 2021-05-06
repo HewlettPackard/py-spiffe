@@ -2,11 +2,13 @@
 JwtBundle module manages JwtBundle objects.
 """
 import threading
+from json import JSONDecodeError
+from jwt.api_jwk import PyJWKSet
+from jwt.exceptions import InvalidKeyError
 from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
-
 from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
-from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError
+from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
 from pyspiffe.exceptions import ArgumentError
 
 _PUBLIC_KEY_TYPES = Union[
@@ -32,6 +34,9 @@ class JwtBundle(object):
         Args:
             trust_domain: The TrustDomain to associate with the JwtBundle instance.
             jwt_authorities: A dictionary with key_id->PublicKey valid for the given TrustDomain.
+
+        Raises:
+            JWTBundleError: In case the trust_domain is empty.
         """
         self.lock = threading.Lock()
 
@@ -68,3 +73,38 @@ class JwtBundle(object):
 
         with self.lock:
             return self._jwt_authorities.get(key_id)
+
+    @classmethod
+    def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'JwtBundle':
+        """parses a bundle from bytes. The data must be a standard RFC 7517 JWKS document.
+
+        Args:
+            trust_domain: A TrustDomain to associate to the bundle.
+            bundle_bytes: An array of bytes that represents a set of JWKs.
+
+        Returns:
+            An instance of 'JWTBundle' with the JWT authorities associated to the given trust domain.
+
+        Raises:
+            JWTBundleError: In case the trust_domain is empty.
+            ParseJWTBundleError: In case the set of jwt_authorities cannot be parsed from the bundle_bytes.
+        """
+
+        if not trust_domain:
+            raise ParseJWTBundleError(EMPTY_DOMAIN_ERROR)
+
+        try:
+            jwks = PyJWKSet.from_json(bundle_bytes)
+        except (JSONDecodeError, InvalidKeyError, TypeError, AttributeError):
+            raise ParseJWTBundleError('Cannot parse jwks from bundle_bytes')
+
+        jwt_authorities = {}
+        for jwk in jwks.keys:
+            if not jwk.key_id:
+                raise ParseJWTBundleError(
+                    'Error adding authority from JWKS: keyID cannot be empty'
+                )
+
+            jwt_authorities[jwk.key_id] = jwk.key
+
+        return JwtBundle(trust_domain, jwt_authorities)

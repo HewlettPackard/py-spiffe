@@ -3,11 +3,16 @@ import datetime
 from calendar import timegm
 from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
-
+from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.exceptions import ArgumentError
-from pyspiffe.workloadapi.exceptions import FetchJwtSvidError, ValidateJwtSvidError
+from pyspiffe.workloadapi.exceptions import (
+    FetchJwtSvidError,
+    ValidateJwtSvidError,
+    FetchJwtBundleError,
+)
+from test.utils.utils import JWKS_1_EC_KEY, JWKS_2_EC_1_RSA_KEYS, JWKS_MISSING_KEY_ID
 
 
 def test_fetch_jwt_svid_aud_sub(mocker):
@@ -114,12 +119,88 @@ def test_fetch_jwt_svid_no_token_returned(mocker):
     )
 
 
-"""
-# TODO: Implement using WorkloadApi Mock
-def test_fetch_jwt_bundles():
-    wlapi = get_client()
-    wlapi.fetch_jwt_bundles()
-"""
+def test_fetch_jwt_bundles(mocker):
+    bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_2_EC_1_RSA_KEYS}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=iter(
+            [
+                workload_pb2.JWTBundlesResponse(
+                    bundles=bundles,
+                ),
+            ]
+        )
+    )
+
+    jwt_bundle_set = WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    jwt_bundle = jwt_bundle_set.get_jwt_bundle_for_trust_domain(
+        TrustDomain('example.org')
+    )
+    assert jwt_bundle
+    assert len(jwt_bundle.jwt_authorities()) == 1
+
+    federated_jwt_bundle = jwt_bundle_set.get_jwt_bundle_for_trust_domain(
+        TrustDomain('domain.test')
+    )
+    assert federated_jwt_bundle
+    assert len(federated_jwt_bundle.jwt_authorities()) == 3
+
+
+def test_fetch_jwt_bundles_raise_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=Exception('Mocked error')
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: JWT Bundles response is invalid.'
+    )
+
+
+def test_fetch_jwt_bundles_empty_response(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=iter(
+            [
+                workload_pb2.JWTBundlesResponse(
+                    bundles={},
+                ),
+            ]
+        )
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: JWT Bundles response is empty.'
+    )
+
+
+def test_fetch_jwt_bundles_error_parsing_jwks(mocker):
+    bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_MISSING_KEY_ID}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=iter(
+            [
+                workload_pb2.JWTBundlesResponse(
+                    bundles=bundles,
+                ),
+            ]
+        )
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: Error parsing JWT bundle: Error adding authority from JWKS: keyID cannot be empty.'
+    )
 
 
 def test_validate_jwt_svid(mocker):
