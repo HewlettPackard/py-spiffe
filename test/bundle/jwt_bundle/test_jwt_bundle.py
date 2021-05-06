@@ -4,8 +4,14 @@ from cryptography.hazmat.backends import default_backend
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
-from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError
+from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
 from pyspiffe.exceptions import ArgumentError
+from test.utils.utils import (
+    JWKS_1_EC_KEY,
+    JWKS_2_EC_1_RSA_KEYS,
+    JWKS_MISSING_X,
+    JWKS_MISSING_KEY_ID,
+)
 
 # Default trust domain to run test cases.
 trust_domain = TrustDomain("spiffe://any.domain")
@@ -78,3 +84,48 @@ def test_get_jwt_authority_empty_authority_dict():
     response = jwt_bundle.get_jwt_authority(key_id='p1')
 
     assert response is None
+
+
+@pytest.mark.parametrize(
+    'test_bytes, expected_authorities',
+    [(JWKS_1_EC_KEY, 1), (JWKS_2_EC_1_RSA_KEYS, 3)],
+)
+def test_parse(test_bytes, expected_authorities):
+    jwt_bundle = JwtBundle.parse(trust_domain, test_bytes)
+
+    assert jwt_bundle
+    assert len(jwt_bundle.jwt_authorities()) == expected_authorities
+
+
+def test_parse_invalid_trust_domain():
+    with pytest.raises(JwtBundleError) as exception:
+        JwtBundle.parse(None, b'test_bundle')
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: Trust domain cannot be empty.'
+    )
+
+
+@pytest.mark.parametrize(
+    'test_bytes',
+    [b'', None, b'1211', b'invalid bytes', JWKS_MISSING_X],
+)
+def test_parse_invalid_bytes(test_bytes):
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, test_bytes)
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: Cannot parse jwks from bundle_bytes.'
+    )
+
+
+def test_parse_corrupted_key_missing_key_id():
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, JWKS_MISSING_KEY_ID)
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: Error adding authority from JWKS: keyID cannot be empty.'
+    )

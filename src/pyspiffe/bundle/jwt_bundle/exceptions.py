@@ -20,6 +20,20 @@ class JwtBundleError(PySpiffeError):
         return self.message
 
 
+class ParseJWTBundleError(JwtBundleError):
+    """Error raised when a JWT bundle could not be parsed from bytes."""
+
+    _MESSAGE = 'Error parsing JWT bundle: {}'
+
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of ParseJWTBundleError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
+
+
 class AuthorityNotFoundError(JwtBundleError):
     """Raised when an authority is not found associated with a key_id."""
 
