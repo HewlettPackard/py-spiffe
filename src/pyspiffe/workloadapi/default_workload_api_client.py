@@ -43,14 +43,26 @@ from pyspiffe.workloadapi.workload_api_client import (
 _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUMENT}
 
 
-class _RetryHandler:
+class RetryHandler:
+    """Handler that performs retries using an exponential backoff policy."""
+
     def __init__(
         self,
         max_retries: int = 0,
         base_backoff_in_seconds: float = 0.1,
         backoff_factor: int = 2,
-        max_delay_in_seconds: int = 60,
+        max_delay_in_seconds: float = 60,
     ) -> None:
+        """Creates a RetryHandler that keeps track of retries and allows the execution of a callable using an
+           exponential backoff policy.
+
+        Args:
+            max_retries: The maximum number of times that the handler will retry. Default: 0 (no maximum).
+            base_backoff_in_seconds: The initial delay in seconds and base number that will be multiplied by an exponential factor in each
+                                     retry backoff calculation.
+            max_delay_in_seconds: The maximum delay expressed in seconds.
+            backoff_factor: Base of the exponential calculation: base_backoff * pow(backoff_factor, retry_number).
+        """
         self._max_retries = max_retries
         self._base_backoff = base_backoff_in_seconds
         self._backoff_factor = backoff_factor
@@ -59,8 +71,9 @@ class _RetryHandler:
         self._lock = threading.RLock()
 
     def do_retry(self, fn: Callable, params: List) -> bool:
+        """Executes the callable after after a backoff delay calculated based on an exponential policy."""
         with self._lock:
-            if self._max_retries and self._retries_count > self._max_retries:
+            if self._max_retries and self._retries_count >= self._max_retries:
                 return False
             self._retries_count += 1
             backoff = self._calculate_backoff()
@@ -70,6 +83,7 @@ class _RetryHandler:
         return True
 
     def reset(self):
+        """Resets the handler setting the retries counting to zero."""
         with self._lock:
             self._retries_count = 0
 
@@ -171,7 +185,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         cancel_handler = CancelHandler()
 
-        retry_handler = _RetryHandler() if retry_connect else None
+        retry_handler = RetryHandler() if retry_connect else None
 
         # start listening for updates in a separate thread
         t = threading.Thread(
@@ -400,7 +414,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _call_watch_x509_context(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: Optional[_RetryHandler],
+        retry_handler: Optional[RetryHandler],
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
     ) -> None:
@@ -423,7 +437,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _handle_x509_context_response(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: Optional[_RetryHandler],
+        retry_handler: Optional[RetryHandler],
         response_iterator: Iterator[workload_pb2.X509SVIDResponse],
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
@@ -450,7 +464,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _handle_grpc_error(
         self,
         cancel_handler: CancelHandler,
-        retry_handler: Optional[_RetryHandler],
+        retry_handler: Optional[RetryHandler],
         grpc_error: grpc.RpcError,
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],

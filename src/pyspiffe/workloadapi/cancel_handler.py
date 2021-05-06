@@ -1,3 +1,6 @@
+"""
+This module provides a Cancel Handler.
+"""
 import threading
 from typing import Callable
 
@@ -6,6 +9,11 @@ class CancelHandler:
     """Represents a handler to cancel operations."""
 
     def __init__(self, on_cancel: Callable[[], bool] = None) -> None:
+        """Create a CancelHandler.
+
+        Args:
+            on_cancel: The Callable that will be executed when the method 'cancel' is called. Can be 'None' and be set afterwards.
+        """
         self._on_cancel = on_cancel
         self._lock = threading.Lock()
 

@@ -58,10 +58,10 @@ class WorkloadApiClient(ABC):
            incrementing it then to 0.2, 0.4, 0.8, 1.6 and so on (until the max backoff of 60 seconds). It retries indefinitely.
 
         Args:
-            on_success: a Callable accepting a X509Context as argument and returning None, to be executed when a new update
+            on_success: A Callable accepting a X509Context as argument and returning None, to be executed when a new update
                         is fetched from the Workload API.
 
-            on_error: a Callable accepting an Exception as argument and returning None, to be executed when there is
+            on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
                       an error on the connection with the Workload API.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
