@@ -37,6 +37,8 @@ from pyspiffe.workloadapi.workload_api_client import (
     WORKLOAD_API_HEADER_VALUE,
 )
 
+__all__ = ['DefaultWorkloadApiClient']
+
 # GRPC Error Codes that the client will not retry on:
 #  - INVALID_ARGUMENT is not retried according to the SPIFFE spec because the request is invalid
 #  - CANCELLED is not retried because it occurs when the caller has canceled the operation.
@@ -46,9 +48,11 @@ _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUM
 class RetryHandler:
     """Handler that performs retries using an exponential backoff policy."""
 
+    UNLIMITED_RETRIES = 0
+
     def __init__(
         self,
-        max_retries: int = 0,
+        max_retries: int = UNLIMITED_RETRIES,
         base_backoff_in_seconds: float = 0.1,
         backoff_factor: int = 2,
         max_delay_in_seconds: float = 60,
