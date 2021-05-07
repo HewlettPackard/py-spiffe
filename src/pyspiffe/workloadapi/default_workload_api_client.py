@@ -389,17 +389,17 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     ) -> workload_pb2.JWTSVIDResponse:
 
         try:
-            request = workload_pb2.JWTSVIDRequest()
-            request.audience.extend(audience)
-            if spiffe_id:
-                request.spiffe_id = spiffe_id
+            request = workload_pb2.JWTSVIDRequest(
+                audience=audience,
+                spiffe_id=spiffe_id,
+            )
             response = self._spiffe_workload_api_stub.FetchJWTSVID(request)
-            item = next(response)
         except Exception as e:
             raise FetchJwtSvidError(str(e))
-        if len(item.svids) == 0:
+        if len(response.svids) == 0:
             raise FetchJwtSvidError('JWT SVID response is empty')
-        return item
+
+        return response
 
     def _process_x509_context(
         self, x509_svid_response: workload_pb2.X509SVIDResponse
