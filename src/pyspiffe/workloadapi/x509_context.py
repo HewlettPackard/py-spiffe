@@ -6,8 +6,6 @@ from typing import List, Optional
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.svid.x509_svid import X509Svid
 
-__all__ = ['X509Context']
-
 
 class X509Context(object):
     """Represents the X.509 materials that are fetched from the Workload API.
