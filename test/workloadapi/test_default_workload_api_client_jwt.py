@@ -15,15 +15,11 @@ def test_fetch_jwt_svid_aud_sub(mocker):
     jwt_svid = create_jwt(spiffe_id=str(spiffe_id))
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
-        return_value=iter(
-            [
-                workload_pb2.JWTSVIDResponse(
-                    svids=[
-                        workload_pb2.JWTSVID(
-                            spiffe_id=str(spiffe_id),
-                            svid=jwt_svid,
-                        )
-                    ]
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(
+                    spiffe_id=str(spiffe_id),
+                    svid=jwt_svid,
                 )
             ]
         )
@@ -44,14 +40,10 @@ def test_fetch_jwt_svid_aud(mocker):
     jwt_svid = create_jwt(spiffe_id=spiffe_id)
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
-        return_value=iter(
-            [
-                workload_pb2.JWTSVIDResponse(
-                    svids=[
-                        workload_pb2.JWTSVID(
-                            svid=jwt_svid,
-                        )
-                    ]
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(
+                    svid=jwt_svid,
                 )
             ]
         )
@@ -79,26 +71,25 @@ def test_fetch_jwt_svid_no_audience(test_input_audience, expected):
     assert str(exception.value) == expected
 
 
-def test_fetch_jwt_svid_fetch_error():
+def test_fetch_jwt_svid_fetch_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        side_effect=Exception('Mocked Error')
+    )
+
     with pytest.raises(FetchJwtSvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
 
-    assert str(exception.value).startswith('Error fetching JWT SVID')
+    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
 
 
 def test_fetch_jwt_svid_wrong_token(mocker):
-    spiffe_id = ''
-    jwt_svid = create_jwt(spiffe_id=spiffe_id)
+    jwt_svid = create_jwt(spiffe_id='')
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
-        return_value=iter(
-            [
-                workload_pb2.JWTSVIDResponse(
-                    svids=[
-                        workload_pb2.JWTSVID(
-                            svid=jwt_svid,
-                        )
-                    ]
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(
+                    svid=jwt_svid,
                 )
             ]
         )
@@ -106,17 +97,21 @@ def test_fetch_jwt_svid_wrong_token(mocker):
     with pytest.raises(FetchJwtSvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
 
-    assert str(exception.value).startswith('Error fetching JWT SVID')
+    assert (
+        str(exception.value) == 'Error fetching JWT SVID: Missing required claim: sub.'
+    )
 
 
 def test_fetch_jwt_svid_no_token_returned(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
-        return_value=iter([workload_pb2.JWTSVIDResponse(svids=[])])
+        return_value=workload_pb2.JWTSVIDResponse(svids=[])
     )
     with pytest.raises(FetchJwtSvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
 
-    assert str(exception.value).startswith('Error fetching JWT SVID')
+    assert (
+        str(exception.value) == 'Error fetching JWT SVID: JWT SVID response is empty.'
+    )
 
 
 """
