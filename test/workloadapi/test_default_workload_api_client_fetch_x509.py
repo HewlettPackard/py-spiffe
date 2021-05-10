@@ -1,3 +1,6 @@
+import threading
+
+import grpc
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
@@ -6,6 +9,7 @@ from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
+from pyspiffe.workloadapi.x509_context import X509Context
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
 
@@ -236,8 +240,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
 
 
 def test_fetch_x509_context_success(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -336,8 +339,7 @@ def test_fetch_x509_context_raise_exception(mocker):
 
 
 def test_fetch_x509_context_corrupted_svid(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -372,8 +374,7 @@ def test_fetch_x509_context_corrupted_svid(mocker):
 
 
 def test_fetch_x509_context_corrupted_bundle(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -409,8 +410,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_context_corrupted_federated_bundle(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = _CORRUPTED
+    federated_bundles = {'domain.test': _CORRUPTED}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -561,3 +561,187 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
         str(exception.value)
         == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
     )
+
+
+class ResponseHolder:
+    # Used in tests to store responses from the watch methods.
+
+    def __init__(self):
+        self.error = None
+        self.success = None
+
+
+def test_watch_x509_context_success(mocker):
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter(
+            [
+                workload_pb2.X509SVIDResponse(
+                    svids=[
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service',
+                            x509_svid=_CHAIN1,
+                            x509_svid_key=_KEY1,
+                            bundle=_BUNDLE,
+                        ),
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service2',
+                            x509_svid=_CHAIN2,
+                            x509_svid_key=_KEY2,
+                            bundle=_BUNDLE,
+                        ),
+                    ],
+                    federated_bundles=federated_bundles,
+                )
+            ]
+        )
+    )
+
+    done = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: handle_error(e, response_holder, done),
+        retry_connect=True,
+    )
+
+    done.wait(5)  # add timeout to prevent test from hanging
+
+    assert not response_holder.error
+    x509_context = response_holder.success
+    svid1 = x509_context.default_svid()
+    assert svid1.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
+    assert len(svid1.cert_chain()) == 2
+    assert isinstance(svid1.leaf(), Certificate)
+    assert isinstance(svid1.private_key(), ec.EllipticCurvePrivateKey)
+
+    svid2 = x509_context.x509_svids()[1]
+    assert svid2.spiffe_id() == SpiffeId.parse('spiffe://example.org/service2')
+    assert len(svid2.cert_chain()) == 1
+    assert isinstance(svid2.leaf(), Certificate)
+    assert isinstance(svid2.private_key(), ec.EllipticCurvePrivateKey)
+
+    bundle_set = x509_context.x509_bundle_set()
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert bundle
+    assert len(bundle.x509_authorities()) == 1
+
+
+def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mocker):
+    mock_error_iter = mocker.MagicMock()
+    mock_error_iter.__iter__.side_effect = (
+        yield_grpc_error_and_then_correct_x509_svid_response()
+    )
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=mock_error_iter
+    )
+
+    expected_error = FetchX509SvidError('StatusCode.DEADLINE_EXCEEDED')
+    done = threading.Event()
+
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: assert_error(e, expected_error),
+        True,
+    )
+
+    done.wait(5)  # add timeout to prevent test from hanging
+
+    x509_context = response_holder.success
+    svid1 = x509_context.default_svid()
+    assert svid1.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
+    assert len(svid1.cert_chain()) == 2
+    assert isinstance(svid1.leaf(), Certificate)
+    assert isinstance(svid1.private_key(), ec.EllipticCurvePrivateKey)
+
+    svid2 = x509_context.x509_svids()[1]
+    assert svid2.spiffe_id() == SpiffeId.parse('spiffe://example.org/service2')
+    assert len(svid2.cert_chain()) == 1
+    assert isinstance(svid2.leaf(), Certificate)
+    assert isinstance(svid2.private_key(), ec.EllipticCurvePrivateKey)
+
+    bundle_set = x509_context.x509_bundle_set()
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert bundle
+    assert len(bundle.x509_authorities()) == 1
+
+
+def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
+    grpc_error = grpc.RpcError()
+    grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
+
+    mock_error_iter = mocker.MagicMock()
+    mock_error_iter.__iter__.side_effect = grpc_error
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=mock_error_iter
+    )
+
+    done = threading.Event()
+    expected_error = FetchX509SvidError('StatusCode.INVALID_ARGUMENT')
+
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_x509_context(
+        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda e: handle_error(e, response_holder, done),
+        True,
+    )
+
+    done.wait(5)  # add timeout to prevent test from hanging
+
+    assert not response_holder.success
+    assert str(response_holder.error) == str(expected_error)
+
+
+def assert_error(error: Exception, expected: Exception):
+    assert str(error) == str(expected)
+
+
+def handle_error(
+    error: Exception, response_holder: ResponseHolder, event: threading.Event
+):
+    response_holder.error = error
+    event.set()
+
+
+def handle_x509_context_success(
+    response: X509Context, response_holder: ResponseHolder, event: threading.Event
+):
+    response_holder.success = response
+    event.set()
+
+
+def yield_grpc_error_and_then_correct_x509_svid_response():
+    grpc_error = grpc.RpcError()
+    grpc_error.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
+    yield grpc_error
+
+    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    response = iter(
+        [
+            workload_pb2.X509SVIDResponse(
+                svids=[
+                    workload_pb2.X509SVID(
+                        spiffe_id='spiffe://example.org/service',
+                        x509_svid=_CHAIN1,
+                        x509_svid_key=_KEY1,
+                        bundle=_BUNDLE,
+                    ),
+                    workload_pb2.X509SVID(
+                        spiffe_id='spiffe://example.org/service2',
+                        x509_svid=_CHAIN2,
+                        x509_svid_key=_KEY2,
+                        bundle=_BUNDLE,
+                    ),
+                ],
+                federated_bundles=federated_bundles,
+            )
+        ]
+    )
+    yield response
