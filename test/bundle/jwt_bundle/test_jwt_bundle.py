@@ -1,7 +1,7 @@
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
-
+from jwt.exceptions import InvalidKeyError
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
@@ -97,19 +97,31 @@ def test_parse(test_bytes, expected_authorities):
     assert len(jwt_bundle.jwt_authorities()) == expected_authorities
 
 
-def test_parse_invalid_trust_domain():
-    with pytest.raises(JwtBundleError) as exception:
-        JwtBundle.parse(None, b'test_bundle')
+@pytest.mark.parametrize(
+    'test_trust_domain',
+    ['', None],
+)
+def test_parse_invalid_trust_domain(test_trust_domain):
+    with pytest.raises(ArgumentError) as exception:
+        JwtBundle.parse(test_trust_domain, JWKS_1_EC_KEY)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing JWT bundle: Trust domain cannot be empty.'
-    )
+    assert str(exception.value) == 'Trust domain cannot be empty.'
+
+
+@pytest.mark.parametrize(
+    'test_bundle_bytes',
+    [b'', None],
+)
+def test_parse_missing_bundle_bytes(test_bundle_bytes):
+    with pytest.raises(ArgumentError) as exception:
+        JwtBundle.parse(trust_domain, test_bundle_bytes)
+
+    assert str(exception.value) == 'Bundle bytes cannot be empty.'
 
 
 @pytest.mark.parametrize(
     'test_bytes',
-    [b'', None, b'1211', b'invalid bytes', JWKS_MISSING_X],
+    [b'1211', b'invalid bytes'],
 )
 def test_parse_invalid_bytes(test_bytes):
     with pytest.raises(ParseJWTBundleError) as exception:
@@ -117,7 +129,23 @@ def test_parse_invalid_bytes(test_bytes):
 
     assert (
         str(exception.value)
-        == 'Error parsing JWT bundle: Cannot parse jwks from bundle_bytes.'
+        == 'Error parsing JWT bundle: Cannot parse jwks. bundle_bytes does not represent a valid jwks.'
+    )
+
+
+def test_parse_bundle_bytes_invalid_key(mocker):
+    mocker.patch(
+        'pyspiffe.bundle.jwt_bundle.jwt_bundle.PyJWKSet.from_json',
+        side_effect=InvalidKeyError('Invalid Key'),
+        autospect=True,
+    )
+
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, JWKS_MISSING_X)
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: Cannot parse jwks from bundle_bytes: Invalid Key.'
     )
 
 

@@ -44,18 +44,3 @@ class JwtBundleSet(object):
         """
         with self.lock:
             return self._bundles.get(trust_domain)
-
-    def get_jwt_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[JwtBundle]:
-        """Returns the JwtBundle object for the given trust domain.
-
-        Args:
-            trust_domain: The TrustDomain to get an JwtBundle.
-
-        Returns:
-            A JwtBundle object for the given TrustDomain.
-            None if the TrustDomain is not found in the set.
-        """
-        with self.lock:
-            return self._bundles.get(trust_domain)

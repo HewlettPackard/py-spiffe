@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import grpc
 from calendar import timegm
 from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
@@ -12,7 +13,12 @@ from pyspiffe.workloadapi.exceptions import (
     ValidateJwtSvidError,
     FetchJwtBundleError,
 )
-from test.utils.utils import JWKS_1_EC_KEY, JWKS_2_EC_1_RSA_KEYS, JWKS_MISSING_KEY_ID
+from test.utils.utils import (
+    FakeCall,
+    JWKS_1_EC_KEY,
+    JWKS_2_EC_1_RSA_KEYS,
+    JWKS_MISSING_KEY_ID,
+)
 
 
 def test_fetch_jwt_svid_aud_sub(mocker):
@@ -123,7 +129,7 @@ def test_fetch_jwt_bundles(mocker):
     bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_2_EC_1_RSA_KEYS}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        side_effect=iter(
+        return_value=iter(
             [
                 workload_pb2.JWTBundlesResponse(
                     bundles=bundles,
@@ -134,36 +140,18 @@ def test_fetch_jwt_bundles(mocker):
 
     jwt_bundle_set = WORKLOAD_API_CLIENT.fetch_jwt_bundles()
 
-    jwt_bundle = jwt_bundle_set.get_jwt_bundle_for_trust_domain(
-        TrustDomain('example.org')
-    )
+    jwt_bundle = jwt_bundle_set.get(TrustDomain('example.org'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities()) == 1
 
-    federated_jwt_bundle = jwt_bundle_set.get_jwt_bundle_for_trust_domain(
-        TrustDomain('domain.test')
-    )
+    federated_jwt_bundle = jwt_bundle_set.get(TrustDomain('domain.test'))
     assert federated_jwt_bundle
     assert len(federated_jwt_bundle.jwt_authorities()) == 3
 
 
-def test_fetch_jwt_bundles_raise_error(mocker):
-    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        side_effect=Exception('Mocked error')
-    )
-
-    with pytest.raises(FetchJwtBundleError) as exc_info:
-        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
-
-    assert (
-        str(exc_info.value)
-        == 'Error fetching JWT Bundle: JWT Bundles response is invalid.'
-    )
-
-
 def test_fetch_jwt_bundles_empty_response(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        side_effect=iter(
+        return_value=iter(
             [
                 workload_pb2.JWTBundlesResponse(
                     bundles={},
@@ -185,7 +173,7 @@ def test_fetch_jwt_bundles_error_parsing_jwks(mocker):
     bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_MISSING_KEY_ID}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        side_effect=iter(
+        return_value=iter(
             [
                 workload_pb2.JWTBundlesResponse(
                     bundles=bundles,
@@ -200,6 +188,48 @@ def test_fetch_jwt_bundles_error_parsing_jwks(mocker):
     assert (
         str(exc_info.value)
         == 'Error fetching JWT Bundle: Error parsing JWT bundle: Error adding authority from JWKS: keyID cannot be empty.'
+    )
+
+
+def test_fetch_jwt_bundles_raise_grpc_call(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=FakeCall()
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: Error details from Workload API.'
+    )
+
+
+def test_fetch_jwt_bundles_raise_grpc_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=grpc.RpcError('Mocked gRPC error')
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: Could not process response from the Workload API.'
+    )
+
+
+def test_fetch_jwt_bundles_raise_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=Exception('Mocked error')
+    )
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        WORKLOAD_API_CLIENT.fetch_jwt_bundles()
+
+    assert (
+        str(exc_info.value)
+        == 'Error fetching JWT Bundle: Could not process response from the Workload API.'
     )
 
 

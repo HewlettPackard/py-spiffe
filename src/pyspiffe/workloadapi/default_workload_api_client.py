@@ -12,7 +12,6 @@ from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.bundle.jwt_bundle.exceptions import ParseJWTBundleError
 from pyspiffe.config import ConfigSetter
 from pyspiffe.exceptions import ArgumentError
 from pyspiffe.proto.spiffe import (
@@ -20,6 +19,7 @@ from pyspiffe.proto.spiffe import (
     workload_pb2,
 )
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.workloadapi.handle_error import handle_error
 from pyspiffe.workloadapi.exceptions import (
     FetchX509SvidError,
     FetchX509BundleError,
@@ -276,6 +276,10 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         except JwtSvidError as e:
             raise FetchJwtSvidError(str(e))
 
+    @handle_error(
+        error_cls=FetchJwtBundleError,
+        default_msg='Could not process response from the Workload API',
+    )
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
 
@@ -287,19 +291,13 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                                 in case the set of jwt_authorities cannot be parsed from the Workload API Response.
         """
 
-        try:
-            response = self._spiffe_workload_api_stub.FetchJWTBundles(
-                workload_pb2.JWTBundlesRequest()
-            )
-
-            jwt_bundles = {
-                TrustDomain(td): JwtBundle.parse(TrustDomain(td), jwk_set)
-                for td, jwk_set in response.bundles.items()
-            }
-        except ParseJWTBundleError as pe:
-            raise FetchJwtBundleError(str(pe))
-        except Exception:
-            raise FetchJwtBundleError('JWT Bundles response is invalid')
+        responses = self._spiffe_workload_api_stub.FetchJWTBundles(
+            workload_pb2.JWTBundlesRequest(), timeout=10
+        )
+        jwt_bundles = {}
+        res = next(responses)
+        for td, jwk_set in res.bundles.items():
+            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
 
         if not jwt_bundles:
             raise FetchJwtBundleError('JWT Bundles response is empty')

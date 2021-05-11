@@ -76,7 +76,7 @@ class JwtBundle(object):
 
     @classmethod
     def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'JwtBundle':
-        """parses a bundle from bytes. The data must be a standard RFC 7517 JWKS document.
+        """Parses a bundle from bytes. The data must be a standard RFC 7517 JWKS document.
 
         Args:
             trust_domain: A TrustDomain to associate to the bundle.
@@ -86,17 +86,26 @@ class JwtBundle(object):
             An instance of 'JWTBundle' with the JWT authorities associated to the given trust domain.
 
         Raises:
-            JWTBundleError: In case the trust_domain is empty.
+            ArgumentError: In case the trust_domain is empty or bundle_bytes is empty.
             ParseJWTBundleError: In case the set of jwt_authorities cannot be parsed from the bundle_bytes.
         """
 
         if not trust_domain:
-            raise ParseJWTBundleError(EMPTY_DOMAIN_ERROR)
+            raise ArgumentError(EMPTY_DOMAIN_ERROR)
+
+        if not bundle_bytes:
+            raise ArgumentError('Bundle bytes cannot be empty')
 
         try:
             jwks = PyJWKSet.from_json(bundle_bytes)
-        except (JSONDecodeError, InvalidKeyError, TypeError, AttributeError):
-            raise ParseJWTBundleError('Cannot parse jwks from bundle_bytes')
+        except InvalidKeyError as ike:
+            raise ParseJWTBundleError(
+                'Cannot parse jwks from bundle_bytes: ' + str(ike)
+            )
+        except (JSONDecodeError, AttributeError):
+            raise ParseJWTBundleError(
+                'Cannot parse jwks. bundle_bytes does not represent a valid jwks'
+            )
 
         jwt_authorities = {}
         for jwk in jwks.keys:
