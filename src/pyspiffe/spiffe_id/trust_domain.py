@@ -92,3 +92,5 @@ class TrustDomain(object):
             raise ArgumentError(EMPTY_DOMAIN_ERROR)
         if uri.port:
             raise ArgumentError('Trust domain: port is not allowed')
+        if uri.username:
+            raise ArgumentError('Trust domain: user info is not allowed')

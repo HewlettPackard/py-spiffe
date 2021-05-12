@@ -30,6 +30,7 @@ def test_valid_trust_domain(test_input, expected):
         ('spiffe:///path/element', 'Trust domain cannot be empty.'),
         ('/path/element', 'Trust domain cannot be empty.'),
         ('spiffe://domain.test:80', 'Trust domain: port is not allowed.'),
+        ('user:pass@domain.test', 'Trust domain: user info is not allowed.'),
     ],
 )
 def test_invalid_trust_domain(test_input, expected):
