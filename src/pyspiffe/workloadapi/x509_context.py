@@ -1,9 +1,10 @@
 """
 This module provides an object for transferring X.509 SVID and Bundles materials.
 """
-from typing import List, Optional
+from typing import List
 
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
+from pyspiffe.exceptions import ArgumentError
 from pyspiffe.svid.x509_svid import X509Svid
 
 
@@ -23,10 +24,13 @@ class X509Context(object):
             x509_bundle_set: An X509BundleSet object.
         """
 
+        if not x509_svids:
+            raise ArgumentError('X.509 SVID list cannot be empty')
+
         self._x509_svids = x509_svids.copy() if x509_svids else []
         self._x509_bundle_set = x509_bundle_set
 
-    def default_svid(self) -> Optional[X509Svid]:
+    def default_svid(self) -> X509Svid:
         """Returns the default X509-SVID (the first in the list).
 
         See the SPIFFE Workload API standard Section 5.3.
@@ -36,7 +40,7 @@ class X509Context(object):
             The first X509Svid object in the list, None in case the X509Context has no objects in the X509Svid list.
 
         """
-        return self._x509_svids[0] if self._x509_svids else None
+        return self._x509_svids[0]
 
     def x509_svids(self) -> List[X509Svid]:
         """Returns the list of X509Svid objects."""
