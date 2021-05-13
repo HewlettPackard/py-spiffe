@@ -63,6 +63,20 @@ class FetchJwtSvidError(WorkloadApiError):
         super().__init__(self._MESSAGE.format(additional_information))
 
 
+class FetchJwtBundleError(WorkloadApiError):
+    """Error raised when there is an error fetching JWT Bundles."""
+
+    _MESSAGE = 'Error fetching JWT Bundle: {}'
+
+    def __init__(self, additional_information: str = 'none') -> None:
+        """Creates an instance of FetchJwtBundleError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
+
+
 class ValidateJwtSvidError(WorkloadApiError):
     """Error raised when a JWT-SVID cannot be validated by the Workload API."""
 
