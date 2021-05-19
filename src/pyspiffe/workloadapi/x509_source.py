@@ -1,3 +1,6 @@
+"""
+This module defines the interface of an X.509 Source.
+"""
 from abc import ABC, abstractmethod
 from typing import Optional
 

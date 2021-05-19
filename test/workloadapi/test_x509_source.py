@@ -5,23 +5,21 @@ from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 from pyspiffe.workloadapi.default_x509_source import DefaultX509Source
-from test.utils.utils import read_file_bytes
+from pyspiffe.workloadapi.exceptions import X509SourceError
+from test.workloadapi.test_default_workload_api_client_fetch_x509 import (
+    FEDERATED_BUNDLE,
+    CHAIN1,
+    KEY1,
+    BUNDLE,
+    CHAIN2,
+    KEY2,
+)
 
 WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
 
-TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
-TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
-CHAIN1 = read_file_bytes(TEST_CERTS_PATH.format('1-chain.der'))
-KEY1 = read_file_bytes(TEST_CERTS_PATH.format('1-key.der'))
-CHAIN2 = read_file_bytes(TEST_CERTS_PATH.format('4-cert.der'))
-KEY2 = read_file_bytes(TEST_CERTS_PATH.format('4-key.der'))
-BUNDLE = read_file_bytes(TEST_BUNDLE_PATH.format('cert.der'))
-FEDERATED_BUNDLE = read_file_bytes(TEST_BUNDLE_PATH.format('federated_bundle.der'))
-
 
 def mock_client_return_multiple_svids(mocker):
-    federated_bundles = dict()
-    federated_bundles['domain.test'] = FEDERATED_BUNDLE
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -73,7 +71,7 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker):
     x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, picker=lambda svids: svids[2])
 
     # the source should be closed, as it couldn't get the X.509 context set
-    with (pytest.raises(Exception)) as exception:
+    with (pytest.raises(X509SourceError)) as exception:
         x509_source.get_x509_svid()
 
     assert (
@@ -101,7 +99,7 @@ def test_x509_source_is_closed_get_svid(mocker):
 
     x509_source.close()
 
-    with (pytest.raises(Exception)) as exception:
+    with (pytest.raises(X509SourceError)) as exception:
         x509_source.get_x509_svid()
 
     assert (
@@ -116,7 +114,7 @@ def test_x509_source_is_closed_get_bundle(mocker):
 
     x509_source.close()
 
-    with (pytest.raises(Exception)) as exception:
+    with (pytest.raises(X509SourceError)) as exception:
         x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
 
     assert (

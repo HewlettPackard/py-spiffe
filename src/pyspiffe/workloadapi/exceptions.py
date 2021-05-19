@@ -80,7 +80,7 @@ class ValidateJwtSvidError(WorkloadApiError):
 class X509SourceError(WorkloadApiError):
     """Error raised when there is an error in the X.509 Source."""
 
-    _MESSAGE = 'X.509 Source error: {}.'
+    _MESSAGE = 'X.509 Source error: {}'
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of X509SourceError.
