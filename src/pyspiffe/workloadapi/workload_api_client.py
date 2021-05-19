@@ -112,6 +112,29 @@ class WorkloadApiClient(ABC):
         """
 
     @abstractmethod
+    def watch_jwt_bundles(
+        self,
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
+    ) -> CancelHandler:
+        """Watches for changes to the JWT bundles.
+
+        Args:
+            on_success: A Callable accepting a JwtBundleSet as argument and returning None, to be executed when a new
+                        update is fetched from the Workload API.
+
+            on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
+                      an error on the connection with the Workload API.
+
+            retry_connect: Enable retries when the connection with the Workload API returns an error. Default: True.
+
+        Returns:
+            CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
+                           the Workload API.
+        """
+
+    @abstractmethod
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """Validates the JWT-SVID token. The parsed and validated JWT-SVID is
         returned.

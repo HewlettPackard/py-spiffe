@@ -9,9 +9,9 @@ from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
-from pyspiffe.workloadapi.x509_context import X509Context
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
+from test.utils.utils import ResponseHolder, handle_success, handle_error, assert_error
 
 TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
 TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
@@ -557,14 +557,6 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
     )
 
 
-class ResponseHolder:
-    # Used in tests to store responses from the watch methods.
-
-    def __init__(self):
-        self.error = None
-        self.success = None
-
-
 def test_watch_x509_context_success(mocker):
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
@@ -596,7 +588,7 @@ def test_watch_x509_context_success(mocker):
     response_holder = ResponseHolder()
 
     WORKLOAD_API_CLIENT.watch_x509_context(
-        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda r: handle_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         retry_connect=True,
     )
@@ -639,7 +631,7 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
     response_holder = ResponseHolder()
 
     WORKLOAD_API_CLIENT.watch_x509_context(
-        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda r: handle_success(r, response_holder, done),
         lambda e: assert_error(e, expected_error),
         True,
     )
@@ -682,7 +674,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
     response_holder = ResponseHolder()
 
     WORKLOAD_API_CLIENT.watch_x509_context(
-        lambda r: handle_x509_context_success(r, response_holder, done),
+        lambda r: handle_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         True,
     )
@@ -691,24 +683,6 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker):
 
     assert not response_holder.success
     assert str(response_holder.error) == str(expected_error)
-
-
-def assert_error(error: Exception, expected: Exception):
-    assert str(error) == str(expected)
-
-
-def handle_error(
-    error: Exception, response_holder: ResponseHolder, event: threading.Event
-):
-    response_holder.error = error
-    event.set()
-
-
-def handle_x509_context_success(
-    response: X509Context, response_holder: ResponseHolder, event: threading.Event
-):
-    response_holder.success = response
-    event.set()
 
 
 def yield_grpc_error_and_then_correct_x509_svid_response():
