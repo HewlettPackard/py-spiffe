@@ -62,7 +62,7 @@ class WorkloadApiClient(ABC):
                         is fetched from the Workload API.
 
             on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
-                      an error on the connection with the Workload API.
+                      an error on the connection with the Workload API after what there is no retries.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
                            Default: True.

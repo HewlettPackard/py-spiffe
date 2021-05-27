@@ -1,6 +1,7 @@
 """
 This module provides a Workload API client.
 """
+import logging
 import threading
 import time
 from typing import Optional, List, Mapping, Iterator, Callable
@@ -179,7 +180,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                         is fetched from the Workload API.
 
             on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
-                      an error on the connection with the Workload API.
+                      an error on the connection with the Workload API after what there is no retries.
 
             retry_connect: Enable retries when the connection with the Workload API returns an error.
                            Default: True.
@@ -494,11 +495,16 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         on_error: Callable[[Exception], None],
     ):
         grpc_error_code = grpc_error.code()
-        error = FetchX509SvidError(str(grpc_error_code))
-        on_error(error)
 
         if retry_handler and grpc_error_code not in _NON_RETRYABLE_CODES:
+            logging.error(
+                'Error connecting to the Workload API: {}'.format(str(grpc_error_code))
+            )
             retry_handler.do_retry(
                 self._call_watch_x509_context,
                 [cancel_handler, retry_handler, on_success, on_error],
             )
+        else:
+            # don't retry, instead report error to user on the on_error callback
+            error = FetchX509SvidError(str(grpc_error_code))
+            on_error(error)

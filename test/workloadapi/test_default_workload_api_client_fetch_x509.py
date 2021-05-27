@@ -13,15 +13,15 @@ from pyspiffe.workloadapi.x509_context import X509Context
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
 
-_TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
-_TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
-_CHAIN1 = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
-_KEY1 = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
-_CHAIN2 = read_file_bytes(_TEST_CERTS_PATH.format('4-cert.der'))
-_KEY2 = read_file_bytes(_TEST_CERTS_PATH.format('4-key.der'))
-_BUNDLE = read_file_bytes(_TEST_BUNDLE_PATH.format('cert.der'))
-_FEDERATED_BUNDLE = read_file_bytes(_TEST_BUNDLE_PATH.format('federated_bundle.der'))
-_CORRUPTED = read_file_bytes(_TEST_CERTS_PATH.format('corrupted'))
+TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
+TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
+CHAIN1 = read_file_bytes(TEST_CERTS_PATH.format('1-chain.der'))
+KEY1 = read_file_bytes(TEST_CERTS_PATH.format('1-key.der'))
+CHAIN2 = read_file_bytes(TEST_CERTS_PATH.format('4-cert.der'))
+KEY2 = read_file_bytes(TEST_CERTS_PATH.format('4-key.der'))
+BUNDLE = read_file_bytes(TEST_BUNDLE_PATH.format('cert.der'))
+FEDERATED_BUNDLE = read_file_bytes(TEST_BUNDLE_PATH.format('federated_bundle.der'))
+CORRUPTED = read_file_bytes(TEST_CERTS_PATH.format('corrupted'))
 
 
 def test_fetch_x509_svid_success(mocker):
@@ -32,13 +32,13 @@ def test_fetch_x509_svid_success(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
                         ),
                     ]
                 )
@@ -104,13 +104,13 @@ def test_fetch_x509_svid_corrupted_response(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CORRUPTED,
-                            x509_svid_key=_KEY1,
+                            x509_svid=CORRUPTED,
+                            x509_svid_key=KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
                         ),
                     ]
                 )
@@ -135,13 +135,13 @@ def test_fetch_x509_svids_success(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
                         ),
                     ]
                 )
@@ -216,13 +216,13 @@ def test_fetch_x509_svids_corrupted_response(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CORRUPTED,
-                            x509_svid_key=_KEY2,
+                            x509_svid=CORRUPTED,
+                            x509_svid_key=KEY2,
                         ),
                     ]
                 )
@@ -240,7 +240,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
 
 
 def test_fetch_x509_context_success(mocker):
-    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -249,15 +249,15 @@ def test_fetch_x509_context_success(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -339,7 +339,7 @@ def test_fetch_x509_context_raise_exception(mocker):
 
 
 def test_fetch_x509_context_corrupted_svid(mocker):
-    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -348,15 +348,15 @@ def test_fetch_x509_context_corrupted_svid(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_CORRUPTED,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=CORRUPTED,
+                            bundle=BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -374,7 +374,7 @@ def test_fetch_x509_context_corrupted_svid(mocker):
 
 
 def test_fetch_x509_context_corrupted_bundle(mocker):
-    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -383,15 +383,15 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
-                            bundle=_CORRUPTED,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=CORRUPTED,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
-                            bundle=_CORRUPTED,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=CORRUPTED,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -410,7 +410,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_context_corrupted_federated_bundle(mocker):
-    federated_bundles = {'domain.test': _CORRUPTED}
+    federated_bundles = {'domain.test': CORRUPTED}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -419,15 +419,15 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -446,9 +446,7 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
 
 
 def test_fetch_x509_bundles_success(mocker):
-    bundles = dict()
-    bundles['example.org'] = _BUNDLE
-    bundles['domain.test'] = _FEDERATED_BUNDLE
+    bundles = {'example.org': BUNDLE, 'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
@@ -516,9 +514,7 @@ def test_fetch_x509_bundles_raise_exception(mocker):
 
 
 def test_fetch_x509_bundles_corrupted_bundle(mocker):
-    bundles = dict()
-    bundles['example.org'] = _CORRUPTED
-    bundles['domain.test'] = _FEDERATED_BUNDLE
+    bundles = {'example.org': CORRUPTED, 'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
@@ -540,9 +536,7 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker):
 
 
 def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
-    bundles = dict()
-    bundles['example.org'] = _BUNDLE
-    bundles['domain.test'] = _CORRUPTED
+    bundles = {'example.org': BUNDLE, 'domain.test': CORRUPTED}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         return_value=iter(
@@ -572,7 +566,7 @@ class ResponseHolder:
 
 
 def test_watch_x509_context_success(mocker):
-    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
@@ -581,15 +575,15 @@ def test_watch_x509_context_success(mocker):
                     svids=[
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service',
-                            x509_svid=_CHAIN1,
-                            x509_svid_key=_KEY1,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
                         ),
                         workload_pb2.X509SVID(
                             spiffe_id='spiffe://example.org/service2',
-                            x509_svid=_CHAIN2,
-                            x509_svid_key=_KEY2,
-                            bundle=_BUNDLE,
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=BUNDLE,
                         ),
                     ],
                     federated_bundles=federated_bundles,
@@ -722,22 +716,22 @@ def yield_grpc_error_and_then_correct_x509_svid_response():
     grpc_error.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
     yield grpc_error
 
-    federated_bundles = {'domain.test': _FEDERATED_BUNDLE}
+    federated_bundles = {'domain.test': FEDERATED_BUNDLE}
     response = iter(
         [
             workload_pb2.X509SVIDResponse(
                 svids=[
                     workload_pb2.X509SVID(
                         spiffe_id='spiffe://example.org/service',
-                        x509_svid=_CHAIN1,
-                        x509_svid_key=_KEY1,
-                        bundle=_BUNDLE,
+                        x509_svid=CHAIN1,
+                        x509_svid_key=KEY1,
+                        bundle=BUNDLE,
                     ),
                     workload_pb2.X509SVID(
                         spiffe_id='spiffe://example.org/service2',
-                        x509_svid=_CHAIN2,
-                        x509_svid_key=_KEY2,
-                        bundle=_BUNDLE,
+                        x509_svid=CHAIN2,
+                        x509_svid_key=KEY2,
+                        bundle=BUNDLE,
                     ),
                 ],
                 federated_bundles=federated_bundles,

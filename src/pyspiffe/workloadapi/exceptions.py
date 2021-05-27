@@ -89,3 +89,17 @@ class ValidateJwtSvidError(WorkloadApiError):
             additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
+
+
+class X509SourceError(WorkloadApiError):
+    """Error raised when there is an error in the X.509 Source."""
+
+    _MESSAGE = 'X.509 Source error: {}'
+
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of X509SourceError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
