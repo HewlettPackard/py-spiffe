@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0eworkload.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x11\n\x0fX509SVIDRequest\"\xb6\x01\n\x10X509SVIDResponse\x12\x18\n\x05svids\x18\x01 \x03(\x0b\x32\t.X509SVID\x12\x0b\n\x03\x63rl\x18\x02 \x03(\x0c\x12\x42\n\x11\x66\x65\x64\x65rated_bundles\x18\x03 \x03(\x0b\x32\'.X509SVIDResponse.FederatedBundlesEntry\x1a\x37\n\x15\x46\x65\x64\x65ratedBundlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"W\n\x08X509SVID\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\x11\n\tx509_svid\x18\x02 \x01(\x0c\x12\x15\n\rx509_svid_key\x18\x03 \x01(\x0c\x12\x0e\n\x06\x62undle\x18\x04 \x01(\x0c\"\x14\n\x12X509BundlesRequest\"y\n\x13X509BundlesResponse\x12\x32\n\x07\x62undles\x18\x01 \x03(\x0b\x32!.X509BundlesResponse.BundlesEntry\x1a.\n\x0c\x42undlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"*\n\x07JWTSVID\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\x0c\n\x04svid\x18\x02 \x01(\t\"5\n\x0eJWTSVIDRequest\x12\x10\n\x08\x61udience\x18\x01 \x03(\t\x12\x11\n\tspiffe_id\x18\x02 \x01(\t\"*\n\x0fJWTSVIDResponse\x12\x17\n\x05svids\x18\x01 \x03(\x0b\x32\x08.JWTSVID\"\x13\n\x11JWTBundlesRequest\"w\n\x12JWTBundlesResponse\x12\x31\n\x07\x62undles\x18\x01 \x03(\x0b\x32 .JWTBundlesResponse.BundlesEntry\x1a.\n\x0c\x42undlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"8\n\x16ValidateJWTSVIDRequest\x12\x10\n\x08\x61udience\x18\x01 \x01(\t\x12\x0c\n\x04svid\x18\x02 \x01(\t\"U\n\x17ValidateJWTSVIDResponse\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\'\n\x06\x63laims\x18\x02 \x01(\x0b\x32\x17.google.protobuf.Struct2\xc3\x02\n\x11SpiffeWorkloadAPI\x12\x31\n\x0c\x46\x65tchJWTSVID\x12\x0f.JWTSVIDRequest\x1a\x10.JWTSVIDResponse\x12<\n\x0f\x46\x65tchJWTBundles\x12\x12.JWTBundlesRequest\x1a\x13.JWTBundlesResponse0\x01\x12\x44\n\x0fValidateJWTSVID\x12\x17.ValidateJWTSVIDRequest\x1a\x18.ValidateJWTSVIDResponse\x12\x36\n\rFetchX509SVID\x12\x10.X509SVIDRequest\x1a\x11.X509SVIDResponse0\x01\x12?\n\x10\x46\x65tchX509Bundles\x12\x13.X509BundlesRequest\x1a\x14.X509BundlesResponse0\x01\x62\x06proto3'
+  serialized_pb=b'\n\x0eworkload.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x11\n\x0fX509SVIDRequest\"\xb6\x01\n\x10X509SVIDResponse\x12\x18\n\x05svids\x18\x01 \x03(\x0b\x32\t.X509SVID\x12\x0b\n\x03\x63rl\x18\x02 \x03(\x0c\x12\x42\n\x11\x66\x65\x64\x65rated_bundles\x18\x03 \x03(\x0b\x32\'.X509SVIDResponse.FederatedBundlesEntry\x1a\x37\n\x15\x46\x65\x64\x65ratedBundlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"W\n\x08X509SVID\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\x11\n\tx509_svid\x18\x02 \x01(\x0c\x12\x15\n\rx509_svid_key\x18\x03 \x01(\x0c\x12\x0e\n\x06\x62undle\x18\x04 \x01(\x0c\"\x14\n\x12X509BundlesRequest\"\x86\x01\n\x13X509BundlesResponse\x12\x0b\n\x03\x63rl\x18\x01 \x03(\x0c\x12\x32\n\x07\x62undles\x18\x02 \x03(\x0b\x32!.X509BundlesResponse.BundlesEntry\x1a.\n\x0c\x42undlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"5\n\x0eJWTSVIDRequest\x12\x10\n\x08\x61udience\x18\x01 \x03(\t\x12\x11\n\tspiffe_id\x18\x02 \x01(\t\"*\n\x0fJWTSVIDResponse\x12\x17\n\x05svids\x18\x01 \x03(\x0b\x32\x08.JWTSVID\"*\n\x07JWTSVID\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\x0c\n\x04svid\x18\x02 \x01(\t\"\x13\n\x11JWTBundlesRequest\"w\n\x12JWTBundlesResponse\x12\x31\n\x07\x62undles\x18\x01 \x03(\x0b\x32 .JWTBundlesResponse.BundlesEntry\x1a.\n\x0c\x42undlesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"8\n\x16ValidateJWTSVIDRequest\x12\x10\n\x08\x61udience\x18\x01 \x01(\t\x12\x0c\n\x04svid\x18\x02 \x01(\t\"U\n\x17ValidateJWTSVIDResponse\x12\x11\n\tspiffe_id\x18\x01 \x01(\t\x12\'\n\x06\x63laims\x18\x02 \x01(\x0b\x32\x17.google.protobuf.Struct2\xc3\x02\n\x11SpiffeWorkloadAPI\x12\x36\n\rFetchX509SVID\x12\x10.X509SVIDRequest\x1a\x11.X509SVIDResponse0\x01\x12?\n\x10\x46\x65tchX509Bundles\x12\x13.X509BundlesRequest\x1a\x14.X509BundlesResponse0\x01\x12\x31\n\x0c\x46\x65tchJWTSVID\x12\x0f.JWTSVIDRequest\x1a\x10.JWTSVIDResponse\x12<\n\x0f\x46\x65tchJWTBundles\x12\x12.JWTBundlesRequest\x1a\x13.JWTBundlesResponse0\x01\x12\x44\n\x0fValidateJWTSVID\x12\x17.ValidateJWTSVIDRequest\x1a\x18.ValidateJWTSVIDResponseb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 
@@ -248,8 +248,8 @@ _X509BUNDLESRESPONSE_BUNDLESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=438,
-  serialized_end=484,
+  serialized_start=452,
+  serialized_end=498,
 )
 
 _X509BUNDLESRESPONSE = _descriptor.Descriptor(
@@ -261,8 +261,15 @@ _X509BUNDLESRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='bundles', full_name='X509BundlesResponse.bundles', index=0,
-      number=1, type=11, cpp_type=10, label=3,
+      name='crl', full_name='X509BundlesResponse.crl', index=0,
+      number=1, type=12, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='bundles', full_name='X509BundlesResponse.bundles', index=1,
+      number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -279,47 +286,8 @@ _X509BUNDLESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=363,
-  serialized_end=484,
-)
-
-
-_JWTSVID = _descriptor.Descriptor(
-  name='JWTSVID',
-  full_name='JWTSVID',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='spiffe_id', full_name='JWTSVID.spiffe_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='svid', full_name='JWTSVID.svid', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=486,
-  serialized_end=528,
+  serialized_start=364,
+  serialized_end=498,
 )
 
 
@@ -357,8 +325,8 @@ _JWTSVIDREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=530,
-  serialized_end=583,
+  serialized_start=500,
+  serialized_end=553,
 )
 
 
@@ -389,8 +357,47 @@ _JWTSVIDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=585,
-  serialized_end=627,
+  serialized_start=555,
+  serialized_end=597,
+)
+
+
+_JWTSVID = _descriptor.Descriptor(
+  name='JWTSVID',
+  full_name='JWTSVID',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='spiffe_id', full_name='JWTSVID.spiffe_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='svid', full_name='JWTSVID.svid', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=599,
+  serialized_end=641,
 )
 
 
@@ -414,8 +421,8 @@ _JWTBUNDLESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=629,
-  serialized_end=648,
+  serialized_start=643,
+  serialized_end=662,
 )
 
 
@@ -453,8 +460,8 @@ _JWTBUNDLESRESPONSE_BUNDLESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=438,
-  serialized_end=484,
+  serialized_start=452,
+  serialized_end=498,
 )
 
 _JWTBUNDLESRESPONSE = _descriptor.Descriptor(
@@ -484,8 +491,8 @@ _JWTBUNDLESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=650,
-  serialized_end=769,
+  serialized_start=664,
+  serialized_end=783,
 )
 
 
@@ -523,8 +530,8 @@ _VALIDATEJWTSVIDREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=771,
-  serialized_end=827,
+  serialized_start=785,
+  serialized_end=841,
 )
 
 
@@ -562,8 +569,8 @@ _VALIDATEJWTSVIDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=829,
-  serialized_end=914,
+  serialized_start=843,
+  serialized_end=928,
 )
 
 _X509SVIDRESPONSE_FEDERATEDBUNDLESENTRY.containing_type = _X509SVIDRESPONSE
@@ -580,9 +587,9 @@ DESCRIPTOR.message_types_by_name['X509SVIDResponse'] = _X509SVIDRESPONSE
 DESCRIPTOR.message_types_by_name['X509SVID'] = _X509SVID
 DESCRIPTOR.message_types_by_name['X509BundlesRequest'] = _X509BUNDLESREQUEST
 DESCRIPTOR.message_types_by_name['X509BundlesResponse'] = _X509BUNDLESRESPONSE
-DESCRIPTOR.message_types_by_name['JWTSVID'] = _JWTSVID
 DESCRIPTOR.message_types_by_name['JWTSVIDRequest'] = _JWTSVIDREQUEST
 DESCRIPTOR.message_types_by_name['JWTSVIDResponse'] = _JWTSVIDRESPONSE
+DESCRIPTOR.message_types_by_name['JWTSVID'] = _JWTSVID
 DESCRIPTOR.message_types_by_name['JWTBundlesRequest'] = _JWTBUNDLESREQUEST
 DESCRIPTOR.message_types_by_name['JWTBundlesResponse'] = _JWTBUNDLESRESPONSE
 DESCRIPTOR.message_types_by_name['ValidateJWTSVIDRequest'] = _VALIDATEJWTSVIDREQUEST
@@ -640,13 +647,6 @@ X509BundlesResponse = _reflection.GeneratedProtocolMessageType('X509BundlesRespo
 _sym_db.RegisterMessage(X509BundlesResponse)
 _sym_db.RegisterMessage(X509BundlesResponse.BundlesEntry)
 
-JWTSVID = _reflection.GeneratedProtocolMessageType('JWTSVID', (_message.Message,), {
-  'DESCRIPTOR' : _JWTSVID,
-  '__module__' : 'workload_pb2'
-  # @@protoc_insertion_point(class_scope:JWTSVID)
-  })
-_sym_db.RegisterMessage(JWTSVID)
-
 JWTSVIDRequest = _reflection.GeneratedProtocolMessageType('JWTSVIDRequest', (_message.Message,), {
   'DESCRIPTOR' : _JWTSVIDREQUEST,
   '__module__' : 'workload_pb2'
@@ -660,6 +660,13 @@ JWTSVIDResponse = _reflection.GeneratedProtocolMessageType('JWTSVIDResponse', (_
   # @@protoc_insertion_point(class_scope:JWTSVIDResponse)
   })
 _sym_db.RegisterMessage(JWTSVIDResponse)
+
+JWTSVID = _reflection.GeneratedProtocolMessageType('JWTSVID', (_message.Message,), {
+  'DESCRIPTOR' : _JWTSVID,
+  '__module__' : 'workload_pb2'
+  # @@protoc_insertion_point(class_scope:JWTSVID)
+  })
+_sym_db.RegisterMessage(JWTSVID)
 
 JWTBundlesRequest = _reflection.GeneratedProtocolMessageType('JWTBundlesRequest', (_message.Message,), {
   'DESCRIPTOR' : _JWTBUNDLESREQUEST,
@@ -709,43 +716,13 @@ _SPIFFEWORKLOADAPI = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=917,
-  serialized_end=1240,
+  serialized_start=931,
+  serialized_end=1254,
   methods=[
-  _descriptor.MethodDescriptor(
-    name='FetchJWTSVID',
-    full_name='SpiffeWorkloadAPI.FetchJWTSVID',
-    index=0,
-    containing_service=None,
-    input_type=_JWTSVIDREQUEST,
-    output_type=_JWTSVIDRESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='FetchJWTBundles',
-    full_name='SpiffeWorkloadAPI.FetchJWTBundles',
-    index=1,
-    containing_service=None,
-    input_type=_JWTBUNDLESREQUEST,
-    output_type=_JWTBUNDLESRESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='ValidateJWTSVID',
-    full_name='SpiffeWorkloadAPI.ValidateJWTSVID',
-    index=2,
-    containing_service=None,
-    input_type=_VALIDATEJWTSVIDREQUEST,
-    output_type=_VALIDATEJWTSVIDRESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
   _descriptor.MethodDescriptor(
     name='FetchX509SVID',
     full_name='SpiffeWorkloadAPI.FetchX509SVID',
-    index=3,
+    index=0,
     containing_service=None,
     input_type=_X509SVIDREQUEST,
     output_type=_X509SVIDRESPONSE,
@@ -755,10 +732,40 @@ _SPIFFEWORKLOADAPI = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='FetchX509Bundles',
     full_name='SpiffeWorkloadAPI.FetchX509Bundles',
-    index=4,
+    index=1,
     containing_service=None,
     input_type=_X509BUNDLESREQUEST,
     output_type=_X509BUNDLESRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='FetchJWTSVID',
+    full_name='SpiffeWorkloadAPI.FetchJWTSVID',
+    index=2,
+    containing_service=None,
+    input_type=_JWTSVIDREQUEST,
+    output_type=_JWTSVIDRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='FetchJWTBundles',
+    full_name='SpiffeWorkloadAPI.FetchJWTBundles',
+    index=3,
+    containing_service=None,
+    input_type=_JWTBUNDLESREQUEST,
+    output_type=_JWTBUNDLESRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ValidateJWTSVID',
+    full_name='SpiffeWorkloadAPI.ValidateJWTSVID',
+    index=4,
+    containing_service=None,
+    input_type=_VALIDATEJWTSVIDREQUEST,
+    output_type=_VALIDATEJWTSVIDRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
