@@ -65,7 +65,7 @@ class DefaultJwtSource(JwtSource):
 
         # set the watcher that will keep the source updated and log the underlying errors
         self._client_cancel_handler = self._workload_api_client.fetch_jwt_bundles(
-            self._set_context, self._log_error
+            self._set_bundle_set, self._log_error
         )
 
         self._initialized.wait(timeout_in_seconds)
@@ -115,7 +115,7 @@ class DefaultJwtSource(JwtSource):
             self._initialized.set()
             self._closed = True
 
-    def _set_context(self, jwt_bundle_set: JwtBundleSet) -> None:
+    def _set_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
         try:
             _jwt_svid = self._workload_api_client.fetch_jwt_svid(
                 self._audiences, self._subject
