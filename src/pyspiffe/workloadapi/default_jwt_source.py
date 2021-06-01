@@ -3,8 +3,7 @@ This module defines the default source implementation for JWT Bundles and SVIDs.
 """
 import logging
 import threading
-from contextlib import suppress
-from typing import Optional, List
+from typing import Optional, Set
 
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
@@ -24,28 +23,28 @@ class DefaultJwtSource(JwtSource):
 
     def __init__(
         self,
-        audiences: List[str],
+        audiences: Set[str],
         workload_api_client: WorkloadApiClient = None,
-        spiffe_socket: str = None,
+        spiffe_socket_path: str = None,
         timeout_in_seconds: float = None,
         subject: Optional[SpiffeId] = None,
     ) -> None:
-        """Creates a new JwtSource.
+        """Creates a new DefaultJwtSource.
            It blocks until the initial update has been received from the Workload API or until timeout_in_seconds is reached.
            In case the underlying Workload API connection returns an unretryable error, the source will be closed and
            no methods on the source will be available.
         Args:
-            workload_api_client: A WorkloadApiClient that will be used to fetch the JWT materials from the Workload API.
+            audiences: List of audiences for the JWT SVID.
+            workload_api_client: A WorkloadApiClient object that will be used to fetch the JWT materials from the Workload API.
                                  In case it's not provided, a default client will be created.
-            spiffe_socket: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
+            spiffe_socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable will be used and thus, must be set.
-            timeout_in_seconds: Time to wait for the first update of the Workload API. If no timeout is provided, and
+            timeout_in_seconds: Time to wait for the first update of the Workload API. If not provided, and
                                 the connection with the Workload API fails, it will block indefinitely while
                                 the connection is retried.
-            audiences: List of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
         Returns:
-            DefaultJwtSource: New DefaultJwtSource object, initialized with the JwtContext fetched from the Workload API.
+            DefaultJwtSource: New DefaultJwtSource object, initialized with the JwtBundleSet fetched from the Workload API.
         Raises:
             ArgumentError: If spiffe_socket_path is invalid or not provided and SPIFFE_ENDPOINT_SOCKET env variable is not set.
             JwtSourceError: In case a timeout was configured and it was reached during the source initialization waiting
@@ -60,12 +59,12 @@ class DefaultJwtSource(JwtSource):
         self._workload_api_client = (
             workload_api_client
             if workload_api_client
-            else DefaultWorkloadApiClient(spiffe_socket)
+            else DefaultWorkloadApiClient(spiffe_socket_path)
         )
 
         # set the watcher that will keep the source updated and log the underlying errors
         self._client_cancel_handler = self._workload_api_client.fetch_jwt_bundles(
-            self._set_bundle_set, self._log_error
+            self._set_bundle_set, self._on_error
         )
 
         self._initialized.wait(timeout_in_seconds)
@@ -106,30 +105,43 @@ class DefaultJwtSource(JwtSource):
 
         IMPORTANT: client code must call this method when the JwtSource is not needed anymore as the connection with Workload API will
         only be closed when this method is invoked.
+
         """
         with self._lock:
             # the cancel method throws a grpc exception, that can be discarded
-            with suppress(Exception):
-                self._client_cancel_handler.cancel()
-            # TODO: double check this: prevents blocking on the constructor
-            self._initialized.set()
-            self._closed = True
+            with self._lock:
+                try:
+                    self._client_cancel_handler.cancel()
+                except Exception as err:
+                    logging.exception(
+                        'Jwt Source: Exception canceling the Workload API client connection: {}'.format(
+                            str(err)
+                        )
+                    )
+                # TODO: double check this: prevents blocking on the constructor
+                self._initialized.set()
+                self._closed = True
 
     def _set_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
         try:
-            _jwt_svid = self._workload_api_client.fetch_jwt_svid(
+            jwt_svid = self._workload_api_client.fetch_jwt_svid(
                 self._audiences, self._subject
             )
-            with self._lock:
-                self._jwt_svid = _jwt_svid
-                self._jwt_bundle_set = jwt_bundle_set
-                self._initialized.set()
         except Exception as err:
             logging.error('JWT Source: error setting JWT context: {}.'.format(str(err)))
             logging.error('JWT Source: closing due to invalid state.')
             self.close()
+            return
+
+        with self._lock:
+            self._jwt_svid = jwt_svid
+            self._jwt_bundle_set = jwt_bundle_set
+            self._initialized.set()
+
+    def _on_error(self, error: Exception) -> None:
+        self._log_error(error)
+        self.close()
 
     def _log_error(self, err: Exception) -> None:
         logging.error('JWT Source: Workload API client error: {}.'.format(str(err)))
         logging.error('JWT Source: closing.')
-        self.close()

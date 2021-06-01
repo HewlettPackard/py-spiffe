@@ -29,3 +29,8 @@ class JwtSource(ABC):
     def close(self) -> None:
         """Closes this JWTSource."""
         pass
+
+    @abstractmethod
+    def is_closed(self) -> bool:
+        """Tests if the connection to Workload API is valid/open."""
+        pass
