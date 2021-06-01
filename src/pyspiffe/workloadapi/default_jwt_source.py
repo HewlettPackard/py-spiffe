@@ -7,7 +7,7 @@ from typing import Optional, Set
 
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.bundle.jwt_bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
+from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
@@ -63,10 +63,9 @@ class DefaultJwtSource(JwtSource):
         )
 
         # set the watcher that will keep the source updated and log the underlying errors
-        self._client_cancel_handler = self._workload_api_client.fetch_jwt_bundles(
-            self._set_bundle_set, self._on_error
+        self._client_cancel_handler = self._workload_api_client.watch_jwt_bundles(
+            self._set_jwt_data, self._on_error
         )
-
         self._initialized.wait(timeout_in_seconds)
 
         if not self._initialized.is_set():
@@ -109,20 +108,22 @@ class DefaultJwtSource(JwtSource):
         """
         with self._lock:
             # the cancel method throws a grpc exception, that can be discarded
-            with self._lock:
-                try:
-                    self._client_cancel_handler.cancel()
-                except Exception as err:
-                    logging.exception(
-                        'Jwt Source: Exception canceling the Workload API client connection: {}'.format(
-                            str(err)
-                        )
+            try:
+                self._client_cancel_handler.cancel()
+            except Exception as err:
+                logging.exception(
+                    'Jwt Source: Exception canceling the Workload API client connection: {}'.format(
+                        str(err)
                     )
-                # TODO: double check this: prevents blocking on the constructor
-                self._initialized.set()
-                self._closed = True
+                )
+            self._initialized.set()
+            self._closed = True
 
-    def _set_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
+    def is_closed(self) -> bool:
+        with self._lock:
+            return self._closed
+
+    def _set_jwt_data(self, jwt_bundle_set: JwtBundleSet) -> None:
         try:
             jwt_svid = self._workload_api_client.fetch_jwt_svid(
                 self._audiences, self._subject
