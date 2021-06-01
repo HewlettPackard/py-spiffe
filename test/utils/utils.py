@@ -1,4 +1,6 @@
 import grpc
+import threading
+from typing import Any
 
 _TEST_JWKS_PATH = 'test/bundle/jwt_bundle/jwks/{}'
 
@@ -24,3 +26,36 @@ class FakeCall(grpc.Call, grpc.RpcError):
 
     def details(self):
         return self._details
+
+
+class ResponseHolder:
+    """Helper class to be used in test cases for watch methods."""
+
+    def __init__(self):
+        self.error = None
+        self.success = None
+
+
+def handle_success(
+    response: Any, response_holder: ResponseHolder, event: threading.Event
+):
+    """Helper method to store a response when running tests for watch methods."""
+
+    response_holder.success = response
+    event.set()
+
+
+def handle_error(
+    error: Exception, response_holder: ResponseHolder, event: threading.Event
+):
+    """Helper method to store an error when running tests for watch methods."""
+
+    response_holder.error = error
+    event.set()
+
+
+def assert_error(error: Exception, expected: Exception):
+    """Helper method to assert errors raised when running test for watch methods."""
+
+    assert type(error) == type(expected)
+    assert str(error) == str(expected)

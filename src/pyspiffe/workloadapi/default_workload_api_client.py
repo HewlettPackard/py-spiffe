@@ -4,7 +4,7 @@ This module provides a Workload API client.
 import logging
 import threading
 import time
-from typing import Optional, List, Mapping, Iterator, Callable
+from typing import Optional, List, Mapping, Iterator, Callable, Dict
 
 import grpc
 from pyspiffe.workloadapi.cancel_handler import CancelHandler
@@ -295,15 +295,57 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         responses = self._spiffe_workload_api_stub.FetchJWTBundles(
             workload_pb2.JWTBundlesRequest(), timeout=10
         )
-        jwt_bundles = {}
         res = next(responses)
-        for td, jwk_set in res.bundles.items():
-            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
-
+        jwt_bundles: Dict[TrustDomain, JwtBundle] = self._create_td_jwt_bundle_dict(res)
         if not jwt_bundles:
             raise FetchJwtBundleError('JWT Bundles response is empty')
 
         return JwtBundleSet(jwt_bundles)
+
+    def watch_jwt_bundles(
+        self,
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
+    ) -> CancelHandler:
+        """Watches for changes to the JWT bundles.
+
+        This method returns immediately and spawns a new thread to handle the connection with the Workload API. That thread
+        will keep running until the client calls the method `cancel` on the returned CancelHandler, or in case
+        `retry_connect` is false and there is an error returned by the Workload API.
+
+        A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
+        updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
+        the next update based on the SVIDs TTL.
+
+        Args:
+            on_success: A Callable accepting a JwtBundleSet as argument and returning None, to be executed when a new
+                        update is fetched from the Workload API.
+
+            on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
+                      an error on the connection with the Workload API.
+
+            retry_connect: Enable retries when the connection with the Workload API returns an error. Default: True.
+
+        Returns:
+            CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
+                           the Workload API.
+        """
+
+        cancel_handler = CancelHandler()
+
+        retry_handler = RetryHandler() if retry_connect else None
+
+        # start listening for updates in a separate thread
+        t = threading.Thread(
+            target=self._call_watch_jwt_bundles,
+            args=(cancel_handler, retry_handler, on_success, on_error),
+            daemon=True,
+        )
+        t.start()
+
+        # this handler is initialized later after the call to the Workload API
+        return cancel_handler
 
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.
@@ -508,3 +550,48 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             # don't retry, instead report error to user on the on_error callback
             error = FetchX509SvidError(str(grpc_error_code))
             on_error(error)
+
+    def _call_watch_jwt_bundles(
+        self,
+        cancel_handler: CancelHandler,
+        retry_handler: Optional[RetryHandler],
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+    ) -> None:
+        try:
+            response_iterator = self._spiffe_workload_api_stub.FetchJWTBundles(
+                workload_pb2.JWTBundlesRequest()
+            )
+
+            # register the cancel function on the cancel handler returned to the user
+            cancel_handler.set_handler(lambda: response_iterator.cancel())
+
+            for item in response_iterator:
+                jwt_bundles = self._create_td_jwt_bundle_dict(item)
+                if retry_handler:
+                    retry_handler.reset()
+                on_success(JwtBundleSet(jwt_bundles))
+        except grpc.RpcError as rpc_error:
+            if isinstance(rpc_error, grpc.Call):
+                on_error(FetchJwtBundleError(str(rpc_error.details())))
+                if retry_handler and rpc_error.code() not in _NON_RETRYABLE_CODES:
+                    retry_handler.do_retry(
+                        self._call_watch_jwt_bundles,
+                        [cancel_handler, retry_handler, on_success, on_error],
+                    )
+            else:
+                on_error(
+                    FetchJwtBundleError('Cannot process response from Workload API')
+                )
+        except Exception as error:
+            on_error(FetchJwtBundleError(str(error)))
+
+    @staticmethod
+    def _create_td_jwt_bundle_dict(
+        jwt_bundle_response: workload_pb2.JWTBundlesResponse,
+    ) -> Dict[TrustDomain, JwtBundle]:
+        jwt_bundles = {}
+        for td, jwk_set in jwt_bundle_response.bundles.items():
+            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
+
+        return jwt_bundles

@@ -1,6 +1,9 @@
+from typing import Any, Iterable, List
+import time
 import pytest
 import datetime
 import grpc
+import threading
 from calendar import timegm
 from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
@@ -18,6 +21,10 @@ from test.utils.utils import (
     JWKS_1_EC_KEY,
     JWKS_2_EC_1_RSA_KEYS,
     JWKS_MISSING_KEY_ID,
+    ResponseHolder,
+    handle_success,
+    handle_error,
+    assert_error,
 )
 
 
@@ -284,3 +291,164 @@ def test_validate_jwt_svid_raise_error(mocker):
         WORKLOAD_API_CLIENT.validate_jwt_svid(token=jwt_svid, audience='audience')
 
     assert str(exception.value) == 'JWT SVID is not valid: Mocked error.'
+
+
+def test_watch_jwt_bundle_success(mocker):
+    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+    jwt_bundles_2 = {'domain.dev': JWKS_1_EC_KEY}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        return_value=delayed_responses(
+            [
+                workload_pb2.JWTBundlesResponse(bundles=jwt_bundles),
+                workload_pb2.JWTBundlesResponse(bundles=jwt_bundles_2),
+            ]
+        )
+    )
+
+    event = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_jwt_bundles(
+        on_success=lambda r: handle_success(r, response_holder, event),
+        on_error=lambda e: handle_error(e, response_holder, event),
+    )
+
+    event.wait(3)  # add timeout to prevent test from hanging
+
+    assert not response_holder.error
+    jwt_bundle_set = response_holder.success
+    assert jwt_bundle_set
+    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain('example.org'))
+    assert jwt_bundle_1
+    assert len(jwt_bundle_1.jwt_authorities()) == 1
+
+    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain('domain.prod'))
+    assert jwt_bundle_2
+    assert len(jwt_bundle_2.jwt_authorities()) == 3
+
+    # Wait to receive the second response from delayed_responses()
+    time.sleep(1)
+
+    assert not response_holder.error
+    jwt_bundle_set = response_holder.success
+    jwt_bundle = jwt_bundle_set.get(TrustDomain('domain.dev'))
+    assert jwt_bundle
+    assert len(jwt_bundle.jwt_authorities()) == 1
+
+
+def delayed_responses(responses: List[Any]) -> Iterable:
+    for res in responses:
+        yield res
+        time.sleep(0.5)
+
+
+def test_watch_jwt_bundle_retry_on_grpc_error(mocker):
+    grpc_error = FakeCall()
+    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=[
+            grpc_error,
+            delayed_responses([workload_pb2.JWTBundlesResponse(bundles=jwt_bundles)]),
+        ]
+    )
+
+    expected_error = FetchJwtBundleError(grpc_error.details())
+    event = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_jwt_bundles(
+        on_success=lambda r: handle_success(r, response_holder, event),
+        on_error=lambda e: assert_error(e, expected_error),
+    )
+
+    event.wait(3)  # add timeout to prevent test from hanging
+    # Wait to receive the response from delayed_responses()
+    time.sleep(1)
+
+    jwt_bundle_set = response_holder.success
+    assert jwt_bundle_set
+    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain('example.org'))
+    assert jwt_bundle_1
+    assert len(jwt_bundle_1.jwt_authorities()) == 1
+
+    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain('domain.prod'))
+    assert jwt_bundle_2
+    assert len(jwt_bundle_2.jwt_authorities()) == 3
+
+
+def test_watch_jwt_bundle_no_retry_on_grpc_error(mocker):
+    grpc_error = FakeCall()
+    grpc_error._code = grpc.StatusCode.INVALID_ARGUMENT
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=[
+            grpc_error,
+        ]
+    )
+
+    expected_error = FetchJwtBundleError(grpc_error.details())
+    event = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_jwt_bundles(
+        on_success=lambda r: handle_success(r, response_holder, event),
+        on_error=lambda e: handle_error(e, response_holder, event),
+    )
+
+    event.wait(3)  # add timeout to prevent test from hanging
+
+    assert not response_holder.success
+    assert response_holder.error
+    assert_error(response_holder.error, expected_error)
+
+
+def test_watch_jwt_bundle_no_retry_on_grpc_error_no_call(mocker):
+    grpc_error = grpc.RpcError
+    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=[
+            grpc_error,
+            delayed_responses([workload_pb2.JWTBundlesResponse(bundles=jwt_bundles)]),
+        ]
+    )
+
+    expected_error = FetchJwtBundleError('Cannot process response from Workload API.')
+    event = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_jwt_bundles(
+        on_success=lambda r: handle_success(r, response_holder, event),
+        on_error=lambda e: handle_error(e, response_holder, event),
+    )
+
+    event.wait(3)  # add timeout to prevent test from hanging
+
+    assert not response_holder.success
+    assert response_holder.error
+    assert_error(response_holder.error, expected_error)
+
+
+def test_watch_jwt_bundle_no_retry_on_error(mocker):
+    some_error = Exception('Some Error')
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        side_effect=some_error,
+    )
+
+    expected_error = FetchJwtBundleError(str(some_error))
+    event = threading.Event()
+    response_holder = ResponseHolder()
+
+    WORKLOAD_API_CLIENT.watch_jwt_bundles(
+        on_success=lambda r: handle_success(r, response_holder, event),
+        on_error=lambda e: handle_error(e, response_holder, event),
+    )
+
+    event.wait(3)  # add timeout to prevent test from hanging
+
+    assert not response_holder.success
+    assert response_holder.error
+    assert_error(response_holder.error, expected_error)
