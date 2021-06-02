@@ -32,5 +32,5 @@ class JwtSource(ABC):
 
     @abstractmethod
     def is_closed(self) -> bool:
-        """Tests if the connection to Workload API is valid/open."""
+        """Returns True if the connection to Workload API is closed."""
         pass

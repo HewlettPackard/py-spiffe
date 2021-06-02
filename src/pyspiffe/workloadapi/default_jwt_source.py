@@ -120,6 +120,7 @@ class DefaultJwtSource(JwtSource):
             self._closed = True
 
     def is_closed(self) -> bool:
+        """Returns True if the connection to Workload API is closed."""
         with self._lock:
             return self._closed
 
@@ -144,5 +145,5 @@ class DefaultJwtSource(JwtSource):
         self.close()
 
     def _log_error(self, err: Exception) -> None:
-        logging.error('JWT Source: Workload API client error: {}.'.format(str(err)))
+        logging.error('JWT Source: Workload API client error: {}'.format(str(err)))
         logging.error('JWT Source: closing.')
