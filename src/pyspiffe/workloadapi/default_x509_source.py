@@ -14,6 +14,8 @@ from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from pyspiffe.workloadapi.x509_context import X509Context
 from pyspiffe.workloadapi.x509_source import X509Source
 
+_logger = logging.getLogger(__name__)
+
 
 class DefaultX509Source(X509Source):
     """Source of X509-SVIDs and X.509 bundles maintained via the Workload API."""
@@ -108,7 +110,7 @@ class DefaultX509Source(X509Source):
             try:
                 self._client_cancel_handler.cancel()
             except Exception as err:
-                logging.exception(
+                _logger.exception(
                     'Exception canceling the Workload API client connection: {}'.format(
                         str(err)
                     )
@@ -122,10 +124,10 @@ class DefaultX509Source(X509Source):
             try:
                 svid = self._picker(x509_context.x509_svids())
             except Exception as err:
-                logging.error(
+                _logger.error(
                     'X.509 Source: error picking X.509-SVID: {}.'.format(str(err))
                 )
-                logging.error('X.509 Source: closing due to invalid state.')
+                _logger.error('X.509 Source: closing due to invalid state.')
                 self.close()
                 return
         else:
@@ -142,5 +144,5 @@ class DefaultX509Source(X509Source):
 
     @staticmethod
     def _log_error(err: Exception) -> None:
-        logging.error('X.509 Source: Workload API client error: {}.'.format(str(err)))
-        logging.error('X.509 Source: closing.')
+        _logger.error('X.509 Source: Workload API client error: {}.'.format(str(err)))
+        _logger.error('X.509 Source: closing.')
