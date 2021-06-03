@@ -110,18 +110,22 @@ def test_get_bundle_for_trust_domain(mocker):
     assert len(jwt_bundle.jwt_authorities()) == 1
 
 
-"""
 def test_get_bundle_for_trust_domain_exception(mocker):
 
-    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
-        return_value=workload_pb2.JWTSVIDResponse(svids=[])
+    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
+        return_value=[
+            workload_pb2.JWTBundlesResponse(bundles=jwt_bundles),
+        ],
+        side_effect=Exception('Mocked Error'),
     )
 
     jwt_source = DefaultJwtSource(DEFAULT_AUDIENCE, WORKLOAD_API_CLIENT)
-    jwt_source.close()
 
     with pytest.raises(JwtSourceError) as exception:
-        jwt_bundle = jwt_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
-    assert jwt_bundle is None
-    assert str(exception.value) == 'Cannot get JWT Bundle: source is closed'
-"""
+        _ = jwt_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+
+    assert (
+        str(exception.value)
+        == 'JWT Source error: Cannot get JWT Bundle: source is closed.'
+    )
