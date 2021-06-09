@@ -234,10 +234,7 @@ def test_fetch_jwt_bundles_raise_error(mocker):
     with pytest.raises(FetchJwtBundleError) as exc_info:
         WORKLOAD_API_CLIENT.fetch_jwt_bundles()
 
-    assert (
-        str(exc_info.value)
-        == 'Error fetching JWT Bundle: Could not process response from the Workload API.'
-    )
+    assert str(exc_info.value) == 'Error fetching JWT Bundle: Mocked error.'
 
 
 def test_validate_jwt_svid(mocker):

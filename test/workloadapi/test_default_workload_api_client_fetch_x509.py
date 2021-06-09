@@ -11,7 +11,13 @@ from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
-from test.utils.utils import ResponseHolder, handle_success, handle_error, assert_error
+from test.utils.utils import (
+    ResponseHolder,
+    handle_success,
+    handle_error,
+    assert_error,
+    FakeCall,
+)
 
 TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
 TEST_BUNDLE_PATH = 'test/bundle/x509bundle/certs/{}'
@@ -82,6 +88,20 @@ def test_fetch_x509_svid_invalid_response(mocker):
     )
 
 
+def test_fetch_x509_svid_raise_grpc_error_call(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        side_effect=FakeCall()
+    )
+
+    with (pytest.raises(FetchX509SvidError)) as exception:
+        WORKLOAD_API_CLIENT.fetch_x509_svid()
+
+    assert (
+        str(exception.value)
+        == 'Error fetching X.509 SVID: Error details from Workload API.'
+    )
+
+
 def test_fetch_x509_svid_raise_exception(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
@@ -90,10 +110,7 @@ def test_fetch_x509_svid_raise_exception(mocker):
     with (pytest.raises(FetchX509SvidError)) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
-    )
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
 
 
 def test_fetch_x509_svid_corrupted_response(mocker):
@@ -194,6 +211,20 @@ def test_fetch_x509_svids_invalid_response(mocker):
     )
 
 
+def test_fetch_x509_svids_raise_grpc_error_call(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        side_effect=FakeCall()
+    )
+
+    with (pytest.raises(FetchX509SvidError)) as exception:
+        WORKLOAD_API_CLIENT.fetch_x509_svids()
+
+    assert (
+        str(exception.value)
+        == 'Error fetching X.509 SVID: Error details from Workload API.'
+    )
+
+
 def test_fetch_x509_svids_raise_exception(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
@@ -202,10 +233,7 @@ def test_fetch_x509_svids_raise_exception(mocker):
     with (pytest.raises(FetchX509SvidError)) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
-    )
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
 
 
 def test_fetch_x509_svids_corrupted_response(mocker):
@@ -324,6 +352,20 @@ def test_fetch_x509_context_invalid_response(mocker):
     )
 
 
+def test_fetch_x509_context_raise_grpc_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        side_effect=FakeCall()
+    )
+
+    with (pytest.raises(FetchX509SvidError)) as exception:
+        WORKLOAD_API_CLIENT.fetch_x509_context()
+
+    assert (
+        str(exception.value)
+        == 'Error fetching X.509 SVID: Error details from Workload API.'
+    )
+
+
 def test_fetch_x509_context_raise_exception(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
@@ -332,10 +374,7 @@ def test_fetch_x509_context_raise_exception(mocker):
     with (pytest.raises(FetchX509SvidError)) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
-    )
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
 
 
 def test_fetch_x509_context_corrupted_svid(mocker):
@@ -499,6 +538,20 @@ def test_fetch_x509_bundles_invalid_response(mocker):
     )
 
 
+def test_fetch_x509_bundles_raise_grpc_error(mocker):
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
+        side_effect=FakeCall()
+    )
+
+    with (pytest.raises(FetchX509BundleError)) as exception:
+        WORKLOAD_API_CLIENT.fetch_x509_bundles()
+
+    assert (
+        str(exception.value)
+        == 'Error fetching X.509 Bundles: Error details from Workload API.'
+    )
+
+
 def test_fetch_x509_bundles_raise_exception(mocker):
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         side_effect=Exception('mocked error')
@@ -507,10 +560,7 @@ def test_fetch_x509_bundles_raise_exception(mocker):
     with (pytest.raises(FetchX509BundleError)) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundles: X.509 Bundles response is invalid.'
-    )
+    assert str(exception.value) == 'Error fetching X.509 Bundles: mocked error.'
 
 
 def test_fetch_x509_bundles_corrupted_bundle(mocker):
