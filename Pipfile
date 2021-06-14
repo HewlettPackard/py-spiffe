@@ -18,9 +18,10 @@ pem = "~=21.1.0 "
 python_version = "3.6"
 
 [dev-packages]
-black = "==21.4b0"
-mypy = "==0.812"
-mypy-protobuf = "==1.15"
+black = "==21.5b2"
+mypy = "==0.901"
+mypy-protobuf = "==2.4"
+types-protobuf = "0.1.11"
 pre-commit = "==1.18.1"
 tox = "~=3.20.1"
 sphinx = "~=3.4.3"
