@@ -39,7 +39,10 @@ from pyspiffe.workloadapi.workload_api_client import (
     WORKLOAD_API_HEADER_VALUE,
 )
 
+_logger = logging.getLogger(__name__)
+
 __all__ = ['DefaultWorkloadApiClient']
+
 
 # GRPC Error Codes that the client will not retry on:
 #  - INVALID_ARGUMENT is not retried according to the SPIFFE spec because the request is invalid
@@ -529,7 +532,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         grpc_error_code = grpc_error.code()
 
         if retry_handler and grpc_error_code not in _NON_RETRYABLE_CODES:
-            logging.error(
+            _logger.error(
                 'Error connecting to the Workload API: {}'.format(str(grpc_error_code))
             )
             retry_handler.do_retry(
