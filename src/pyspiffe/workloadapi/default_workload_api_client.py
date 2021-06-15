@@ -32,7 +32,6 @@ from pyspiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-from pyspiffe.svid.exceptions import JwtSvidError
 
 from pyspiffe.workloadapi.workload_api_client import (
     WorkloadApiClient,
@@ -135,6 +134,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             self._channel
         )
 
+    @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_svid(self) -> X509Svid:
         """Fetches the default X509-SVID, i.e. the first in the list returned by the Workload API.
 
@@ -205,6 +205,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         # this handler is initialized later after the call to the Workload API
         return cancel_handler
 
+    @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_svids(self) -> List[X509Svid]:
         """Fetches all X509-SVIDs.
 
@@ -224,6 +225,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         return result
 
+    @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_context(self) -> X509Context:
         """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain).
 
@@ -240,6 +242,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         response = self._call_fetch_x509_svid()
         return self._process_x509_context(response)
 
+    @handle_error(error_cls=FetchX509BundleError)
     def fetch_x509_bundles(self) -> X509BundleSet:
         """Fetches X.509 bundles, keyed by trust domain.
 
@@ -253,6 +256,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         response = self._call_fetch_x509_bundles()
         return self._create_bundle_set(response.bundles)
 
+    @handle_error(error_cls=FetchJwtSvidError)
     def fetch_jwt_svid(
         self, audiences: List[str], subject: Optional[SpiffeId] = None
     ) -> JwtSvid:
@@ -270,17 +274,21 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         """
         if not audiences:
             raise ArgumentError('Parameter audiences cannot be empty')
-        try:
-            response = self._call_fetch_jwt_svids(audiences, str(subject))
-            svid = response.svids[0].svid
-            return JwtSvid.parse_insecure(svid, audiences)
-        except JwtSvidError as e:
-            raise FetchJwtSvidError(str(e))
 
-    @handle_error(
-        error_cls=FetchJwtBundleError,
-        default_msg='Could not process response from the Workload API',
-    )
+        response = self._spiffe_workload_api_stub.FetchJWTSVID(
+            request=workload_pb2.JWTSVIDRequest(
+                audience=audiences,
+                spiffe_id=str(subject),
+            )
+        )
+
+        if len(response.svids) == 0:
+            raise FetchJwtSvidError('JWT SVID response is empty')
+
+        svid = response.svids[0].svid
+        return JwtSvid.parse_insecure(svid, audiences)
+
+    @handle_error(error_cls=FetchJwtBundleError)
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
 
@@ -347,6 +355,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         # this handler is initialized later after the call to the Workload API
         return cancel_handler
 
+    @handle_error(error_cls=ValidateJwtSvidError)
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
         """Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.
 
@@ -356,22 +365,23 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
         Returns:
             JwtSvid: If the token and audience could be validated.
+
+        Raises:
             ArgumentError: In case token or audience is empty.
+            ValidateJwtSvidError: In case an error occurs calling the Workload API or
+                                in case the response from the Workload API cannot be processed.
         """
         if not token:
             raise ArgumentError('Token cannot be empty')
         if not audience:
             raise ArgumentError('Audience cannot be empty')
 
-        try:
-            request = workload_pb2.ValidateJWTSVIDRequest(
+        self._spiffe_workload_api_stub.ValidateJWTSVID(
+            request=workload_pb2.ValidateJWTSVIDRequest(
                 audience=audience,
                 svid=token,
             )
-
-            self._spiffe_workload_api_stub.ValidateJWTSVID(request)
-        except Exception as e:
-            raise ValidateJwtSvidError(str(e))
+        )
 
         return JwtSvid.parse_insecure(token, [audience])
 
@@ -401,24 +411,24 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         return grpc.intercept_channel(grpc_insecure_channel, spiffe_client_interceptor)
 
     def _call_fetch_x509_svid(self) -> workload_pb2.X509SVIDResponse:
+        response = self._spiffe_workload_api_stub.FetchX509SVID(
+            workload_pb2.X509SVIDRequest()
+        )
         try:
-            response = self._spiffe_workload_api_stub.FetchX509SVID(
-                workload_pb2.X509SVIDRequest()
-            )
             item = next(response)
-        except Exception:
+        except StopIteration:
             raise FetchX509SvidError('X.509 SVID response is invalid')
         if len(item.svids) == 0:
             raise FetchX509SvidError('X.509 SVID response is empty')
         return item
 
     def _call_fetch_x509_bundles(self) -> workload_pb2.X509BundlesResponse:
+        response = self._spiffe_workload_api_stub.FetchX509Bundles(
+            workload_pb2.X509BundlesRequest()
+        )
         try:
-            response = self._spiffe_workload_api_stub.FetchX509Bundles(
-                workload_pb2.X509BundlesRequest()
-            )
             item = next(response)
-        except Exception:
+        except StopIteration:
             raise FetchX509BundleError('X.509 Bundles response is invalid')
         if len(item.bundles) == 0:
             raise FetchX509BundleError('X.509 Bundles response is empty')
@@ -435,10 +445,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     def _create_x509_svid(svid: workload_pb2.X509SVID) -> X509Svid:
         cert = svid.x509_svid
         key = svid.x509_svid_key
-        try:
-            return X509Svid.parse_raw(cert, key)
-        except Exception as e:
-            raise FetchX509SvidError(str(e))
+        return X509Svid.parse_raw(cert, key)
 
     @staticmethod
     def _create_x509_bundle(trust_domain: TrustDomain, bundle: bytes) -> X509Bundle:
@@ -446,23 +453,6 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             return X509Bundle.parse_raw(trust_domain, bundle)
         except Exception as e:
             raise FetchX509BundleError(str(e))
-
-    def _call_fetch_jwt_svids(
-        self, audience: List[str], spiffe_id: Optional[str] = None
-    ) -> workload_pb2.JWTSVIDResponse:
-
-        try:
-            request = workload_pb2.JWTSVIDRequest(
-                audience=audience,
-                spiffe_id=spiffe_id,
-            )
-            response = self._spiffe_workload_api_stub.FetchJWTSVID(request)
-        except Exception as e:
-            raise FetchJwtSvidError(str(e))
-        if len(response.svids) == 0:
-            raise FetchJwtSvidError('JWT SVID response is empty')
-
-        return response
 
     def _process_x509_context(
         self, x509_svid_response: workload_pb2.X509SVIDResponse
