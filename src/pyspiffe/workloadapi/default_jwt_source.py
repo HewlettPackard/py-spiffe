@@ -14,27 +14,28 @@ from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiC
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from pyspiffe.workloadapi.jwt_source import JwtSource
 from pyspiffe.workloadapi.exceptions import JwtSourceError
+from pyspiffe.exceptions import ArgumentError
 
 
 class DefaultJwtSource(JwtSource):
-    """Default implementation of JwtSource. This class may be used by clients to get updated JWT-SVIDs and JWT bundles without the need to contact WorkloadAPI.
-    DefaultJwtSource treates updates from WorkloadAPI and keeps JWT-SVID and JWT bundles updated.
+    """Default implementation of JwtSource. This class may be used by clients to get updated JWT-SVIDs and JWT bundles.
+
+    DefaultJwtSource treates updates from Workload API and keeps JWT bundles updated.
     """
 
     def __init__(
         self,
-        audiences: Set[str],
         workload_api_client: WorkloadApiClient = None,
         spiffe_socket_path: str = None,
         timeout_in_seconds: float = None,
-        subject: Optional[SpiffeId] = None,
     ) -> None:
         """Creates a new DefaultJwtSource.
+
            It blocks until the initial update has been received from the Workload API or until timeout_in_seconds is reached.
            In case the underlying Workload API connection returns an unretryable error, the source will be closed and
            no methods on the source will be available.
+
         Args:
-            audiences: List of audiences for the JWT SVID.
             workload_api_client: A WorkloadApiClient object that will be used to fetch the JWT materials from the Workload API.
                                  In case it's not provided, a default client will be created.
             spiffe_socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
@@ -42,9 +43,10 @@ class DefaultJwtSource(JwtSource):
             timeout_in_seconds: Time to wait for the first update of the Workload API. If not provided, and
                                 the connection with the Workload API fails, it will block indefinitely while
                                 the connection is retried.
-            subject: SPIFFE ID subject for the JWT.
+
         Returns:
             DefaultJwtSource: New DefaultJwtSource object, initialized with the JwtBundleSet fetched from the Workload API.
+
         Raises:
             ArgumentError: If spiffe_socket_path is invalid or not provided and SPIFFE_ENDPOINT_SOCKET env variable is not set.
             JwtSourceError: In case a timeout was configured and it was reached during the source initialization waiting
@@ -54,8 +56,6 @@ class DefaultJwtSource(JwtSource):
         self._initialized = threading.Event()
         self._lock = threading.Lock()
         self._closed = False
-        self._audiences = audiences
-        self._subject = subject
         self._workload_api_client = (
             workload_api_client
             if workload_api_client
@@ -74,20 +74,33 @@ class DefaultJwtSource(JwtSource):
                 'Could not initialize JWT Source: reached timeout waiting for the first update'
             )
 
-    def get_jwt_svid(self) -> JwtSvid:
+    def get_jwt_svid(
+        self, audiences: Set[str], subject: Optional[SpiffeId] = None
+    ) -> JwtSvid:
         """Returns an JWT-SVID from the source.
 
-        Raises:
-            JwtSourceError: In case this JWT Source is closed.
-        """
-        with self._lock:
-            if self._closed:
-                raise JwtSourceError('Cannot get JWT SVID: source is closed')
-            return self._jwt_svid
+        Args:
+            audiences: List of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT.
 
-    def get_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[JwtBundle]:
+        Raises:
+            ArgumentError: In case audiences is empty.
+            JwtSourceError: In case an error is raised when connecting to WORKLOAD API.
+        """
+        if not audiences:
+            raise ArgumentError('Audience cannot be empty')
+        try:
+            jwt_svid = self._workload_api_client.fetch_jwt_svid(audiences, subject)
+            return jwt_svid
+        except Exception as err:
+            logging.error('JWT Source: error getting JWT SVID: {}.'.format(str(err)))
+            logging.error('JWT Source: closing due to invalid state.')
+            self.close()
+            raise JwtSourceError(
+                'JWT Source: error getting JWT SVID: {}'.format(str(err))
+            )
+
+    def get(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
         """Returns the JWT bundle for the given trust domain.
 
         Raises:
@@ -104,7 +117,6 @@ class DefaultJwtSource(JwtSource):
 
         IMPORTANT: client code must call this method when the JwtSource is not needed anymore as the connection with Workload API will
         only be closed when this method is invoked.
-
         """
         with self._lock:
             # the cancel method throws a grpc exception, that can be discarded
@@ -125,18 +137,7 @@ class DefaultJwtSource(JwtSource):
             return self._closed
 
     def _set_jwt_data(self, jwt_bundle_set: JwtBundleSet) -> None:
-        try:
-            jwt_svid = self._workload_api_client.fetch_jwt_svid(
-                self._audiences, self._subject
-            )
-        except Exception as err:
-            logging.error('JWT Source: error setting JWT context: {}.'.format(str(err)))
-            logging.error('JWT Source: closing due to invalid state.')
-            self.close()
-            return
-
         with self._lock:
-            self._jwt_svid = jwt_svid
             self._jwt_bundle_set = jwt_bundle_set
             self._initialized.set()
 

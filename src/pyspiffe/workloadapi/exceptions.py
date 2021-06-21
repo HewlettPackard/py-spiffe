@@ -112,6 +112,7 @@ class JwtSourceError(WorkloadApiError):
 
     def __init__(self, additional_information: str) -> None:
         """Creates an instance of JWTSourceError.
+
         Args:
             additional_information: Additional information about the error.
         """
