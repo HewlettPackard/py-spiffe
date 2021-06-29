@@ -16,6 +16,8 @@ from pyspiffe.workloadapi.jwt_source import JwtSource
 from pyspiffe.workloadapi.exceptions import JwtSourceError
 from pyspiffe.exceptions import ArgumentError
 
+_logger = logging.getLogger(__name__)
+
 
 class DefaultJwtSource(JwtSource):
     """Default implementation of JwtSource. This class may be used by clients to get updated JWT-SVIDs and JWT bundles.
@@ -85,22 +87,15 @@ class DefaultJwtSource(JwtSource):
 
         Raises:
             ArgumentError: In case audiences is empty.
-            JwtSourceError: In case an error is raised when connecting to WORKLOAD API.
+            FetchJwtSvidError: In case there is an error in fetching the JWT-SVID from the Workload API.
         """
         if not audiences:
             raise ArgumentError('Audience cannot be empty')
-        try:
-            jwt_svid = self._workload_api_client.fetch_jwt_svid(audiences, subject)
-            return jwt_svid
-        except Exception as err:
-            logging.error('JWT Source: error getting JWT SVID: {}.'.format(str(err)))
-            logging.error('JWT Source: closing due to invalid state.')
-            self.close()
-            raise JwtSourceError(
-                'JWT Source: error getting JWT SVID: {}'.format(str(err))
-            )
 
-    def get(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
+        jwt_svid = self._workload_api_client.fetch_jwt_svid(audiences, subject)
+        return jwt_svid
+
+    def get_jwt_bundle(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
         """Returns the JWT bundle for the given trust domain.
 
         Raises:
@@ -123,8 +118,8 @@ class DefaultJwtSource(JwtSource):
             try:
                 self._client_cancel_handler.cancel()
             except Exception as err:
-                logging.exception(
-                    'Jwt Source: Exception canceling the Workload API client connection: {}'.format(
+                _logger.exception(
+                    'JWT Source: Exception canceling the Workload API client connection: {}'.format(
                         str(err)
                     )
                 )
@@ -146,5 +141,5 @@ class DefaultJwtSource(JwtSource):
         self.close()
 
     def _log_error(self, err: Exception) -> None:
-        logging.error('JWT Source: Workload API client error: {}'.format(str(err)))
-        logging.error('JWT Source: closing.')
+        _logger.error('JWT Source: Workload API client error: {}'.format(str(err)))
+        _logger.error('JWT Source: closing.')

@@ -5,7 +5,7 @@ from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.workloadapi.default_jwt_source import DefaultJwtSource
-from pyspiffe.workloadapi.exceptions import JwtSourceError
+from pyspiffe.workloadapi.exceptions import JwtSourceError, FetchJwtSvidError
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
 from pyspiffe.exceptions import ArgumentError
 from test.utils.utils import (
@@ -80,13 +80,10 @@ def test_error_new(mocker):
     )
     mock_client_fetch_jwt_bundles(mocker)
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
-    with pytest.raises(JwtSourceError) as exception:
+    with pytest.raises(FetchJwtSvidError) as exception:
         _ = jwt_source.get_jwt_svid(DEFAULT_AUDIENCE)
 
-    assert (
-        str(exception.value)
-        == 'JWT Source error: JWT Source: error getting JWT SVID: Error fetching JWT SVID: Mocked Error.'
-    )
+    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
 
 
 def test_close(mocker):
@@ -121,17 +118,17 @@ def test_is_closed(mocker):
     assert jwt_source.is_closed()
 
 
-def test_get(mocker):
+def get_jwt_bundle(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
 
-    jwt_bundle = jwt_source.get(TrustDomain('example.org'))
+    jwt_bundle = jwt_source.get_jwt_bundle(TrustDomain('example.org'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities()) == 1
 
 
-def test_get_exception(mocker):
+def test_get_jwt_bundle_exception(mocker):
 
     jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
     WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
@@ -144,7 +141,7 @@ def test_get_exception(mocker):
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
 
     with pytest.raises(JwtSourceError) as exception:
-        _ = jwt_source.get(TrustDomain('example.org'))
+        _ = jwt_source.get_jwt_bundle(TrustDomain('example.org'))
 
     assert (
         str(exception.value)

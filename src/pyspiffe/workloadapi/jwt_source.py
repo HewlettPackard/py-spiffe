@@ -20,7 +20,7 @@ class JwtSource(ABC):
         pass
 
     @abstractmethod
-    def get(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
+    def get_jwt_bundle(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
         """Returns the JWT bundle for the given trust domain."""
         pass
 
