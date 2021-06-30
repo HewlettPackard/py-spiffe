@@ -103,3 +103,17 @@ class X509SourceError(WorkloadApiError):
             additional_information: Additional information about the error.
         """
         super().__init__(self._MESSAGE.format(additional_information))
+
+
+class JwtSourceError(WorkloadApiError):
+    """Error raised when there is an error in the JWT Source."""
+
+    _MESSAGE = 'JWT Source error: {}'
+
+    def __init__(self, additional_information: str) -> None:
+        """Creates an instance of JWTSourceError.
+
+        Args:
+            additional_information: Additional information about the error.
+        """
+        super().__init__(self._MESSAGE.format(additional_information))
