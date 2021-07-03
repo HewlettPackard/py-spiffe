@@ -19,7 +19,7 @@ from pyspiffe.proto.spiffe import (
     workload_pb2_grpc,
     workload_pb2,
 )
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.workloadapi.handle_error import handle_error
 from pyspiffe.workloadapi.exceptions import (
     FetchX509SvidError,
@@ -439,7 +439,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
     def _create_bundle_set(self, resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
         x509_bundles = [
-            self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
+            self._create_x509_bundle(TrustDomain.parse(td), resp_bundles[td])
             for td in resp_bundles
         ]
         return X509BundleSet.of(x509_bundles)
@@ -585,6 +585,8 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     ) -> Dict[TrustDomain, JwtBundle]:
         jwt_bundles = {}
         for td, jwk_set in jwt_bundle_response.bundles.items():
-            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
+            jwt_bundles[TrustDomain.parse(td)] = JwtBundle.parse(
+                TrustDomain.parse(td), jwk_set
+            )
 
         return jwt_bundles

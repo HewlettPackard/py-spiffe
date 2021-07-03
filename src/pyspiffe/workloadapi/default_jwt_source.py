@@ -8,7 +8,7 @@ from typing import Optional, Set
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient

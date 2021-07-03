@@ -6,7 +6,7 @@ import threading
 from typing import Optional, Callable, List
 
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.svid.x509_svid import X509Svid
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 from pyspiffe.workloadapi.exceptions import X509SourceError

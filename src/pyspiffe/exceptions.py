@@ -33,3 +33,19 @@ class ArgumentError(PySpiffeError):
 
     def __str__(self) -> str:
         return super().__str__()
+
+
+class SpiffeIdError(ArgumentError):
+    """SpiffeId validation error for py-spiffe library."""
+
+    def __init__(self, message: str) -> None:
+        """Creates an instance of SpiffeIdError.
+
+        Args:
+            message: Message describing the error.
+        """
+
+        super().__init__(message)
+
+    def __str__(self) -> str:
+        return super().__str__()

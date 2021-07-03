@@ -1,89 +1,96 @@
 import pytest
 
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.exceptions import ArgumentError
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
+from test.spiffe_id.test_spiffe_id import TD_CHARS
 
 
 @pytest.mark.parametrize(
     'test_input,expected',
     [
-        ('domain.test', 'domain.test'),
-        (' doMain.tesT  ', 'domain.test'),
-        ('spiffe://domAin.Test', 'domain.test'),
+        ('trustdomain', 'trustdomain'),
+        ('trustdomain.test', 'trustdomain.test'),
         ('spiffe://domain.test/path/element', 'domain.test'),
-        ('spiffe://domain.test/spiffe://domain.test/path/element', 'domain.test'),
-        ('spiffe://domain.test/spiffe://domain.test:80/path/element', 'domain.test'),
     ],
 )
 def test_valid_trust_domain(test_input, expected):
-    result = TrustDomain(test_input).name()
-    assert result == expected
+    result = TrustDomain.parse(test_input)
+    assert result.name() == expected
 
 
 @pytest.mark.parametrize(
     'test_input,expected',
     [
-        ('', 'Trust domain cannot be empty.'),
-        (None, 'Trust domain cannot be empty.'),
-        ('http://domain.test', 'Trust domain: invalid scheme: expected spiffe.'),
-        ('://domain.test', 'Trust domain: invalid scheme: expected spiffe.'),
-        ('spiffe:///path/element', 'Trust domain cannot be empty.'),
-        ('/path/element', 'Trust domain cannot be empty.'),
-        ('spiffe://domain.test:80', 'Trust domain: port is not allowed.'),
-        ('user:pass@domain.test', 'Trust domain: user info is not allowed.'),
+        ('', 'Trust domain is missing.'),
+        (None, 'Trust domain is missing.'),
+        ('http://domain.test', 'Scheme is missing or invalid.'),
+        ('://domain.test', 'Scheme is missing or invalid.'),
+        ('spiffe:///path/element', 'Trust domain is missing.'),
+        (
+            '/path/element',
+            'Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores.',
+        ),
+        (
+            'spiffe://domain.test:80',
+            'Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores.',
+        ),
+        (
+            'user:pass@domain.test',
+            'Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores.',
+        ),
+        (
+            'Domain.Test',
+            'Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores.',
+        ),
     ],
 )
 def test_invalid_trust_domain(test_input, expected):
     with pytest.raises(ArgumentError) as exception:
-        TrustDomain(test_input)
+        TrustDomain.parse(test_input)
 
     assert str(exception.value) == expected
 
 
-def test_get_name():
-    trust_domain = TrustDomain('example.org')
-    assert trust_domain.name() == 'example.org'
+def test_parse_with_all_chars():
+    # Go all the way through 255, which ensures we reject UTF-8 appropriately
+    for i in range(0, 255):
+        c = chr(i)
+        td = "trustdomain" + c
+        if c in TD_CHARS:
+            trust_domain = TrustDomain.parse(td)
+            assert trust_domain.name() == td
+        else:
+            with pytest.raises(ArgumentError) as exception:
+                TrustDomain.parse(td)
+            assert (
+                str(exception.value)
+                == 'Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores.'
+            )
 
 
 def test_to_string():
-    trust_domain = TrustDomain('domain.test')
+    trust_domain = TrustDomain.parse('domain.test')
     assert str(trust_domain) == 'domain.test'
 
 
 def test_compare_multiple_equal_trust_domains():
-    trust_domain1 = TrustDomain('domain.test')
-    trust_domain2 = TrustDomain('domain.test')
+    trust_domain1 = TrustDomain.parse('domain.test')
+    trust_domain2 = TrustDomain.parse('domain.test')
     assert trust_domain1 == trust_domain2
 
 
 def test_compare_different_trust_domains():
-    trust_domain1 = TrustDomain('domain.test')
-    trust_domain2 = TrustDomain('other.test')
+    trust_domain1 = TrustDomain.parse('domain.test')
+    trust_domain2 = TrustDomain.parse('other.test')
     assert not trust_domain1 == trust_domain2
 
 
 def test_not_equal_when_different_objects():
-    trust_domain = TrustDomain('domain.test')
+    trust_domain = TrustDomain.parse('domain.test')
     td_list = list([trust_domain])
     assert trust_domain != td_list
 
 
-def test_exceeds_maximum_length():
-    name = "a" * 256
-
-    with pytest.raises(ArgumentError) as exception:
-        TrustDomain("{}".format(name))
-
-    assert str(exception.value) == 'Trust domain cannot be longer than 255 bytes.'
-
-
-def test_maximum_length():
-    name = "a" * 255
-    trust_domain = TrustDomain('{}'.format(name))
-
-    assert trust_domain.name() == name
-
-
 def test_as_str_id():
-    trust_domain = TrustDomain('example.org')
+    trust_domain = TrustDomain.parse('example.org')
     assert trust_domain.as_str_id() == 'spiffe://example.org'
