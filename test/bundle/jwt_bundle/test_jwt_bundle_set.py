@@ -3,10 +3,10 @@ from cryptography.hazmat.backends import default_backend
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
-trust_domain_1 = TrustDomain('domain.test')
-trust_domain_2 = TrustDomain('example.org')
+trust_domain_1 = TrustDomain.parse('domain.test')
+trust_domain_2 = TrustDomain.parse('example.org')
 
 # Default authorities to run test cases.
 ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())

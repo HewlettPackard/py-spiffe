@@ -3,9 +3,9 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from jwt.exceptions import InvalidKeyError
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
 from pyspiffe.exceptions import ArgumentError
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from test.utils.utils import (
     JWKS_1_EC_KEY,
     JWKS_2_EC_1_RSA_KEYS,
@@ -14,7 +14,7 @@ from test.utils.utils import (
 )
 
 # Default trust domain to run test cases.
-trust_domain = TrustDomain("spiffe://any.domain")
+trust_domain = TrustDomain.parse("spiffe://any.domain")
 
 # Default authorities to run test cases.
 ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
@@ -36,7 +36,7 @@ def test_create_jwt_bundle_no_trust_domain():
     with pytest.raises(JwtBundleError) as exc_info:
         JwtBundle(None, authorities)
 
-    assert str(exc_info.value) == 'Trust domain cannot be empty.'
+    assert str(exc_info.value) == 'Trust domain is missing.'
 
 
 def test_create_jwt_bundle_no_authorities():
@@ -105,7 +105,7 @@ def test_parse_invalid_trust_domain(test_trust_domain):
     with pytest.raises(ArgumentError) as exception:
         JwtBundle.parse(test_trust_domain, JWKS_1_EC_KEY)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain is missing.'
 
 
 @pytest.mark.parametrize(

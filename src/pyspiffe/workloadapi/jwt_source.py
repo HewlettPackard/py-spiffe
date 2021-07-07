@@ -6,7 +6,7 @@ from typing import Optional, Set
 
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.svid.jwt_svid import JwtSvid
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 

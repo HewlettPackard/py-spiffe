@@ -1,10 +1,10 @@
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
 _TEST_CERTS_PATH = 'test/bundle/x509bundle/certs/{}'
-trust_domain_1 = TrustDomain('domain.test')
-trust_domain_2 = TrustDomain('example.org')
+trust_domain_1 = TrustDomain.parse('domain.test')
+trust_domain_2 = TrustDomain.parse('example.org')
 
 
 def test_create_new_x509_bundle_set():
@@ -28,7 +28,7 @@ def test_create_new_x509_bundle_set():
     assert found_bundle == bundle_2
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(
-        TrustDomain('other.test')
+        TrustDomain.parse('other.test')
     )
     assert found_bundle is None
 
@@ -52,7 +52,7 @@ def test_create_x509_bundle_set_from_list_of_bundles():
     assert found_bundle == bundle_2
 
     found_bundle = x509_bundle_set.get_x509_bundle_for_trust_domain(
-        TrustDomain('other.test')
+        TrustDomain.parse('other.test')
     )
     assert found_bundle is None
 

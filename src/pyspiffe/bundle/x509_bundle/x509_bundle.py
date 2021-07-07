@@ -13,7 +13,8 @@ from pyspiffe.bundle.x509_bundle.exceptions import (
     ParseX509BundleError,
     LoadX509BundleError,
 )
-from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
+from pyspiffe.spiffe_id.errors import MISSING_TRUST_DOMAIN
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.utils.certificate_utils import (
     parse_pem_certificates,
     parse_der_certificates,
@@ -45,7 +46,7 @@ class X509Bundle(object):
         self.lock = threading.Lock()
 
         if not trust_domain:
-            raise X509BundleError(EMPTY_DOMAIN_ERROR)
+            raise X509BundleError(MISSING_TRUST_DOMAIN)
 
         self._trust_domain = trust_domain
         self._x509_authorities = x509_authorities.copy() if x509_authorities else set()

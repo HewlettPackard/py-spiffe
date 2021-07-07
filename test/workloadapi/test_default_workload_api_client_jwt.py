@@ -7,7 +7,7 @@ import threading
 from calendar import timegm
 from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.exceptions import ArgumentError
@@ -147,11 +147,11 @@ def test_fetch_jwt_bundles(mocker):
 
     jwt_bundle_set = WORKLOAD_API_CLIENT.fetch_jwt_bundles()
 
-    jwt_bundle = jwt_bundle_set.get(TrustDomain('example.org'))
+    jwt_bundle = jwt_bundle_set.get(TrustDomain.parse('example.org'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities()) == 1
 
-    federated_jwt_bundle = jwt_bundle_set.get(TrustDomain('domain.test'))
+    federated_jwt_bundle = jwt_bundle_set.get(TrustDomain.parse('domain.test'))
     assert federated_jwt_bundle
     assert len(federated_jwt_bundle.jwt_authorities()) == 3
 
@@ -316,11 +316,11 @@ def test_watch_jwt_bundle_success(mocker):
     assert not response_holder.error
     jwt_bundle_set = response_holder.success
     assert jwt_bundle_set
-    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain('example.org'))
+    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain.parse('example.org'))
     assert jwt_bundle_1
     assert len(jwt_bundle_1.jwt_authorities()) == 1
 
-    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain('domain.prod'))
+    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain.parse('domain.prod'))
     assert jwt_bundle_2
     assert len(jwt_bundle_2.jwt_authorities()) == 3
 
@@ -329,7 +329,7 @@ def test_watch_jwt_bundle_success(mocker):
 
     assert not response_holder.error
     jwt_bundle_set = response_holder.success
-    jwt_bundle = jwt_bundle_set.get(TrustDomain('domain.dev'))
+    jwt_bundle = jwt_bundle_set.get(TrustDomain.parse('domain.dev'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities()) == 1
 
@@ -366,11 +366,11 @@ def test_watch_jwt_bundle_retry_on_grpc_error(mocker):
 
     jwt_bundle_set = response_holder.success
     assert jwt_bundle_set
-    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain('example.org'))
+    jwt_bundle_1 = jwt_bundle_set.get(TrustDomain.parse('example.org'))
     assert jwt_bundle_1
     assert len(jwt_bundle_1.jwt_authorities()) == 1
 
-    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain('domain.prod'))
+    jwt_bundle_2 = jwt_bundle_set.get(TrustDomain.parse('domain.prod'))
     assert jwt_bundle_2
     assert len(jwt_bundle_2.jwt_authorities()) == 3
 

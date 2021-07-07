@@ -7,7 +7,9 @@ from jwt.api_jwk import PyJWKSet
 from jwt.exceptions import InvalidKeyError
 from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
-from pyspiffe.spiffe_id.trust_domain import TrustDomain, EMPTY_DOMAIN_ERROR
+
+from pyspiffe.spiffe_id.errors import MISSING_TRUST_DOMAIN
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
 from pyspiffe.exceptions import ArgumentError
 
@@ -41,7 +43,7 @@ class JwtBundle(object):
         self.lock = threading.Lock()
 
         if not trust_domain:
-            raise JwtBundleError(EMPTY_DOMAIN_ERROR)
+            raise JwtBundleError(MISSING_TRUST_DOMAIN)
 
         self._trust_domain = trust_domain
         self._jwt_authorities = jwt_authorities.copy() if jwt_authorities else {}
@@ -91,7 +93,7 @@ class JwtBundle(object):
         """
 
         if not trust_domain:
-            raise ArgumentError(EMPTY_DOMAIN_ERROR)
+            raise ArgumentError(MISSING_TRUST_DOMAIN)
 
         if not bundle_bytes:
             raise ArgumentError('Bundle bytes cannot be empty')

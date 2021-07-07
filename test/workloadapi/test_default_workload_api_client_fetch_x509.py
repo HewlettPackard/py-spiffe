@@ -7,7 +7,7 @@ from cryptography.x509 import Certificate
 
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
 from test.utils.utils import read_file_bytes
 from test.workloadapi.test_default_workload_api_client import WORKLOAD_API_CLIENT
@@ -313,12 +313,14 @@ def test_fetch_x509_context_success(mocker):
     assert isinstance(svid2.leaf(), Certificate)
     assert isinstance(svid2.private_key(), ec.EllipticCurvePrivateKey)
 
-    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(
+        TrustDomain.parse('example.org')
+    )
     assert bundle
     assert len(bundle.x509_authorities()) == 1
 
     federated_bundle = bundle_set.get_x509_bundle_for_trust_domain(
-        TrustDomain('domain.test')
+        TrustDomain.parse('domain.test')
     )
     assert federated_bundle
     assert len(federated_bundle.x509_authorities()) == 1
@@ -499,12 +501,14 @@ def test_fetch_x509_bundles_success(mocker):
 
     bundle_set = WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
-    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(
+        TrustDomain.parse('example.org')
+    )
     assert bundle
     assert len(bundle.x509_authorities()) == 1
 
     federated_bundle = bundle_set.get_x509_bundle_for_trust_domain(
-        TrustDomain('domain.test')
+        TrustDomain.parse('domain.test')
     )
     assert federated_bundle
     assert len(federated_bundle.x509_authorities()) == 1
@@ -660,7 +664,9 @@ def test_watch_x509_context_success(mocker):
     assert isinstance(svid2.private_key(), ec.EllipticCurvePrivateKey)
 
     bundle_set = x509_context.x509_bundle_set()
-    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(
+        TrustDomain.parse('example.org')
+    )
     assert bundle
     assert len(bundle.x509_authorities()) == 1
 
@@ -702,7 +708,9 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(mock
     assert isinstance(svid2.private_key(), ec.EllipticCurvePrivateKey)
 
     bundle_set = x509_context.x509_bundle_set()
-    bundle = bundle_set.get_x509_bundle_for_trust_domain(TrustDomain('example.org'))
+    bundle = bundle_set.get_x509_bundle_for_trust_domain(
+        TrustDomain.parse('example.org')
+    )
     assert bundle
     assert len(bundle.x509_authorities()) == 1
 

@@ -5,7 +5,7 @@ import threading
 from typing import List, Optional, Dict
 
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
 __all__ = ['X509BundleSet']
 

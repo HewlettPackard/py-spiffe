@@ -12,11 +12,11 @@ from pyspiffe.bundle.x509_bundle.exceptions import (
     SaveX509BundleError,
 )
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.exceptions import ArgumentError
 
 _TEST_CERTS_PATH = 'test/bundle/x509bundle/certs/{}'
-trust_domain = TrustDomain('domain.test')
+trust_domain = TrustDomain.parse('domain.test')
 
 
 def test_parse_raw_bundle_single_authority():
@@ -86,7 +86,7 @@ def test_parse_raw_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse_raw(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain is missing.'
 
 
 def test_parse_trust_domain_is_emtpy():
@@ -95,7 +95,7 @@ def test_parse_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain is missing.'
 
 
 def test_parse_bundle_from_empty():
@@ -155,7 +155,7 @@ def test_load_bundle_empty_trust_domain():
     with pytest.raises(Exception) as exception:
         X509Bundle.load(None, bundle_path, serialization.Encoding.PEM)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain is missing.'
 
 
 def test_load_bundle_invalid_encoding():

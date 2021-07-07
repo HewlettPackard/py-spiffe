@@ -147,7 +147,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
             jwt.encode(
                 {
                     'aud': ['spire'],
-                    'sub': 'spiffe://test.org/',
+                    'sub': 'spiffe://test.org',
                     'exp': timegm(
                         (
                             datetime.datetime.utcnow() + datetime.timedelta(hours=100)
@@ -158,13 +158,13 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                 headers={'alg': 'RS256', 'typ': 'JWT'},
             ),
             ['spire'],
-            'spiffe://test.org/',
+            'spiffe://test.org',
         ),
         (
             jwt.encode(
                 {
                     'aud': ['spire', 'test', 'valid'],
-                    'sub': 'spiffe://test.com.br/',
+                    'sub': 'spiffe://test.com.br',
                     'exp': timegm(
                         (
                             datetime.datetime.utcnow() + datetime.timedelta(hours=1)
@@ -175,7 +175,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                 headers={'alg': 'PS384', 'typ': 'JOSE'},
             ),
             {'spire', 'test'},
-            "spiffe://test.com.br/",
+            "spiffe://test.com.br",
         ),
     ],
 )

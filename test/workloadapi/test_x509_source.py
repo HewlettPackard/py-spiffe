@@ -2,7 +2,7 @@ import pytest
 
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 from pyspiffe.workloadapi.default_x509_source import DefaultX509Source
 from pyspiffe.workloadapi.exceptions import X509SourceError
@@ -84,12 +84,12 @@ def test_x509_source_get_bundle_for_trust_domain(mocker):
     mock_client_return_multiple_svids(mocker)
     x509_source = DefaultX509Source(WORKLOAD_API_CLIENT)
 
-    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
-    assert bundle.trust_domain() == TrustDomain('example.org')
+    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
+    assert bundle.trust_domain() == TrustDomain.parse('example.org')
     assert len(bundle.x509_authorities()) == 1
 
-    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
-    assert bundle.trust_domain() == TrustDomain('domain.test')
+    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain.parse('domain.test'))
+    assert bundle.trust_domain() == TrustDomain.parse('domain.test')
     assert len(bundle.x509_authorities()) == 1
 
 
@@ -115,7 +115,7 @@ def test_x509_source_is_closed_get_bundle(mocker):
     x509_source.close()
 
     with (pytest.raises(X509SourceError)) as exception:
-        x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+        x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
 
     assert (
         str(exception.value)

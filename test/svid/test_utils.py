@@ -6,7 +6,7 @@ import datetime
 from calendar import timegm
 from typing import List
 from pyspiffe.utils.certificate_utils import PRIVATE_KEY_TYPES
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -37,10 +37,10 @@ def get_keys_pems(private_key: PRIVATE_KEY_TYPES):
     return private_key_pem, public_key_pem
 
 
-DEFAULT_TRUST_DOMAIN = TrustDomain('test.com')
+DEFAULT_TRUST_DOMAIN = TrustDomain.parse('test.com')
 """Default Trust Domain to be used when creating a default test JWT. Trust Domain=test.com/"""
 
-DEFAULT_SPIFFE_ID = 'spiffe://test.com/'
+DEFAULT_SPIFFE_ID = 'spiffe://test.com'
 """Default SPIFFE ID to be used when creating a default test JWT. SPIFFE ID=spiffe://test.com/"""
 
 DEFAULT_ALG = 'RS256'

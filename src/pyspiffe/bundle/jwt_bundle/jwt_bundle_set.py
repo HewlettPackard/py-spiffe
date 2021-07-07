@@ -5,7 +5,7 @@ This module manages JwtBundleSet objects.
 import threading
 from typing import Dict, Optional
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
 
 class JwtBundleSet(object):

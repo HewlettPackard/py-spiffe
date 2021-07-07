@@ -1,7 +1,7 @@
 import pytest
 
 from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
-from pyspiffe.spiffe_id.trust_domain import TrustDomain
+from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.workloadapi.default_jwt_source import DefaultJwtSource
@@ -123,7 +123,7 @@ def get_jwt_bundle(mocker):
     mock_client_fetch_jwt_bundles(mocker)
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
 
-    jwt_bundle = jwt_source.get_jwt_bundle(TrustDomain('example.org'))
+    jwt_bundle = jwt_source.get_jwt_bundle(TrustDomain.parse('example.org'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities()) == 1
 
@@ -141,7 +141,7 @@ def test_get_jwt_bundle_exception(mocker):
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
 
     with pytest.raises(JwtSourceError) as exception:
-        _ = jwt_source.get_jwt_bundle(TrustDomain('example.org'))
+        _ = jwt_source.get_jwt_bundle(TrustDomain.parse('example.org'))
 
     assert (
         str(exception.value)
