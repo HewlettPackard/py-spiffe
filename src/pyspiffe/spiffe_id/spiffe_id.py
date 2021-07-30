@@ -10,7 +10,6 @@ from pyspiffe.spiffe_id import SPIFFE_SCHEME
 from pyspiffe.spiffe_id.errors import (
     EMPTY,
     WRONG_SCHEME,
-    NO_LEADING_SLASH,
     EMPTY_SEGMENT,
     DOT_SEGMENT,
     BAD_PATH_SEGMENT_CHAR,
@@ -128,7 +127,8 @@ class SpiffeId(object):
         td = rest[:i]
         path = rest[i:]
 
-        validate_path(path)
+        if path:
+            validate_path(path)
 
         result = SpiffeId()
         trust_domain = TrustDomain()
@@ -138,10 +138,10 @@ class SpiffeId(object):
         return result
 
     @classmethod
-    def of(
+    def from_segments(
         cls, trust_domain: TrustDomain, path_segments: Union[str, List[str]] = None
     ) -> 'SpiffeId':
-        """Creates SpiffeId type instance from a Trust Domain and zero or more paths.
+        """Creates SpiffeId type instance from a Trust Domain and one or more paths.
 
         Args:
             trust_domain: The trust domain corresponds to the trust root of a system.
@@ -155,12 +155,12 @@ class SpiffeId(object):
             SpiffeIdError: If the path segments are not SPIFFE conformant.
 
         Examples:
-            >>> spiffe_id_1 = SpiffeId.of(TrustDomain.parse('example.org'), '/path')
+            >>> spiffe_id_1 = SpiffeId.from_segments(TrustDomain.parse('example.org'), 'path')
             >>> print(spiffe_id_1)
             spiffe://example.org/path
 
             an array of paths:
-            >>> spiffe_id_2 = SpiffeId.of(TrustDomain.parse('example.org'), ['/path1', '/path2', '/element'])
+            >>> spiffe_id_2 = SpiffeId.from_segments(TrustDomain.parse('example.org'), ['path1', 'path2', 'element'])
             >>> print(spiffe_id_2)
             spiffe://example.org/path1/path2/element
         """
@@ -177,10 +177,10 @@ class SpiffeId(object):
             if isinstance(path_segments, List):
                 for p in path_segments:
                     validate_path(p)
-                    path += p
+                    path += '/' + p
             else:
                 validate_path(path_segments)
-                path = path_segments
+                path = '/' + path_segments
 
             result._set_path(path)
 
@@ -241,17 +241,11 @@ def is_valid_path_segment_char(c):
     return c == '-' or c == '.' or c == '_'
 
 
-# Validates that a path string is a conformant path for a SPIFFE ID. Namely:
-# - does not contain an empty segments (including a trailing slash)
-# - does not contain dot segments (i.e. '.' or '..')
-# - does not contain any percent encoded characters
-# - has only characters from the unreserved or sub-delims set from RFC3986.
+# Validates that a path string is a conformant path for a SPIFFE ID.
+# See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
 def validate_path(path):
     if not path:
-        return
-
-    if path[0] != '/':
-        raise SpiffeIdError(NO_LEADING_SLASH)
+        raise ArgumentError(EMPTY)
 
     segment_start = 0
     segment_end = 0
