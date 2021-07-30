@@ -119,28 +119,28 @@ PATH_CHARS = {
     [
         (
             TrustDomain.parse('example.org'),
-            ['/path', '/element'],
+            ['path', 'element'],
             'spiffe://example.org/path/element',
         ),
         (
             TrustDomain.parse('example.org'),
-            ['/path', '/element'],
+            ['path', 'element'],
             'spiffe://example.org/path/element',
         ),
         (
             TrustDomain.parse('domain.test'),
-            ['/pAth1', '/pATH2'],
+            ['pAth1', 'pATH2'],
             'spiffe://domain.test/pAth1/pATH2',
         ),
         (
             TrustDomain.parse('domain.test'),
-            '/pAth1/pATH2',
+            'pAth1/pATH2',
             'spiffe://domain.test/pAth1/pATH2',
         ),
     ],
 )
 def test_of_trust_domain_and_segments(trust_domain, path_segments, expected_spiffe_id):
-    result = SpiffeId.of(trust_domain, path_segments)
+    result = SpiffeId.from_segments(trust_domain, path_segments)
     assert str(result) == expected_spiffe_id
 
 
@@ -178,7 +178,7 @@ def test_of_trust_domain_and_invalid_segments(
     trust_domain, path_segments, expected_error
 ):
     with pytest.raises(SpiffeIdError) as exception:
-        SpiffeId.of(trust_domain, path_segments)
+        SpiffeId.from_segments(trust_domain, path_segments)
     assert str(exception.value) == expected_error
 
 
@@ -252,35 +252,35 @@ def test_parse_spiffe_id_from_invalid(spiffe_id_str, expected):
 
 def test_equal_spiffe_id():
     trust_domain = TrustDomain.parse('trustdomain')
-    spiffeid_1 = SpiffeId.of(trust_domain, '/path1')
-    spiffeid_2 = SpiffeId.of(trust_domain, '/path1')
+    spiffeid_1 = SpiffeId.from_segments(trust_domain, '/path1')
+    spiffeid_2 = SpiffeId.from_segments(trust_domain, '/path1')
     assert spiffeid_1 == spiffeid_2
 
 
 def test_equal_spiffe_id_with_multiple_paths():
     trust_domain = TrustDomain.parse('trustdomain')
-    spiffeid_1 = SpiffeId.of(trust_domain, ['/PATH1', '/PATH2'])
-    spiffeid_2 = SpiffeId.of(trust_domain, ['/PATH1', '/PATH2'])
+    spiffeid_1 = SpiffeId.from_segments(trust_domain, ['/PATH1', '/PATH2'])
+    spiffeid_2 = SpiffeId.from_segments(trust_domain, ['/PATH1', '/PATH2'])
     assert spiffeid_1 == spiffeid_2
 
 
 def test_not_equal_spiffe_ids():
     trust_domain = TrustDomain.parse('trustdomain')
-    spiffeid_1 = SpiffeId.of(trust_domain, '/path1')
-    spiffeid_2 = SpiffeId.of(trust_domain, '/path2')
+    spiffeid_1 = SpiffeId.from_segments(trust_domain, '/path1')
+    spiffeid_2 = SpiffeId.from_segments(trust_domain, '/path2')
     assert spiffeid_1 != spiffeid_2
 
 
 def test_trust_domain_none():
     with pytest.raises(ArgumentError) as exception:
-        SpiffeId.of(None, '/path')
+        SpiffeId.from_segments(None, '/path')
 
     assert str(exception.value) == 'Trust domain is missing.'
 
 
 def test_of_empty_trust_domain():
     with pytest.raises(ArgumentError) as exception:
-        SpiffeId.of('', '/path')
+        SpiffeId.from_segments('', '/path')
 
     assert str(exception.value) == 'Trust domain is missing.'
 
@@ -346,16 +346,16 @@ def test_of_with_all_chars():
         if c == '/':
             continue
 
-        path1 = '/Path1' + c
-        path2 = '/Path2' + c
+        path1 = 'Path1' + c
+        path2 = 'Path2' + c
         trust_domain = TrustDomain.parse('trustdomain')
 
         if c in PATH_CHARS:
-            spiffe_id = SpiffeId.of(trust_domain, [path1, path2])
-            assert str(spiffe_id) == 'spiffe://trustdomain' + path1 + path2
+            spiffe_id = SpiffeId.from_segments(trust_domain, [path1, path2])
+            assert str(spiffe_id) == 'spiffe://trustdomain' + '/' + path1 + '/' + path2
         else:
             with pytest.raises(SpiffeIdError) as exception:
-                SpiffeId.of('spiffe://trustdomain', [path1, path2])
+                SpiffeId.from_segments('spiffe://trustdomain', [path1, path2])
             assert (
                 str(exception.value)
                 == 'Path segment characters are limited to letters, numbers, dots, dashes, and underscores.'
