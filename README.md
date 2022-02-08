@@ -7,6 +7,12 @@
 ## Overview
 Python library for SPIFFE.
 
+## Status of the library
+
+This SPIFFE library provides a Workload API client to fetch X.509 and JWT SVIDs and trust bundles. 
+
+**Important:** This library currently doesn't provide any functionality to support TLS connections using SPIFFE certificates.
+
 ## RFC
 
 The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs.google.com/document/d/1IByE9Ge1MTyWD7rL9o99-1c5Fn83p1ra3eApARY9X-I/edit#heading=h.70d940e8vk81
