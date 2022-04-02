@@ -288,8 +288,39 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         if len(response.svids) == 0:
             raise FetchJwtSvidError('JWT SVID response is empty')
 
-        svid = response.svids[0].svid
-        return JwtSvid.parse_insecure(svid, audiences)
+        return self._create_jwt_svid(response.svids[0], audiences)
+
+    @handle_error(error_cls=FetchJwtSvidError)
+    def fetch_jwt_svids(
+        self, audiences: List[str], subject: Optional[SpiffeId] = None
+    ) -> List[JwtSvid]:
+        """Fetches all SPIFFE JWT-SVIDs.
+
+        Args:
+            audiences: List of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT.
+
+        Returns:
+            JwtSvid: List of JwtSvid object.
+        Raises:
+            ArgumentError: In case audience is empty.
+            FetchJwtSvidError: In case there is an error in fetching the JWT-SVID from the Workload API.
+        """
+        if not audiences:
+            raise ArgumentError('Parameter audiences cannot be empty')
+
+        response = self._spiffe_workload_api_stub.FetchJWTSVID(
+            request=workload_pb2.JWTSVIDRequest(
+                audience=audiences,
+                spiffe_id=str(subject),
+            )
+        )
+
+        result = []
+        for svid in response.svids:
+            result.append(self._create_jwt_svid(svid, audiences))
+
+        return result
 
     @handle_error(error_cls=FetchJwtBundleError)
     def fetch_jwt_bundles(self) -> JwtBundleSet:
@@ -449,6 +480,10 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         cert = svid.x509_svid
         key = svid.x509_svid_key
         return X509Svid.parse_raw(cert, key)
+
+    @staticmethod
+    def _create_jwt_svid(svid: workload_pb2.JWTSVID, audiences: List[str]) -> JwtSvid:
+        return JwtSvid.parse_insecure(svid.svid, audiences)
 
     @staticmethod
     def _create_x509_bundle(trust_domain: TrustDomain, bundle: bytes) -> X509Bundle:

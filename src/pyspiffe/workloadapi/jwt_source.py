@@ -2,7 +2,7 @@
 This module defines the source for JWT Bundles and SVIDs.
 """
 from abc import ABC, abstractmethod
-from typing import Optional, Set
+from typing import Optional, Set, List
 
 
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
@@ -17,6 +17,13 @@ class JwtSource(ABC):
     @abstractmethod
     def get_jwt_svid(self, audiences: Set[str], subject: Optional[SpiffeId]) -> JwtSvid:
         """Returns an JWT-SVID from the source."""
+        pass
+
+    @abstractmethod
+    def get_jwt_svids(
+        self, audiences: Set[str], subject: Optional[SpiffeId]
+    ) -> List[JwtSvid]:
+        """Returns all JWT-SVIDs from the source."""
         pass
 
     @abstractmethod
