@@ -103,7 +103,7 @@ class WorkloadApiClient(ABC):
         """
 
     @abstractmethod
-    def fetch_jwt_svid(
+    def fetch_jwt_svids(
         self, audiences: Set[str], subject: Optional[SpiffeId] = None
     ) -> List[JwtSvid]:
         """Fetches all SPIFFE JWT-SVIDs.

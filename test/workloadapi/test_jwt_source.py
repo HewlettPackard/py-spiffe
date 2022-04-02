@@ -14,6 +14,7 @@ from test.utils.utils import (
 )
 
 SPIFFE_ID = SpiffeId.parse('spiffe://example.org/my_service')
+EXTRA_SPIFFE_ID = SpiffeId.parse('spiffe://example.org/extra_service')
 
 
 def mock_client_get_jwt_svid(mocker):
@@ -26,6 +27,26 @@ def mock_client_get_jwt_svid(mocker):
                     spiffe_id=str(SPIFFE_ID),
                     svid=jwt_svid,
                 )
+            ]
+        )
+    )
+
+
+def mock_client_get_jwt_svids(mocker):
+    jwt_svid = create_jwt(spiffe_id=str(SPIFFE_ID))
+    extra_jwt_svid = create_jwt(spiffe_id=str(EXTRA_SPIFFE_ID))
+
+    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(
+                    spiffe_id=str(SPIFFE_ID),
+                    svid=jwt_svid,
+                ),
+                workload_pb2.JWTSVID(
+                    spiffe_id=str(EXTRA_SPIFFE_ID),
+                    svid=extra_jwt_svid,
+                ),
             ]
         )
     )
@@ -70,6 +91,43 @@ def test_get_jwt_svid_exception(mocker):
     jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
     with pytest.raises(ArgumentError) as exception:
         _ = jwt_source.get_jwt_svid("")
+
+    assert str(exception.value) == 'Audience cannot be empty.'
+
+
+def test_get_jwt_svids(mocker):
+    mock_client_get_jwt_svids(mocker)
+    mock_client_fetch_jwt_bundles(mocker)
+
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_svid = jwt_source.get_jwt_svids(DEFAULT_AUDIENCE)
+
+    assert len(jwt_svid) == 2
+    assert jwt_svid[0].spiffe_id == SPIFFE_ID
+    assert jwt_svid[0].audience == DEFAULT_AUDIENCE
+    assert jwt_svid[1].spiffe_id == EXTRA_SPIFFE_ID
+    assert jwt_svid[1].audience == DEFAULT_AUDIENCE
+
+
+def test_get_jwt_svids_one_subject(mocker):
+    mock_client_get_jwt_svid(mocker)
+    mock_client_fetch_jwt_bundles(mocker)
+
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, subject=SPIFFE_ID)
+    jwt_svid = jwt_source.get_jwt_svid(DEFAULT_AUDIENCE)
+
+    assert len(jwt_svid) == 1
+    assert jwt_svid[0].spiffe_id == SPIFFE_ID
+    assert jwt_svid[0].audience == DEFAULT_AUDIENCE
+
+
+def test_get_jwt_svids_exception(mocker):
+    mock_client_get_jwt_svids(mocker)
+    mock_client_fetch_jwt_bundles(mocker)
+
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    with pytest.raises(ArgumentError) as exception:
+        _ = jwt_source.get_jwt_svids("")
 
     assert str(exception.value) == 'Audience cannot be empty.'
 
