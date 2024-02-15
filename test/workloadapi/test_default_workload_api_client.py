@@ -11,7 +11,7 @@ WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
 def test_instantiate_default_without_var():
     with pytest.raises(ArgumentError) as exception:
-        DefaultWorkloadApiClient()
+        DefaultWorkloadApiClient(None)
 
     assert (
         str(exception.value)
@@ -22,7 +22,7 @@ def test_instantiate_default_without_var():
 # With SPIFFE_ENDPOINT_SOCKET, and no path passed, succeeds
 def test_instantiate_default_with_var():
     os.environ[SPIFFE_SOCKET_ENV] = 'unix:///tmp/agent.sock'
-    wlapi = DefaultWorkloadApiClient()
+    wlapi = DefaultWorkloadApiClient(None)
     del os.environ[SPIFFE_SOCKET_ENV]
     assert wlapi.get_spiffe_endpoint_socket() == 'unix:///tmp/agent.sock'
 
@@ -37,7 +37,7 @@ def test_instantiate_socket_path():
 def test_instantiate_default_with_bad_var():
     os.environ[SPIFFE_SOCKET_ENV] = '/invalid'
     with pytest.raises(ArgumentError) as exception:
-        DefaultWorkloadApiClient()
+        DefaultWorkloadApiClient(None)
 
     assert (
         str(exception.value)

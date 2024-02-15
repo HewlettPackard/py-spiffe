@@ -129,9 +129,9 @@ def test_parse_raw_missing_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert str(exception.value) == (
-        'Error parsing private key: Could not deserialize key data. The data may be in an incorrect format '
-        'or it may be encrypted with an unsupported algorithm.'
+    assert (
+        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        in str(exception.value)
     )
 
 
@@ -142,9 +142,9 @@ def test_parse_missing_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert str(exception.value) == (
-        'Error parsing private key: Could not deserialize key data. The data may be in an incorrect format '
-        'or it may be encrypted with an unsupported algorithm.'
+    assert (
+        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        in str(exception.value)
     )
 
 
@@ -155,7 +155,7 @@ def test_parse_raw_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
+    assert 'Unable to parse DER X.509 certificate.' in str(exception.value)
 
 
 def test_parse_corrupted_certificate():
@@ -165,7 +165,7 @@ def test_parse_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
+    assert 'Unable to parse PEM X.509 certificate.' in str(exception.value)
 
 
 def test_parse_raw_corrupted_private_key():
@@ -175,9 +175,9 @@ def test_parse_raw_corrupted_private_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert str(exception.value) == (
-        'Error parsing private key: Could not deserialize key data. The data may be in an incorrect format '
-        'or it may be encrypted with an unsupported algorithm.'
+    assert (
+        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        in str(exception.value)
     )
 
 
@@ -188,9 +188,9 @@ def test_parse_corrupted_private_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert str(exception.value) == (
-        'Error parsing private key: Could not deserialize key data. The data may be in an incorrect format '
-        'or it may be encrypted with an unsupported algorithm.'
+    assert (
+        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        in str(exception.value)
     )
 
 

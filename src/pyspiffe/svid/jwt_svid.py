@@ -121,7 +121,7 @@ class JwtSvid(object):
             key_id = header_params.get('kid')
             signing_key = jwt_bundle.get_jwt_authority(key_id)
             if not signing_key:
-                raise AuthorityNotFoundError(key_id)
+                raise AuthorityNotFoundError(key_id if key_id else '')
 
             public_key_pem = signing_key.public_bytes(
                 encoding=serialization.Encoding.PEM,

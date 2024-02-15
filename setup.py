@@ -31,7 +31,8 @@ setup(
         'cryptography',
         'grpcio-tools',
         'pyasn1',
+        'pyasn1-modules',
         'pem',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
 )

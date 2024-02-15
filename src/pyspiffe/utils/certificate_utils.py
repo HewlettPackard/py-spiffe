@@ -3,7 +3,16 @@ from typing import List, Iterable, Union
 import os
 import pem
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import ed25519, ed448, rsa, ec, dsa
+from cryptography.hazmat.primitives.asymmetric import (
+    ed25519,
+    ed448,
+    rsa,
+    ec,
+    dsa,
+    dh,
+    x25519,
+    x448,
+)
 from cryptography.hazmat.primitives.serialization import (
     load_der_private_key,
     load_pem_private_key,
@@ -12,6 +21,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
 from pyasn1.codec.der.decoder import decode
+from pyasn1.codec.der.encoder import encode
+from pyasn1_modules.rfc5280 import Certificate as Pyasn1Certificate
 from pyspiffe.utils.exceptions import (
     X509CertificateError,
     ParseCertificateError,
@@ -26,11 +37,14 @@ _CERTS_FILE_MODE = 0o644
 _PRIVATE_KEY_FILE_MODE = 0o600
 
 PRIVATE_KEY_TYPES = Union[
+    dh.DHPrivateKey,
     ed25519.Ed25519PrivateKey,
     ed448.Ed448PrivateKey,
     rsa.RSAPrivateKey,
     dsa.DSAPrivateKey,
     ec.EllipticCurvePrivateKey,
+    x25519.X25519PrivateKey,
+    x448.X448PrivateKey,
 ]
 
 
@@ -75,13 +89,11 @@ def parse_der_certificates(der_bytes: bytes) -> List[Certificate]:
 
     try:
         result = []
-        leaf = x509.load_der_x509_certificate(der_bytes, default_backend())
-        result.append(leaf)
-        _, remaining_data = decode(der_bytes)
+        cert, remaining_data = decode(der_bytes, Pyasn1Certificate())
+        result.append(x509.load_der_x509_certificate(encode(cert)))
         while len(remaining_data) > 0:
-            cert = x509.load_der_x509_certificate(remaining_data, default_backend())
-            result.append(cert)
-            _, remaining_data = decode(remaining_data)
+            cert, remaining_data = decode(remaining_data, Pyasn1Certificate())
+            result.append(x509.load_der_x509_certificate(encode(cert)))
         return result
     except Exception:
         raise ParseCertificateError('Unable to parse DER X.509 certificate')

@@ -11,7 +11,7 @@ _CHAIN = read_file_bytes(_TEST_CERTS_PATH.format('1-chain.der'))
 _KEY = read_file_bytes(_TEST_CERTS_PATH.format('1-key.der'))
 _SVID1 = X509Svid.parse_raw(_CHAIN, _KEY)
 _SVID2 = X509Svid.parse_raw(_CHAIN, _KEY)
-_BUNDLE_SET = X509BundleSet()
+_BUNDLE_SET = X509BundleSet(None)
 
 
 def test_default_svid():

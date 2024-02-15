@@ -14,7 +14,7 @@ def restore_env_vars():
 
 def test_socket_must_be_set():
     with pytest.raises(ArgumentError) as exception:
-        ConfigSetter()
+        ConfigSetter(None)
 
     assert str(exception.value) == 'SPIFFE endpoint socket: socket must be set.'
 
@@ -30,7 +30,7 @@ def test_read_socket_from_environment_variables():
     fake_socket = 'unix:///path/to/endpoint.sock'
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
-    setter = ConfigSetter()
+    setter = ConfigSetter(None)
 
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 

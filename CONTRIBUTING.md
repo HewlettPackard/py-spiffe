@@ -13,15 +13,14 @@
 ## Prerequisites
 For basic development you will need:
 
-* Python 3.6
+* Python 3.9
 * Pipenv (https://github.com/pypa/pipenv)
 * Pyenv (https://github.com/pyenv/pyenv)
 
 ## Setup the environment
 1. Use `pyenv` to install the different version of Python.
-Python 3.6 is required for development and the other versions are required for testing.
+Python 3.9 is required for development and the other versions are required for testing.
 ```
-pyenv install 3.6.x
 pyenv install 3.7.x
 pyenv install 3.8.x
 pyenv install 3.9.x
@@ -37,7 +36,7 @@ cd py-spiffe
 
 4. Use the installed versions to define the specific versions for development and testing
 ```
-pyenv local 3.6.12 3.7.0 3.8.0 3.9.0
+pyenv local 3.7.0 3.8.0 3.9.0
 ```
 
 5. Create the virtual environment

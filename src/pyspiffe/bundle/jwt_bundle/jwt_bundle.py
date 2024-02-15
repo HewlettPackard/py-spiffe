@@ -1,6 +1,7 @@
 """
 JwtBundle module manages JwtBundle objects.
 """
+
 import threading
 from json import JSONDecodeError
 from jwt.api_jwk import PyJWKSet
@@ -57,7 +58,7 @@ class JwtBundle(object):
         with self.lock:
             return self._jwt_authorities.copy()
 
-    def get_jwt_authority(self, key_id: str) -> Optional[_PUBLIC_KEY_TYPES]:
+    def get_jwt_authority(self, key_id: Optional[str]) -> Optional[_PUBLIC_KEY_TYPES]:
         """Returns the authority for the specified key_id.
 
         Args:
@@ -99,7 +100,7 @@ class JwtBundle(object):
             raise ArgumentError('Bundle bytes cannot be empty')
 
         try:
-            jwks = PyJWKSet.from_json(bundle_bytes)
+            jwks = PyJWKSet.from_json(bundle_bytes.decode('utf-8'))
         except InvalidKeyError as ike:
             raise ParseJWTBundleError(
                 'Cannot parse jwks from bundle_bytes: ' + str(ike)
