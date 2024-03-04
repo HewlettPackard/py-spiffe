@@ -1,0 +1,26 @@
+name: PR_Build
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
+        with:
+          python-version: 3.9
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Lint with tox
+        run: tox -e lint
+
+      - name: Run tests with tox
+        run: tox --recreate -e py39 --parallel auto
