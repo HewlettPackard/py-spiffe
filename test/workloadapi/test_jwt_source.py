@@ -45,7 +45,7 @@ def test_get_jwt_svid(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     jwt_svid = jwt_source.get_jwt_svid(DEFAULT_AUDIENCE, subject=SPIFFE_ID)
 
     assert jwt_svid.spiffe_id == SPIFFE_ID
@@ -56,7 +56,7 @@ def test_get_jwt_svid_no_subject(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     jwt_svid = jwt_source.get_jwt_svid(DEFAULT_AUDIENCE)
 
     assert jwt_svid.spiffe_id == SPIFFE_ID
@@ -67,7 +67,7 @@ def test_get_jwt_svid_exception(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     with pytest.raises(ArgumentError) as exception:
         _ = jwt_source.get_jwt_svid("")
 
@@ -79,7 +79,7 @@ def test_error_new(mocker):
         side_effect=Exception('Mocked Error')
     )
     mock_client_fetch_jwt_bundles(mocker)
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     with pytest.raises(FetchJwtSvidError) as exception:
         _ = jwt_source.get_jwt_svid(DEFAULT_AUDIENCE)
 
@@ -90,7 +90,7 @@ def test_close(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     jwt_source.close()
 
     assert jwt_source.is_closed()
@@ -100,7 +100,7 @@ def test_close_twice(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     jwt_source.close()
     jwt_source.close()
 
@@ -112,7 +112,7 @@ def test_is_closed(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
     assert not jwt_source.is_closed()
     jwt_source.close()
     assert jwt_source.is_closed()
@@ -121,7 +121,7 @@ def test_is_closed(mocker):
 def get_jwt_bundle(mocker):
     mock_client_get_jwt_svid(mocker)
     mock_client_fetch_jwt_bundles(mocker)
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
 
     jwt_bundle = jwt_source.get_jwt_bundle(TrustDomain.parse('example.org'))
     assert jwt_bundle
@@ -138,7 +138,7 @@ def test_get_jwt_bundle_exception(mocker):
         side_effect=Exception('Mocked Error'),
     )
 
-    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT)
+    jwt_source = DefaultJwtSource(WORKLOAD_API_CLIENT, None, None)
 
     with pytest.raises(JwtSourceError) as exception:
         _ = jwt_source.get_jwt_bundle(TrustDomain.parse('example.org'))

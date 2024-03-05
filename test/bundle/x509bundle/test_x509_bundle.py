@@ -294,7 +294,7 @@ def test_add_and_remove_authority():
 
 
 def test_not_equal_when_different_objects():
-    x509_bundle_1 = X509Bundle(trust_domain)
+    x509_bundle_1 = X509Bundle(trust_domain, None)
 
     assert x509_bundle_1 != trust_domain
 

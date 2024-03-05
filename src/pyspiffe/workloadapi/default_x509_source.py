@@ -1,6 +1,7 @@
 """
 This module provides an implementation of an X.509 Source.
 """
+
 import logging
 import threading
 from typing import Optional, Callable, List
@@ -22,10 +23,10 @@ class DefaultX509Source(X509Source):
 
     def __init__(
         self,
-        workload_api_client: WorkloadApiClient = None,
-        spiffe_socket_path: str = None,
-        timeout_in_seconds: float = None,
-        picker: Callable[[List[X509Svid]], X509Svid] = None,
+        workload_api_client: Optional[WorkloadApiClient],
+        spiffe_socket_path: Optional[str],
+        timeout_in_seconds: Optional[float],
+        picker: Optional[Callable[[List[X509Svid]], X509Svid]],
     ) -> None:
         """Creates a new X509Source.
 

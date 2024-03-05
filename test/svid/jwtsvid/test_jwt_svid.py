@@ -2,6 +2,7 @@ import pytest
 import datetime
 from calendar import timegm
 import jwt
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -27,6 +28,21 @@ from test.svid.test_utils import (
 
 JWT_BUNDLE = JwtBundle(DEFAULT_TRUST_DOMAIN, {'kid1': DEFAULT_KEY.public_key()})
 
+rsa_private_key = rsa.generate_private_key(
+    backend=default_backend(), public_exponent=65537, key_size=2048
+).private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.PKCS8,
+    serialization.NoEncryption(),
+)
+
+ec_private_key = ec.generate_private_key(
+    ec.SECP256R1(), default_backend()
+).private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.PKCS8,
+    serialization.NoEncryption(),
+)
 
 """
     parse_insecure tests
@@ -62,7 +78,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                         ).utctimetuple()
                     ),
                 },
-                'secret',
+                rsa_private_key,
                 headers={'alg': 'RS256', 'typ': 'JOSE'},
             ),
             ["spire"],
@@ -74,7 +90,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                     'aud': ['spire'],
                     'sub': 'spiffeid://somewhere.over.the',
                 },
-                'secret',
+                ec_private_key,
                 headers={'alg': 'ES384', 'typ': 'JWT'},
             ),
             ["spire"],
@@ -90,7 +106,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                         ).utctimetuple()
                     ),
                 },
-                'secret',
+                rsa_private_key,
                 headers={'alg': 'RS512', 'typ': 'JWT'},
             ),
             ["spire"],
@@ -107,7 +123,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                         ).utctimetuple()
                     ),
                 },
-                'secret',
+                rsa_private_key,
                 headers={'alg': 'PS512', 'typ': 'JOSE'},
             ),
             ['spire'],
@@ -154,7 +170,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                         ).utctimetuple()
                     ),
                 },
-                'secret',
+                rsa_private_key,
                 headers={'alg': 'RS256', 'typ': 'JWT'},
             ),
             ['spire'],
@@ -171,7 +187,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                         ).utctimetuple()
                     ),
                 },
-                'secret key',
+                rsa_private_key,
                 headers={'alg': 'PS384', 'typ': 'JOSE'},
             ),
             {'spire', 'test'},

@@ -1,6 +1,7 @@
 """
 This module provides a Workload API client.
 """
+
 import logging
 import threading
 import time
@@ -109,7 +110,7 @@ class RetryHandler:
 class DefaultWorkloadApiClient(WorkloadApiClient):
     """Default implementation for a SPIFFE Workload API Client."""
 
-    def __init__(self, spiffe_socket: str = None) -> None:
+    def __init__(self, spiffe_socket: Optional[str]) -> None:
         """Creates a new Workload API Client.
 
         Args:
@@ -193,7 +194,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                            the Workload API.
         """
 
-        cancel_handler = CancelHandler()
+        cancel_handler = CancelHandler(None)
 
         retry_handler = RetryHandler() if retry_connect else None
 
@@ -343,7 +344,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
                            the Workload API.
         """
 
-        cancel_handler = CancelHandler()
+        cancel_handler = CancelHandler(None)
 
         retry_handler = RetryHandler() if retry_connect else None
 

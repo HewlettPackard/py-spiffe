@@ -43,7 +43,7 @@ class ConfigSetter:
 
     _TCP_FORBIDDEN_SOCKET_COMPONENTS = _FORBIDDEN_SOCKET_COMPONENTS + [('path', None)]
 
-    def __init__(self, spiffe_endpoint_socket: str = None) -> None:
+    def __init__(self, spiffe_endpoint_socket: Optional[str]) -> None:
         """Initializes the ConfigSetter class.
 
         Args:
@@ -104,6 +104,9 @@ class ConfigSetter:
 
     @classmethod
     def _validate_tcp_socket(cls, socket: ParseResult) -> None:
+        if socket.hostname is None:
+            raise ArgumentError('SPIFFE endpoint socket: host must be an IP address')
+
         try:
             ipaddress.ip_address(socket.hostname)
         except ValueError:

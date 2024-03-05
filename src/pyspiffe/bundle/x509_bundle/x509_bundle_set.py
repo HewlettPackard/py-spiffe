@@ -1,6 +1,7 @@
 """
 This module manages X509BundleSet objects.
 """
+
 import threading
 from typing import List, Optional, Dict
 
@@ -13,7 +14,7 @@ __all__ = ['X509BundleSet']
 class X509BundleSet(object):
     """X509BundleSet is a set of X509Bundles objects, keyed by trust domain."""
 
-    def __init__(self, bundles: Dict[TrustDomain, X509Bundle] = None) -> None:
+    def __init__(self, bundles: Optional[Dict[TrustDomain, X509Bundle]]) -> None:
         """Creates a new X509BundleSet.
 
         When the bundles parameter is not provided, it creates an empty X509BundleSet.

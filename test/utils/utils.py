@@ -57,5 +57,5 @@ def handle_error(
 def assert_error(error: Exception, expected: Exception):
     """Helper method to assert errors raised when running test for watch methods."""
 
-    assert type(error) == type(expected)
+    assert isinstance(error, type(expected))
     assert str(error) == str(expected)

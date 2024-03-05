@@ -19,7 +19,7 @@ def test_cancel_handler():
 
 
 def test_set_cancel_handler():
-    cancel_handler = CancelHandler()
+    cancel_handler = CancelHandler(None)
     cancel_handler.set_handler(lambda: on_event())
 
     result = cancel_handler.cancel()
@@ -29,7 +29,7 @@ def test_set_cancel_handler():
 
 
 def test_cancel_without_handler_returns_false():
-    cancel_handler = CancelHandler()
+    cancel_handler = CancelHandler(None)
     result = cancel_handler.cancel()
     assert not result
 

@@ -49,7 +49,7 @@ def mock_client_return_multiple_svids(mocker):
 def test_x509_source_get_default_x509_svid(mocker):
     mock_client_return_multiple_svids(mocker)
 
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT)
+    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
 
     x509_svid = x509_source.get_x509_svid()
     assert x509_svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
@@ -58,7 +58,9 @@ def test_x509_source_get_default_x509_svid(mocker):
 def test_x509_source_get_x509_svid_with_picker(mocker):
     mock_client_return_multiple_svids(mocker)
 
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, picker=lambda svids: svids[1])
+    x509_source = DefaultX509Source(
+        WORKLOAD_API_CLIENT, None, None, picker=lambda svids: svids[1]
+    )
 
     x509_svid = x509_source.get_x509_svid()
     assert x509_svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service2')
@@ -68,10 +70,12 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker):
     mock_client_return_multiple_svids(mocker)
 
     # the picker selects an element from the list that doesn't exist
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, picker=lambda svids: svids[2])
+    x509_source = DefaultX509Source(
+        WORKLOAD_API_CLIENT, None, None, picker=lambda svids: svids[2]
+    )
 
     # the source should be closed, as it couldn't get the X.509 context set
-    with (pytest.raises(X509SourceError)) as exception:
+    with pytest.raises(X509SourceError) as exception:
         x509_source.get_x509_svid()
 
     assert (
@@ -82,7 +86,7 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker):
 
 def test_x509_source_get_bundle_for_trust_domain(mocker):
     mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT)
+    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
 
     bundle = x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
     assert bundle.trust_domain() == TrustDomain.parse('example.org')
@@ -95,11 +99,11 @@ def test_x509_source_get_bundle_for_trust_domain(mocker):
 
 def test_x509_source_is_closed_get_svid(mocker):
     mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT)
+    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
 
     x509_source.close()
 
-    with (pytest.raises(X509SourceError)) as exception:
+    with pytest.raises(X509SourceError) as exception:
         x509_source.get_x509_svid()
 
     assert (
@@ -110,11 +114,11 @@ def test_x509_source_is_closed_get_svid(mocker):
 
 def test_x509_source_is_closed_get_bundle(mocker):
     mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT)
+    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
 
     x509_source.close()
 
-    with (pytest.raises(X509SourceError)) as exception:
+    with pytest.raises(X509SourceError) as exception:
         x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
 
     assert (

@@ -1,6 +1,7 @@
 """
 This module defines the default source implementation for JWT Bundles and SVIDs.
 """
+
 import logging
 import threading
 from typing import Optional, Set
@@ -27,9 +28,9 @@ class DefaultJwtSource(JwtSource):
 
     def __init__(
         self,
-        workload_api_client: WorkloadApiClient = None,
-        spiffe_socket_path: str = None,
-        timeout_in_seconds: float = None,
+        workload_api_client: Optional[WorkloadApiClient],
+        spiffe_socket_path: Optional[str],
+        timeout_in_seconds: Optional[float],
     ) -> None:
         """Creates a new DefaultJwtSource.
 

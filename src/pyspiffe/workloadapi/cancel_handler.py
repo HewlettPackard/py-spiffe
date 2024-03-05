@@ -1,14 +1,15 @@
 """
 This module provides a Cancel Handler.
 """
+
 import threading
-from typing import Callable
+from typing import Callable, Optional
 
 
 class CancelHandler:
     """Represents a handler to cancel operations."""
 
-    def __init__(self, on_cancel: Callable[[], bool] = None) -> None:
+    def __init__(self, on_cancel: Optional[Callable[[], bool]]) -> None:
         """Create a CancelHandler.
 
         Args:

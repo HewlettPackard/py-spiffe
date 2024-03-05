@@ -1,8 +1,9 @@
 """
 This module manages X.509 Bundle objects.
 """
+
 import threading
-from typing import Set
+from typing import Set, Optional
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
@@ -31,7 +32,7 @@ class X509Bundle(object):
     def __init__(
         self,
         trust_domain: TrustDomain,
-        x509_authorities: Set[Certificate] = None,
+        x509_authorities: Optional[Set[Certificate]],
     ) -> None:
         """Creates a X509Bundle instance.
 

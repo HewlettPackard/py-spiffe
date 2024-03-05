@@ -1,6 +1,7 @@
 """
 This module manages X.509 SVID objects.
 """
+
 from typing import List
 
 from cryptography import x509
@@ -241,7 +242,8 @@ def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
     ext = cert.extensions.get_extension_for_oid(
         x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
     )
-    sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
+    if isinstance(ext.value, x509.SubjectAlternativeName):
+        sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
     if len(sans) == 0:
         raise InvalidLeafCertificateError(
             'Certificate does not contain a SPIFFE ID in the URI SAN'
@@ -260,21 +262,22 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 def _validate_leaf_certificate(leaf: Certificate) -> None:
     basic_constraints = leaf.extensions.get_extension_for_oid(
         x509.ExtensionOID.BASIC_CONSTRAINTS
-    )
-    if basic_constraints.value.ca:
+    ).value
+    if isinstance(basic_constraints, x509.BasicConstraints) and basic_constraints.ca:
         raise InvalidLeafCertificateError(
             'Leaf certificate must not have CA flag set to true'
         )
-    key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE)
-    if not key_usage.value.digital_signature:
+
+    key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    if isinstance(key_usage, x509.KeyUsage) and not key_usage.digital_signature:
         raise InvalidLeafCertificateError(
             'Leaf certificate must have \'digitalSignature\' as key usage'
         )
-    if key_usage.value.key_cert_sign:
+    if isinstance(key_usage, x509.KeyUsage) and key_usage.key_cert_sign:
         raise InvalidLeafCertificateError(
             'Leaf certificate must not have \'keyCertSign\' as key usage'
         )
-    if key_usage.value.crl_sign:
+    if isinstance(key_usage, x509.KeyUsage) and key_usage.crl_sign:
         raise InvalidLeafCertificateError(
             'Leaf certificate must not have \'cRLSign\' as key usage'
         )
@@ -283,13 +286,16 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
 def _validate_intermediate_certificate(cert: Certificate) -> None:
     basic_constraints = cert.extensions.get_extension_for_oid(
         x509.ExtensionOID.BASIC_CONSTRAINTS
-    )
-    if not basic_constraints.value.ca:
+    ).value
+    if (
+        isinstance(basic_constraints, x509.BasicConstraints)
+        and not basic_constraints.ca
+    ):
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have CA flag set to true'
         )
-    key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE)
-    if not key_usage.value.key_cert_sign:
+    key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    if isinstance(key_usage, x509.KeyUsage) and not key_usage.key_cert_sign:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have \'keyCertSign\' as key usage'
         )

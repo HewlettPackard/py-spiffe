@@ -2,7 +2,7 @@
 This module manages SpiffeId objects.
 """
 
-from typing import Any, Union, List
+from typing import Any, Union, List, Optional
 
 from pyspiffe.exceptions import SpiffeIdError, ArgumentError
 from pyspiffe.spiffe_id import SCHEME_PREFIX
@@ -139,7 +139,7 @@ class SpiffeId(object):
 
     @classmethod
     def from_segments(
-        cls, trust_domain: TrustDomain, path_segments: Union[str, List[str]] = None
+        cls, trust_domain: TrustDomain, path_segments: Optional[Union[str, List[str]]]
     ) -> 'SpiffeId':
         """Creates SpiffeId type instance from a Trust Domain and one or more paths.
 
