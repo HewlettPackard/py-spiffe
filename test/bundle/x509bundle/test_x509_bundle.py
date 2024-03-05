@@ -241,11 +241,10 @@ def test_save_error_writing_bundle_to_file(mocker):
     # create the X509Bundle to be saved
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
-    # mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
     mocker.patch(
         'pyspiffe.bundle.x509_bundle.x509_bundle.write_certificates_to_file',
         side_effect=Exception('Error msg'),
-        autospect=True,
+        autospec=True,
     )
     with pytest.raises(SaveX509BundleError) as err:
         x509_bundle.save('bundle_path', serialization.Encoding.PEM)

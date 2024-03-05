@@ -345,9 +345,9 @@ def test_load_cannot_read_key_bytes(mocker):
     mocker.patch(
         'pyspiffe.svid.x509_svid.load_certificates_bytes_from_file',
         return_value=b'bytes',
-        autospect=True,
+        autospec=True,
     )
-    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospec=True)
 
     with pytest.raises(LoadPrivateKeyError) as exception:
         X509Svid.load('chain_path', 'key-no-exists', serialization.Encoding.PEM)
@@ -428,7 +428,7 @@ def test_save_error_writing_x509_svid_to_file(mocker):
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
-    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospec=True)
     with pytest.raises(StoreCertificateError) as exception:
         x509_svid.save('chain_file', 'key_file', serialization.Encoding.PEM)
 
