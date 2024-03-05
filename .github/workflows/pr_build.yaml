@@ -23,8 +23,5 @@ jobs:
           pip install tox
           pip install pipenv  
 
-      - name: Lint with tox
-        run: tox -e lint
-
-      - name: Run tests with tox
-        run: tox --recreate -e py39 --parallel auto
+      - name: Run tests
+        run: make test
