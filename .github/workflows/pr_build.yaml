@@ -23,5 +23,8 @@ jobs:
           pip install tox
           pip install pipenv  
 
-      - name: Run tests
+      - name: Create Test Environment
+        run: make env dev
+
+      - name: Run Tests
         run: make test
