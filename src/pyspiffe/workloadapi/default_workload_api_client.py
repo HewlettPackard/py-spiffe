@@ -283,7 +283,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         response = self._spiffe_workload_api_stub.FetchJWTSVID(
             request=workload_pb2.JWTSVIDRequest(
                 audience=audiences,
-                spiffe_id=subject,
+                spiffe_id=subject_str,
             )
         )
 
