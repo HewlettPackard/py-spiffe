@@ -279,9 +279,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         if not audiences:
             raise ArgumentError('Parameter audiences cannot be empty')
 
-        if subject is not None:
-            subject = str(subject)
-
+        subject_str = str(subject) if subject is not None else ''
         response = self._spiffe_workload_api_stub.FetchJWTSVID(
             request=workload_pb2.JWTSVIDRequest(
                 audience=audiences,
