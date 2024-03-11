@@ -1,8 +1,17 @@
 repos:
 -   repo: https://github.com/psf/black
-    rev: stable
+    rev: 24.2.0
     hooks:
     - id: black
       language_version: python3.9
       exclude: ^src/pyspiffe/proto/
       require_serial: true
+
+-    repo: local
+     hooks:
+      - id: poetry-lock
+        name: Update poetry.lock file if dependencies have changed
+        entry: ./scripts/lock-dependencies.sh
+        language: script
+        pass_filenames: false
+        always_run: true

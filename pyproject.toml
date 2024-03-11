@@ -1,38 +1,50 @@
-# NOTE: you have to use single-quoted strings in TOML for regular expressions.
-# It's the equivalent of r-strings in Python.  Multiline strings are treated as
-# verbose regular expressions by Black.  Use [ ] to denote a significant space
-# character.
+[tool.poetry]
+name = "pyspiffe"
+version = "0.1.0"
+description = "Python library for SPIFFE support"
+authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
+license = "Apache-2.0"
 
+[tool.poetry.dependencies]
+python = "^3.9" # >= 3.9, < 4.0
+grpcio = "~1.60.0"
+grpcio-tools = "~1.60.0"
+requests = "~2.30.0"
+python-json-logger = "~2.0.6"
+cryptography = "~41.0.0"
+pyjwt = { version = "~2.7.0", extras = ["crypto"] }
+pyasn1 = "~0.5.0"
+pyasn1-modules = "~0.3.0"
+pem = "~21.2.0"
+
+[tool.poetry.dev-dependencies]
+black = "22.3.0"
+mypy = "1.7.1"
+mypy-protobuf = "3.4.0"
+types-protobuf = "4.24.0.4"
+pre-commit = "3.6.2"
+tox = "~4.12.0"
+sphinx = "~7.2.5"
+pytest = "7.4.4"
+pytest-mock = "~3.11.1"
+flake8 = "6.1.0"
+coverage = "6.5.0"
+coveralls = "3.3.1"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+# Tool configurations
 [tool.black]
 skip-string-normalization = true
-target-version = ['py36', 'py37', 'py38']
-include = '\.pyi?$'
+target-version = ['py39']
 exclude = '''
 /(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | src/pyspiffe/proto
+    src/pyspiffe/proto
 )/
 '''
 
-[tool.coverage.run]
-omit = ['*/proto/*']
-source = ["pyspiffe"]
-
-[tool.coverage.paths]
-source = ["src", ".tox/*/site-packages"]
-
-[tool.coverage.html]
-directory = 'reports/unit_test'
-
-[build-system]
-requires = ["setuptools >= 50.3.2", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.mypy]
+ignore_missing_imports = true
+files = ["src", "tests"]

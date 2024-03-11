@@ -1,178 +1,84 @@
-# Contributor guidelines
+# Contributor Guidelines
 
-# Contributing
-1. [Fork this repository](https://github.com/HewlettPackard/py-spiffe/fork)
-2. Clone your forked repository (git clone git@github.com:<your_github_account>/py-spiffe.git)
-3. Create your feature branch (git checkout -b feature/fooBar)
-4. Commit your changes (git commit -m 'Add some fooBar' --signoff)
-5. Push to the branch (git push origin feature/fooBar)
-6. Create a new Pull Request
+## Contributing
 
-# Development setup
+1. [Fork this repository](https://github.com/HewlettPackard/py-spiffe/fork).
+2. Clone your forked repository (`git clone git@github.com:<your_github_account>/py-spiffe.git`).
+3. Create your feature branch (`git checkout -b feature/fooBar`).
+4. Commit your changes (`git commit -am 'Add some fooBar' --signoff`).
+5. Push to the branch (`git push origin feature/fooBar`).
+6. Create a new Pull Request.
 
-## Prerequisites
-For basic development you will need:
+## Development Setup
 
-* Python 3.9
-* Pipenv (https://github.com/pypa/pipenv)
-* Pyenv (https://github.com/pyenv/pyenv)
+### Prerequisites
 
-## Setup the environment
-1. Use `pyenv` to install the different version of Python.
-Python 3.9 is required for development and the other versions are required for testing.
-```
-pyenv install 3.7.x
-pyenv install 3.8.x
-pyenv install 3.9.x
-```
+Before you begin, ensure you have the following installed:
 
-2. Clone the repository
-Follow steps 1 and 2 from the [Contributing](#Contributing) section.
+- Python 3.9 or higher.
+- Poetry: [Installation instructions](https://python-poetry.org/docs/#installation).
 
-3. cd to the py-spiffe directory
-```
-cd py-spiffe
-```
+### Running Tests, Linting, and Building
 
-4. Use the installed versions to define the specific versions for development and testing
-```
-pyenv local 3.7.0 3.8.0 3.9.0
-```
+After cloning the repository and navigating to the project directory, you can use the following commands to set up your
+development environment and start contributing:
 
-5. Create the virtual environment
-```
-make env
-```
-`.venv` directory is created using `pipenv` on the root directory of the repo.
+- **Install Project Dependencies**:
+    ```sh
+    make deps
+    ```
 
-6. Install all the `dev` dependencies
-```
-make dev
-```
+- **Run Tests**:
+  To run all tests, use:
+    ```sh
+    make test
+    ```
 
-7. Run the tests
-```
-make test
-```
+- **Linting**:
+  To check the code style and lint the project, use:
+    ```sh
+    make lint
+    ```
 
-## Clean up your dev environment
-To remove the virtual environment
-```
-make rm_env
-```
+- **Format Code**:
+  To automatically format the code according to the project's coding standards, use:
+    ```sh
+    make format
+    ```
 
-## Troubleshooting
-Ubuntu 20.04 users might experience issues when creating the environment (running `make env`) due to an older version of `setuptools` installed on the virtual environment.
-To work around this issue, update the version of `pipenv` to `2020.11.4` or newer.
-```
-pip install --upgrade --user pipenv
-```
+- **Build the Project**:
+  To build the project (if applicable, e.g., creating a distributable package), use:
+    ```sh
+    make build
+    ```
 
-# Regenerate the protobuf code
+These commands leverage `make` targets defined in the project's `Makefile`, which in turn use Poetry to manage
+dependencies.
 
-In case the protobuf definition `workload.proto` should change, regenerate the python code running:
+### Regenerate the Protobuf Code
 
-```
+If changes are made to the protobuf definition `workload.proto`, regenerate the Python code by running:
+
+```sh
 make pb_generate
 ```
 
-Then amend in `workload_pb2_grpc.py` the import line replacing it by:
+Amend `workload_pb2_grpc.py` by replacing the import line with:
 
-```
+```python
 from . import workload_pb2 as workload__pb2
 ```
 
-# Conventions
-The project follows the Google Python Style Guide (https://google.github.io/styleguide/pyguide.html)
+## Conventions
 
-In addition to the conventions covered in the Google Python Style Guide, the following
-conventions apply to the PySPIFFE repository:
+The project follows the Google Python Style
+Guide ([https://google.github.io/styleguide/pyguide.html](https://google.github.io/styleguide/pyguide.html)).
 
-## Docstrings
-### Modules
-Modules should include a docstring with a description of the module itself. Module level
-variables should be documented in an inline docstring immediately following the variable.
-As example this is the docstring of pyspiffe.spiffe_id.spiffe_id.py:
+### Docstrings
 
-```
-"""
-This module manages SpiffeId objects.
-"""
+- **Modules**: Modules should include a docstring with a description of the module itself.
 
-...
+- **Classes**: Class docstrings should document the list of class public members, including their types.
 
-SPIFFE_ID_MAXIMUM_LENGTH = 2048
-"""int: Maximum length for SPIFFE IDs."""
-
-```
-
-### Classes
-Class docstrings should document the list of class public members including its types.
-Then `__init__` methods should be documented including its arguments. Typing for arguments
-should be defined as PEP 484 type annotations. As example:
-
-```
-class ExampleClass(object):
-    """The summary line for a class docstring should fit on one line.
-
-    If the class has public attributes, they may be documented here
-    in an `Attributes` section including its type information.
-
-    Attributes:
-        attr1 (str): Description of `attr1`.
-        attr2 (int): Description of `attr2`.
-    """
-
-    attr1 = "some string"
-    attr2 = 10
-
-    def __init__(self, param1: str, param2: bool, param3: int = None) -> None:
-        """Example of docstring on the __init__ method.
-
-        Args:
-            param1: Description of `param1`.
-            param2: Description of `param2`. Multiple
-                lines are supported.
-            param3: Description of `param3`.
-
-        """
-        self.param1 = param1
-        self.param2 = param2
-        self.param3 = param3
-```
-_Note_: Do not include the `self` parameter in the ``Args`` section.
-
-This project uses the convention that is followed by most Python code: a name prefixed with an underscore (e.g. _message) should be considered a non-public member, and thus, subject to change without notice.
-
-### Functions
-Functions should include the type of their arguments as
-[PEP 484](https://www.python.org/dev/peps/pep-0484/) type annotations and not as part
-of the docstrings. As example:
-```
-def function_with_pep484_type_annotations(param1: int, param2: str) -> bool:
-    """Example function with PEP 484 type annotations.
-
-    Args:
-        param1: The first parameter.
-        param2: The second parameter.
-
-    Returns:
-        The return value. True for success, False otherwise.
-
-    Raises:
-        ValueError: If `param1` is lees than 0.
-
-    Examples:
-        >>> result = function_with_pep484_type_annotations(1, 2)
-        >>> print(result)
-        3
-
-    """
-    if param1 < 0:
-        raise ValueError('param1 may be greater or equal to zero.')
-    return param1 + param2
-```
-
-## Errors
-Error messages should end with periods.
-
+- **Functions**: Functions should include PEP 484 type annotations for their arguments rather than describing the types
+  in the docstring itself.

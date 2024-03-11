@@ -137,7 +137,7 @@ def test_parse_bundle_bytes_invalid_key(mocker):
     mocker.patch(
         'pyspiffe.bundle.jwt_bundle.jwt_bundle.PyJWKSet.from_json',
         side_effect=InvalidKeyError('Invalid Key'),
-        autospect=True,
+        autospec=True,
     )
 
     with pytest.raises(ParseJWTBundleError) as exception:

@@ -30,8 +30,10 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.intersphi
 # Napoleon settings
 napoleon_include_init_with_doc = True
 
-intersphinx_mapping = {"https://docs.python.org/3.6": None}
-
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'cryptography': ('https://cryptography.io/en/latest/', None),
+}
 
 # Intersphinx settings
 # Add any paths that contain templates here, relative to this directory.

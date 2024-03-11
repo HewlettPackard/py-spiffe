@@ -105,7 +105,7 @@ def test_load_certificates_bytes_from_file_raise_file_not_found():
 
 
 def test_load_certificates_bytes_from_file_raise_exception(mocker):
-    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospec=True)
 
     with pytest.raises(LoadCertificateError) as exception:
         load_certificates_bytes_from_file('path')
@@ -134,7 +134,7 @@ def test_write_certificates_to_file_as_pem(tmpdir):
 
 
 def test_write_certificates_to_file_raise_error(mocker):
-    mocker.patch('builtins.open', autospect=True)
+    mocker.patch('builtins.open', autospec=True)
     mock_cert = mocker.Mock()
     mock_cert.public_bytes.side_effect = Exception('Fake Error')
     des_file = mocker.Mock()
@@ -207,7 +207,7 @@ def test_load_private_key_from_file(tmpdir):
 
 
 def test_load_private_key_from_file_raise_error_file_not_found(mocker):
-    mocker.patch('builtins.open', side_effect=FileNotFoundError(), autospect=True)
+    mocker.patch('builtins.open', side_effect=FileNotFoundError(), autospec=True)
 
     with pytest.raises(LoadPrivateKeyError) as exc_info:
         load_private_key_from_file('key_path')
@@ -219,7 +219,7 @@ def test_load_private_key_from_file_raise_error_file_not_found(mocker):
 
 
 def test_load_private_key_from_file_raise_error(mocker):
-    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospec=True)
 
     with pytest.raises(LoadPrivateKeyError) as exc_info:
         load_private_key_from_file('key_path')
@@ -246,7 +246,7 @@ def test_write_private_key_to_file(tmpdir):
 
 
 def test_write_private_key_to_file_raise_error(mocker):
-    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospect=True)
+    mocker.patch('builtins.open', side_effect=Exception('Fake Error'), autospec=True)
     mock_private_key = mocker.Mock()
 
     with pytest.raises(StorePrivateKeyError) as exc_info:
@@ -263,7 +263,7 @@ def test_write_private_key_to_file_raise_error(mocker):
 
 
 def test_write_private_key_to_file_raise_error_cannot_extract_bytes(mocker):
-    mocker.patch('builtins.open', autospect=True)
+    mocker.patch('builtins.open', autospec=True)
     mock_private_key = mocker.Mock()
     mock_private_key.private_bytes.side_effect = Exception('Fake Error')
 

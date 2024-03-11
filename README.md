@@ -1,30 +1,26 @@
 # py-spiffe Library
 
-[![Build Status](https://travis-ci.com/HewlettPackard/py-spiffe.svg?branch=master)](https://travis-ci.com/HewlettPackard/py-spiffe)
-[![CircleCI](https://circleci.com/gh/HewlettPackard/py-spiffe.svg?style=shield)](https://app.circleci.com/pipelines/github/HewlettPackard/py-spiffe)
+[![Build Status](https://github.com/HewlettPackard/py-spiffe/actions/workflows/pr_build.yaml/badge.svg)](https://github.com/HewlettPackard/py-spiffe/actions)
 [![Coverage Status](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=master)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=master)
 
 ## Overview
-Python library for SPIFFE.
 
-## Status of the library
+The py-spiffe library is a Python solution designed to integrate with the SPIFFE (Secure
+Production Identity Framework For Everyone) ecosystem. By enabling the fetching of SPIFFE Verifiable Identity
+Documents (SVIDs) and trust bundles, this library offers a rich set of classes and types that encapsulate SPIFFE
+standards.
 
-This SPIFFE library provides a Workload API client to fetch X.509 and JWT SVIDs and trust bundles. 
+## Status of the Library
 
-**Important:** This library currently doesn't provide any functionality to support TLS connections using SPIFFE certificates.
+This SPIFFE library extends beyond providing a Workload API client for fetching X.509 and JWT SVIDs and trust bundles;
+it also introduces classes and types that closely align with SPIFFE standards. These components are instrumental in
+developing systems that adhere to and take full advantage of SPIFFE specifications for secure and flexible
+cross-platform authentication.
 
-## RFC
-
-The _RFC - Py-Spiffe features and use cases_ document is public at: https://docs.google.com/document/d/1IByE9Ge1MTyWD7rL9o99-1c5Fn83p1ra3eApARY9X-I/edit#heading=h.70d940e8vk81
-
-## Initial contributors
-* Andres Gomez Coronel (HPE)
-* Glaucimar Aguiar (HPE)
-* Maximiliano Churichi (HPE)
-* Max Lambrecht (HPE)
-* Scott Emmons (HPE)
-
+**Important:** The current release does not directly support establishing TLS connections using SPIFFE certificates, a
+feature crucial for certain applications requiring secure communication channels. 
 
 ## Contributing
+
 * See [CONTRIBUTING](https://github.com/HewlettPackard/py-spiffe/blob/master/CONTRIBUTING.md) to get started.
 * Use [GitHub Issues](https://github.com/HewlettPackard/py-spiffe/issues) to request features or file bugs.
