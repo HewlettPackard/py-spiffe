@@ -15,7 +15,7 @@ cryptography = "~42.0.5"
 pyjwt = { version = "~2.7.0", extras = ["crypto"] }
 pyasn1 = "~0.5.0"
 pyasn1-modules = "~0.3.0"
-pem = "~21.2.0"
+pem = "~23.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "22.3.0"
