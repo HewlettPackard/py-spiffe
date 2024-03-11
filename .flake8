@@ -8,6 +8,8 @@ ignore =
     E501,
     # W503 - Line break before binary operator
     W503
+    # E402 - Mdule level import not at top of file
+    E402
 statistics = True
 doctests = True
 exclude = src/pyspiffe/proto
