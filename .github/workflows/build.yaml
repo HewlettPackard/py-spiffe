@@ -1,8 +1,10 @@
-name: PR Build
+name: Build
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 jobs:

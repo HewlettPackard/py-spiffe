@@ -1,7 +1,7 @@
 # py-spiffe Library
 
-[![Build Status](https://github.com/HewlettPackard/py-spiffe/actions/workflows/pr_build.yaml/badge.svg)](https://github.com/HewlettPackard/py-spiffe/actions)
-[![Coverage Status](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=master)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=master)
+[![Build](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml/badge.svg?branch=master)](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yml?branch=master)
+[![Coverage](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=master)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=master)
 
 ## Overview
 
