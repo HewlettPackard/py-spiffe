@@ -1,6 +1,7 @@
 """
 This module defines SpiffeId validation errors.
 """
+
 EMPTY = 'SPIFFE ID cannot be empty.'
 MISSING_TRUST_DOMAIN = 'Trust domain is missing.'
 WRONG_SCHEME = 'Scheme is missing or invalid.'

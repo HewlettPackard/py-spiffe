@@ -1,6 +1,7 @@
 """
 This module provides an object for transferring X.509 SVID and Bundles materials.
 """
+
 from typing import List
 
 from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet

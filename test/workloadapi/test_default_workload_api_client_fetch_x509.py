@@ -65,7 +65,7 @@ def test_fetch_x509_svid_empty_response(mocker):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
@@ -79,7 +79,7 @@ def test_fetch_x509_svid_invalid_response(mocker):
         return_value=iter([])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
@@ -93,7 +93,7 @@ def test_fetch_x509_svid_raise_grpc_error_call(mocker):
         side_effect=FakeCall()
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
@@ -107,7 +107,7 @@ def test_fetch_x509_svid_raise_exception(mocker):
         side_effect=Exception('mocked error')
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
@@ -135,7 +135,7 @@ def test_fetch_x509_svid_corrupted_response(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svid()
 
     assert (
@@ -188,7 +188,7 @@ def test_fetch_x509_svids_empty_response(mocker):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
@@ -202,7 +202,7 @@ def test_fetch_x509_svids_invalid_response(mocker):
         return_value=iter([])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
@@ -216,7 +216,7 @@ def test_fetch_x509_svids_raise_grpc_error_call(mocker):
         side_effect=FakeCall()
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
@@ -230,7 +230,7 @@ def test_fetch_x509_svids_raise_exception(mocker):
         side_effect=Exception('mocked error')
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
@@ -258,7 +258,7 @@ def test_fetch_x509_svids_corrupted_response(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_svids()
 
     assert (
@@ -331,7 +331,7 @@ def test_fetch_x509_context_empty_response(mocker):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
@@ -345,7 +345,7 @@ def test_fetch_x509_context_invalid_response(mocker):
         return_value=iter([])
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
@@ -359,7 +359,7 @@ def test_fetch_x509_context_raise_grpc_error(mocker):
         side_effect=FakeCall()
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
@@ -373,7 +373,7 @@ def test_fetch_x509_context_raise_exception(mocker):
         side_effect=Exception('mocked error')
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
@@ -406,7 +406,7 @@ def test_fetch_x509_context_corrupted_svid(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509SvidError)) as exception:
+    with pytest.raises(FetchX509SvidError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert 'Error fetching X.509 SVID: Error parsing private key' in str(
@@ -441,7 +441,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
@@ -477,7 +477,7 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_context()
 
     assert (
@@ -519,7 +519,7 @@ def test_fetch_x509_bundles_empty_response(mocker):
         return_value=iter([workload_pb2.X509BundlesResponse(bundles=[])])
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
@@ -533,7 +533,7 @@ def test_fetch_x509_bundles_invalid_response(mocker):
         return_value=iter([])
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
@@ -547,7 +547,7 @@ def test_fetch_x509_bundles_raise_grpc_error(mocker):
         side_effect=FakeCall()
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
@@ -561,7 +561,7 @@ def test_fetch_x509_bundles_raise_exception(mocker):
         side_effect=Exception('mocked error')
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert str(exception.value) == 'Error fetching X.509 Bundles: mocked error.'
@@ -580,7 +580,7 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
@@ -602,7 +602,7 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker):
         )
     )
 
-    with (pytest.raises(FetchX509BundleError)) as exception:
+    with pytest.raises(FetchX509BundleError) as exception:
         WORKLOAD_API_CLIENT.fetch_x509_bundles()
 
     assert (
