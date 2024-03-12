@@ -1378,13 +1378,13 @@ files = [
 
 [[package]]
 name = "types-protobuf"
-version = "4.24.0.4"
+version = "4.24.0.20240311"
 description = "Typing stubs for protobuf"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "types-protobuf-4.24.0.4.tar.gz", hash = "sha256:57ab42cb171dfdba2c74bb5b50c250478538cc3c5ed95b8b368929ad0c9f90a5"},
-    {file = "types_protobuf-4.24.0.4-py3-none-any.whl", hash = "sha256:131ab7d0cbc9e444bc89c994141327dcce7bcaeded72b1acb72a94827eb9c7af"},
+    {file = "types-protobuf-4.24.0.20240311.tar.gz", hash = "sha256:c80426f9fb9b21aee514691e96ab32a5cd694a82e2ac07964b352c3e7e0182bc"},
+    {file = "types_protobuf-4.24.0.20240311-py3-none-any.whl", hash = "sha256:8e039486df058141cb221ab99f88c5878c08cca4376db1d84f63279860aa09cd"},
 ]
 
 [[package]]
@@ -1453,4 +1453,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4c299ae27a69e2474da38f59aee5579b3fdae5cdd9ff612f6e22c3560bb1f7f0"
+content-hash = "526dbe8c0add7a26f1983c83f0fa0bcfeef2a68751edaaf4208937966b4116ea"
