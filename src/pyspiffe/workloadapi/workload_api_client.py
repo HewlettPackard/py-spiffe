@@ -1,6 +1,7 @@
 """
 This module contains the Workload API abstraction.
 """
+
 from abc import ABC, abstractmethod
 from typing import Optional, List, Set, Callable
 

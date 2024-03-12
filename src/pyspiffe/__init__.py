@@ -8,6 +8,7 @@ TODO: add usage example here
    >>>
 
 """
+
 import logging
 from logging import NullHandler
 

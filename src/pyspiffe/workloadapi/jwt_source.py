@@ -1,6 +1,7 @@
 """
 This module defines the source for JWT Bundles and SVIDs.
 """
+
 from abc import ABC, abstractmethod
 from typing import Optional, Set
 

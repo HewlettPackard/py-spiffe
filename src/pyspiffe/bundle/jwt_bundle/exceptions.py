@@ -1,6 +1,7 @@
 """
 This module handles JWT bundle exceptions.
 """
+
 from pyspiffe.exceptions import PySpiffeError
 
 
