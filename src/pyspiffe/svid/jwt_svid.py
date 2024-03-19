@@ -33,7 +33,7 @@ from pyspiffe.svid.exceptions import InvalidTokenError
 
 class JwtSvid(object):
     """Represents a SPIFFE JWT SVID as defined in the SPIFFE standard.
-    See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md>`
+    See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/main/standards/JWT-SVID.md>`
 
     """
 
