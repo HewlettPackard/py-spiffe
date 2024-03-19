@@ -51,7 +51,7 @@ class X509Context(object):
         """Returns the default X509-SVID (the first in the list).
 
         See the SPIFFE Workload API standard Section 5.3.
-        (https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE_Workload_API.md#53-default-identity)
+        (https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md#53-default-identity)
 
         Returns:
             The first X509Svid object in the list, None in case the X509Context has no objects in the X509Svid list.

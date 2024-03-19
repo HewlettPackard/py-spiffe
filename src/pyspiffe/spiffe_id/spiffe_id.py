@@ -97,7 +97,7 @@ class TrustDomain(object):
 
 
 class SpiffeId(object):
-    """Represents a SPIFFE ID as defined in the `SPIFFE standard <https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md>`_."""
+    """Represents a SPIFFE ID as defined in the `SPIFFE standard <https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md>`_."""
 
     @classmethod
     def parse(cls, id: str) -> 'SpiffeId':

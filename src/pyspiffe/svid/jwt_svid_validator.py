@@ -38,7 +38,7 @@ AUDIENCE_NOT_MATCH_ERROR = 'audience does not match expected value'
 
 class JwtSvidValidator(object):
     """Performs validations on a given token checking compliance to SPIFFE specification.
-    See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/master/standards/JWT-SVID.md>`
+    See `SPIFFE JWT-SVID standard <https://github.com/spiffe/spiffe/blob/main/standards/JWT-SVID.md>`
 
     """
 

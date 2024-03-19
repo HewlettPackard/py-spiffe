@@ -1,7 +1,7 @@
 # py-spiffe Library
 
-[![Build](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml/badge.svg?branch=master)](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml?branch=master)
-[![Coverage](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=master)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=master)
+[![Build](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml?branch=main)
+[![Coverage](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=main)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=main)
 
 ## Overview
 
@@ -22,5 +22,5 @@ feature crucial for certain applications requiring secure communication channels
 
 ## Contributing
 
-* See [CONTRIBUTING](https://github.com/HewlettPackard/py-spiffe/blob/master/CONTRIBUTING.md) to get started.
+* See [CONTRIBUTING](https://github.com/HewlettPackard/py-spiffe/blob/main/CONTRIBUTING.md) to get started.
 * Use [GitHub Issues](https://github.com/HewlettPackard/py-spiffe/issues) to request features or file bugs.
