@@ -42,7 +42,7 @@ from pyspiffe.utils.exceptions import (
     LoadPrivateKeyError,
 )
 
-_EXPECTED_SPIFFE_ID = SpiffeId.parse('spiffe://example.org/service')
+_EXPECTED_SPIFFE_ID = SpiffeId('spiffe://example.org/service')
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
 
 
@@ -339,4 +339,4 @@ def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
         x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
     )
     sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
-    return SpiffeId.parse(sans[0])
+    return SpiffeId(sans[0])

@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from pyspiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
+
 """
 This module provides an implementation of an X.509 Source.
 """
@@ -39,10 +41,10 @@ class DefaultX509Source(X509Source):
 
     def __init__(
         self,
-        workload_api_client: Optional[WorkloadApiClient],
-        spiffe_socket_path: Optional[str],
-        timeout_in_seconds: Optional[float],
-        picker: Optional[Callable[[List[X509Svid]], X509Svid]],
+        workload_api_client: Optional[WorkloadApiClient] = None,
+        spiffe_socket_path: Optional[str] = None,
+        timeout_in_seconds: Optional[float] = None,
+        picker: Optional[Callable[[List[X509Svid]], X509Svid]] = None,
     ) -> None:
         """Creates a new X509Source.
 
@@ -100,7 +102,7 @@ class DefaultX509Source(X509Source):
                 'Could not initialize X.509 Source: reached timeout waiting for the first update'
             )
 
-    def get_x509_svid(self) -> X509Svid:
+    def get_svid(self) -> X509Svid:
         """Returns an X509-SVID from the source."""
         with self._lock:
             if self._closed:
@@ -114,7 +116,14 @@ class DefaultX509Source(X509Source):
         with self._lock:
             if self._closed:
                 raise X509SourceError('Cannot get X.509 Bundle: source is closed')
-            return self._x509_bundle_set.get_x509_bundle_for_trust_domain(trust_domain)
+            return self._x509_bundle_set.get_bundle_for_trust_domain(trust_domain)
+
+    def get_bundles(self) -> X509BundleSet:
+        """Returns the X.509 bundle for the given trust domain."""
+        with self._lock:
+            if self._closed:
+                raise X509SourceError('Cannot get X.509 Bundle: source is closed')
+            return self._x509_bundle_set
 
     def close(self) -> None:
         """Closes this X509Source closing the underlying connection with the Workload API. Once the source is closed,
@@ -139,7 +148,7 @@ class DefaultX509Source(X509Source):
     def _set_context(self, x509_context: X509Context) -> None:
         if self._picker:
             try:
-                svid = self._picker(x509_context.x509_svids())
+                svid = self._picker(x509_context.x509_svids)
             except Exception as err:
                 _logger.error(
                     'X.509 Source: error picking X.509-SVID: {}.'.format(str(err))
@@ -148,11 +157,11 @@ class DefaultX509Source(X509Source):
                 self.close()
                 return
         else:
-            svid = x509_context.default_svid()
+            svid = x509_context.default_svid
 
         with self._lock:
             self._x509_svid = svid
-            self._x509_bundle_set = x509_context.x509_bundle_set()
+            self._x509_bundle_set = x509_context.x509_bundle_set
             self._initialized.set()
 
     def _on_error(self, error: Exception) -> None:
@@ -163,3 +172,9 @@ class DefaultX509Source(X509Source):
     def _log_error(err: Exception) -> None:
         _logger.error('X.509 Source: Workload API client error: {}.'.format(str(err)))
         _logger.error('X.509 Source: closing.')
+
+    def __enter__(self) -> 'DefaultX509Source':
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()

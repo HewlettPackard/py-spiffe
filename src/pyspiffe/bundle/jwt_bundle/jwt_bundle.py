@@ -25,7 +25,6 @@ from jwt.exceptions import InvalidKeyError
 from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
-from pyspiffe.spiffe_id.errors import MISSING_TRUST_DOMAIN
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
 from pyspiffe.exceptions import ArgumentError
@@ -60,15 +59,17 @@ class JwtBundle(object):
         self.lock = threading.Lock()
 
         if not trust_domain:
-            raise JwtBundleError(MISSING_TRUST_DOMAIN)
+            raise JwtBundleError("Trust domain cannot be empty")
 
         self._trust_domain = trust_domain
         self._jwt_authorities = jwt_authorities.copy() if jwt_authorities else {}
 
+    @property
     def trust_domain(self) -> TrustDomain:
         """Returns the trust domain of the bundle."""
         return self._trust_domain
 
+    @property
     def jwt_authorities(self) -> Dict[str, _PUBLIC_KEY_TYPES]:
         """Returns a copy of JWT authorities in the bundle."""
         with self.lock:
@@ -110,7 +111,7 @@ class JwtBundle(object):
         """
 
         if not trust_domain:
-            raise ArgumentError(MISSING_TRUST_DOMAIN)
+            raise ArgumentError("Trust domain cannot be empty")
 
         if not bundle_bytes:
             raise ArgumentError('Bundle bytes cannot be empty')

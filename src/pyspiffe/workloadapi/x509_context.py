@@ -47,6 +47,7 @@ class X509Context(object):
         self._x509_svids = x509_svids.copy() if x509_svids else []
         self._x509_bundle_set = x509_bundle_set
 
+    @property
     def default_svid(self) -> X509Svid:
         """Returns the default X509-SVID (the first in the list).
 
@@ -59,10 +60,12 @@ class X509Context(object):
         """
         return self._x509_svids[0]
 
+    @property
     def x509_svids(self) -> List[X509Svid]:
         """Returns the list of X509Svid objects."""
         return self._x509_svids.copy()
 
+    @property
     def x509_bundle_set(self) -> X509BundleSet:
         """Returns the X509BundleSet object."""
         return self._x509_bundle_set

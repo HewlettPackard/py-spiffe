@@ -42,18 +42,13 @@ class X509BundleSet(object):
         """
 
         self.lock = threading.Lock()
-        self._bundles = bundles.copy() if bundles else {}
+        self._bundles: Dict[str, X509Bundle] = {}
 
-    def put(self, bundle: X509Bundle) -> None:
-        """Adds a new X509Bundle object or replace an existing one into the set.
+        if bundles:
+            for trust_domain, bundle in bundles.items():
+                self._bundles[trust_domain.name] = bundle
 
-        Args:
-            bundle: The new X509Bundle to put into the set.
-        """
-        with self.lock:
-            self._bundles[bundle.trust_domain()] = bundle
-
-    def get_x509_bundle_for_trust_domain(
+    def get_bundle_for_trust_domain(
         self, trust_domain: TrustDomain
     ) -> Optional[X509Bundle]:
         """Returns the X509Bundle object for the given trust domain.
@@ -66,7 +61,16 @@ class X509BundleSet(object):
             None if the TrustDomain is not found in the set.
         """
         with self.lock:
-            return self._bundles.get(trust_domain)
+            return self._bundles.get(trust_domain.name)
+
+    def put(self, bundle: X509Bundle) -> None:
+        """Adds a new X509Bundle object or replace an existing one into the set.
+
+        Args:
+            bundle: The new X509Bundle to put into the set.
+        """
+        with self.lock:
+            self._bundles[bundle.trust_domain.name] = bundle
 
     @classmethod
     def of(cls, bundle_list: List[X509Bundle]) -> 'X509BundleSet':
@@ -77,6 +81,6 @@ class X509BundleSet(object):
         """
         bundles = {}
         for b in bundle_list:
-            bundles[b.trust_domain()] = b
+            bundles[b.trust_domain] = b
 
         return X509BundleSet(bundles)

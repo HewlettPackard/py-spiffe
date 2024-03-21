@@ -14,15 +14,20 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from unittest.mock import patch
+
 import pytest
 
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
-from pyspiffe.workloadapi.default_workload_api_client import DefaultWorkloadApiClient
 from pyspiffe.workloadapi.default_x509_source import DefaultX509Source
 from pyspiffe.workloadapi.exceptions import X509SourceError
-from test.workloadapi.test_default_workload_api_client_fetch_x509 import (
+
+from src.pyspiffe.workloadapi.default_workload_api_client import (
+    DefaultWorkloadApiClient,
+)
+from test.workloadapi.test_constants import (
     FEDERATED_BUNDLE,
     CHAIN1,
     KEY1,
@@ -31,13 +36,21 @@ from test.workloadapi.test_default_workload_api_client_fetch_x509 import (
     KEY2,
 )
 
-WORKLOAD_API_CLIENT = DefaultWorkloadApiClient('unix:///dummy.path')
+
+@pytest.fixture
+def client():
+    with patch.object(
+        DefaultWorkloadApiClient, '_check_spiffe_socket_exists'
+    ) as mock_check:
+        mock_check.return_value = None
+        client_instance = DefaultWorkloadApiClient('unix:///dummy.path')
+    return client_instance
 
 
-def mock_client_return_multiple_svids(mocker):
+def mock_client_return_multiple_svids(mocker, client):
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
-    WORKLOAD_API_CLIENT._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
                 workload_pb2.X509SVIDResponse(
@@ -62,37 +75,33 @@ def mock_client_return_multiple_svids(mocker):
     )
 
 
-def test_x509_source_get_default_x509_svid(mocker):
-    mock_client_return_multiple_svids(mocker)
+def test_x509_source_get_default_x509_svid(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
+    x509_source = DefaultX509Source(client)
 
-    x509_svid = x509_source.get_x509_svid()
-    assert x509_svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service')
-
-
-def test_x509_source_get_x509_svid_with_picker(mocker):
-    mock_client_return_multiple_svids(mocker)
-
-    x509_source = DefaultX509Source(
-        WORKLOAD_API_CLIENT, None, None, picker=lambda svids: svids[1]
-    )
-
-    x509_svid = x509_source.get_x509_svid()
-    assert x509_svid.spiffe_id() == SpiffeId.parse('spiffe://example.org/service2')
+    x509_svid = x509_source.get_svid()
+    assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
 
 
-def test_x509_source_get_x509_svid_with_invalid_picker(mocker):
-    mock_client_return_multiple_svids(mocker)
+def test_x509_source_get_x509_svid_with_picker(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = DefaultX509Source(client, picker=lambda svids: svids[1])
+
+    x509_svid = x509_source.get_svid()
+    assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
+
+
+def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
 
     # the picker selects an element from the list that doesn't exist
-    x509_source = DefaultX509Source(
-        WORKLOAD_API_CLIENT, None, None, picker=lambda svids: svids[2]
-    )
+    x509_source = DefaultX509Source(client, picker=lambda svids: svids[2])
 
     # the source should be closed, as it couldn't get the X.509 context set
     with pytest.raises(X509SourceError) as exception:
-        x509_source.get_x509_svid()
+        x509_source.get_svid()
 
     assert (
         str(exception.value)
@@ -100,27 +109,29 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker):
     )
 
 
-def test_x509_source_get_bundle_for_trust_domain(mocker):
-    mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
+def test_x509_source_get_bundle_for_trust_domain(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
 
-    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
-    assert bundle.trust_domain() == TrustDomain.parse('example.org')
-    assert len(bundle.x509_authorities()) == 1
+    x509_source = DefaultX509Source(client)
 
-    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain.parse('domain.test'))
-    assert bundle.trust_domain() == TrustDomain.parse('domain.test')
-    assert len(bundle.x509_authorities()) == 1
+    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert bundle.trust_domain == TrustDomain('example.org')
+    assert len(bundle.x509_authorities) == 1
+
+    bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
+    assert bundle.trust_domain == TrustDomain('domain.test')
+    assert len(bundle.x509_authorities) == 1
 
 
-def test_x509_source_is_closed_get_svid(mocker):
-    mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
+def test_x509_source_is_closed_get_svid(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = DefaultX509Source(client)
 
     x509_source.close()
 
     with pytest.raises(X509SourceError) as exception:
-        x509_source.get_x509_svid()
+        x509_source.get_svid()
 
     assert (
         str(exception.value)
@@ -128,14 +139,15 @@ def test_x509_source_is_closed_get_svid(mocker):
     )
 
 
-def test_x509_source_is_closed_get_bundle(mocker):
-    mock_client_return_multiple_svids(mocker)
-    x509_source = DefaultX509Source(WORKLOAD_API_CLIENT, None, None, None)
+def test_x509_source_is_closed_get_bundle(mocker, client):
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = DefaultX509Source(client)
 
     x509_source.close()
 
     with pytest.raises(X509SourceError) as exception:
-        x509_source.get_bundle_for_trust_domain(TrustDomain.parse('example.org'))
+        x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
 
     assert (
         str(exception.value)

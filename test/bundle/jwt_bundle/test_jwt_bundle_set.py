@@ -21,8 +21,8 @@ from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
-trust_domain_1 = TrustDomain.parse('domain.test')
-trust_domain_2 = TrustDomain.parse('example.org')
+trust_domain_1 = TrustDomain('domain.test')
+trust_domain_2 = TrustDomain('example.org')
 
 # Default authorities to run test cases.
 ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
@@ -44,9 +44,9 @@ def test_create_jwt_bundle_set():
     # check that the bundle was copied
     assert jwt_bundle_set._bundles is not fake_bundles
     assert len(jwt_bundle_set._bundles) == len(fake_bundles.keys())
-    assert list(jwt_bundle_set._bundles.keys())[0].name() == trust_domain_1.name()
+    assert list(jwt_bundle_set._bundles.keys())[0] == trust_domain_1
     assert jwt_bundle_set._bundles[trust_domain_1] == jwt_bundle_1
-    assert list(jwt_bundle_set._bundles.keys())[1].name() == trust_domain_2.name()
+    assert list(jwt_bundle_set._bundles.keys())[1] == trust_domain_2
     assert jwt_bundle_set._bundles[trust_domain_2] == jwt_bundle_2
 
 
@@ -82,7 +82,7 @@ def test_put_bundle_on_empty_set():
     jwt_bundle_set.put(jwt_bundle)
 
     assert len(jwt_bundle_set._bundles) == 1
-    assert list(jwt_bundle_set._bundles.keys())[0].name() == trust_domain_1.name()
+    assert list(jwt_bundle_set._bundles.keys())[0] == trust_domain_1
 
 
 def test_put_replace_bundle_for_trust_domain():
@@ -103,17 +103,17 @@ def test_get():
     jwt_bundle = JwtBundle(trust_domain_1, authorities)
     jwt_bundle_set = JwtBundleSet({trust_domain_1: jwt_bundle})
 
-    res = jwt_bundle_set.get(trust_domain_1)
+    res = jwt_bundle_set.get_bundle_for_trust_domain(trust_domain_1)
 
     assert res == jwt_bundle
-    assert res.trust_domain() == jwt_bundle.trust_domain()
+    assert res.trust_domain == jwt_bundle.trust_domain
 
 
 def test_get_non_existing_trust_domain():
     jwt_bundle = JwtBundle(trust_domain_1, authorities)
     jwt_bundle_set = JwtBundleSet({trust_domain_1: jwt_bundle})
 
-    res = jwt_bundle_set.get(trust_domain_2)
+    res = jwt_bundle_set.get_bundle_for_trust_domain(trust_domain_2)
 
     assert res is None
 
@@ -121,6 +121,6 @@ def test_get_non_existing_trust_domain():
 def test_get_empty_set():
     jwt_bundle_set = JwtBundleSet({})
 
-    res = jwt_bundle_set.get(trust_domain_1)
+    res = jwt_bundle_set.get_bundle_for_trust_domain(trust_domain_1)
 
     assert res is None

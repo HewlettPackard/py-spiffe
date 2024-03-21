@@ -120,6 +120,20 @@ class WorkloadApiClient(ABC):
         """
 
     @abstractmethod
+    def fetch_jwt_svids(
+        self, audiences: Set[str], subject: Optional[SpiffeId] = None
+    ) -> List[JwtSvid]:
+        """Fetches all SPIFFE JWT-SVIDs.
+
+        Args:
+            audiences: Set of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT SVID.
+
+        Returns:
+            JwtSvid: Instance of JwtSvid object.
+        """
+
+    @abstractmethod
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust
         domain.

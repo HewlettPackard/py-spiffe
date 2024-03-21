@@ -213,8 +213,8 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
 )
 def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
     result = JwtSvid.parse_insecure(test_input_token, test_input_audience)
-    assert result.token == test_input_token
-    assert str(result.spiffe_id) == expected
+    assert result._token == test_input_token
+    assert str(result._spiffe_id) == expected
 
 
 """
@@ -291,10 +291,10 @@ def test_parse_and_validate_invalid_kid_mismatch():
 def test_parse_and_validate_valid_token_RSA():
     token = create_jwt()
     jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, ['spire'])
-    assert jwt_svid.audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid.spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid.expiry == DEFAULT_EXPIRY
-    assert jwt_svid.token == token
+    assert jwt_svid._audience == DEFAULT_AUDIENCE
+    assert str(jwt_svid._spiffe_id) == DEFAULT_SPIFFE_ID
+    assert jwt_svid._expiry == DEFAULT_EXPIRY
+    assert jwt_svid._token == token
 
 
 def test_parse_and_validate_valid_token_EC():
@@ -304,10 +304,10 @@ def test_parse_and_validate_valid_token_EC():
     ec_key_pem, _ = get_keys_pems(ec_key)
     token = create_jwt(ec_key_pem, 'kid_ec', alg='ES512')
     jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
-    assert jwt_svid.audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid.spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid.expiry == DEFAULT_EXPIRY
-    assert jwt_svid.token == token
+    assert jwt_svid._audience == DEFAULT_AUDIENCE
+    assert str(jwt_svid._spiffe_id) == DEFAULT_SPIFFE_ID
+    assert jwt_svid._expiry == DEFAULT_EXPIRY
+    assert jwt_svid._token == token
 
 
 def test_parse_and_validate_valid_token_multiple_keys_bundle():
@@ -320,14 +320,14 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle():
 
     token = create_jwt(ec_key_pem, kid='kid_ec', alg='ES512')
     jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
-    assert jwt_svid1.audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid1.spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid1.expiry == DEFAULT_EXPIRY
-    assert jwt_svid1.token == token
+    assert jwt_svid1._audience == DEFAULT_AUDIENCE
+    assert str(jwt_svid1._spiffe_id) == DEFAULT_SPIFFE_ID
+    assert jwt_svid1._expiry == DEFAULT_EXPIRY
+    assert jwt_svid1._token == token
 
     token2 = create_jwt(kid='kid_rsa')
     jwt_svid2 = JwtSvid.parse_and_validate(token2, jwt_bundle, ['spire'])
-    assert jwt_svid2.audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid2.spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid2.expiry == DEFAULT_EXPIRY
-    assert jwt_svid2.token == token2
+    assert jwt_svid2._audience == DEFAULT_AUDIENCE
+    assert str(jwt_svid2._spiffe_id) == DEFAULT_SPIFFE_ID
+    assert jwt_svid2._expiry == DEFAULT_EXPIRY
+    assert jwt_svid2._token == token2

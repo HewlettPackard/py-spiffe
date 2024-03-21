@@ -24,7 +24,7 @@ from typing import Dict, List
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.exceptions import ArgumentError
 from cryptography.hazmat.primitives import serialization
-from pyspiffe.spiffe_id.spiffe_id import SpiffeId
+from pyspiffe.spiffe_id.spiffe_id import SpiffeId, SpiffeIdError
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
 from pyspiffe.svid.jwt_svid_validator import JwtSvidValidator
@@ -54,11 +54,31 @@ class JwtSvid(object):
             claims: Key-value pairs with all the claims present in the token.
             token: Encoded token.
         """
-        self.spiffe_id = spiffe_id
-        self.audience = audience
-        self.expiry = expiry
-        self.claims = claims
-        self.token = token
+        self._spiffe_id = spiffe_id
+        self._audience = audience
+        self._expiry = expiry
+        self._claims = claims
+        self._token = token
+
+    @property
+    def spiffe_id(self) -> SpiffeId:
+        """Returns the SpiffeId."""
+        return self._spiffe_id
+
+    @property
+    def audience(self) -> List[str]:
+        """Returns the Audience."""
+        return self._audience
+
+    @property
+    def expiry(self) -> int:
+        """Returns the Expiry."""
+        return self._expiry
+
+    @property
+    def token(self) -> str:
+        """Returns the token."""
+        return self._token
 
     @classmethod
     def parse_insecure(cls, token: str, expected_audience: List[str]) -> 'JwtSvid':
@@ -90,7 +110,7 @@ class JwtSvid(object):
             validator.validate_header(header_params)
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, expected_audience)
-            spiffe_id = SpiffeId.parse(claims['sub'])
+            spiffe_id = SpiffeId(claims['sub'])
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
@@ -156,10 +176,12 @@ class JwtSvid(object):
                 },
             )
 
-            spiffe_id = SpiffeId.parse(claims.get('sub', None))
+            spiffe_id = SpiffeId(claims.get('sub', None))
 
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
             raise InvalidTokenError(str(err))
         except ArgumentError as value_err:
+            raise InvalidTokenError(str(value_err))
+        except SpiffeIdError as value_err:
             raise InvalidTokenError(str(value_err))

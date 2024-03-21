@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import os
+
 """
 This module provides a Workload API client.
 """
@@ -59,7 +61,6 @@ from pyspiffe.workloadapi.workload_api_client import (
 _logger = logging.getLogger(__name__)
 
 __all__ = ['DefaultWorkloadApiClient']
-
 
 # GRPC Error Codes that the client will not retry on:
 #  - INVALID_ARGUMENT is not retried according to the SPIFFE spec because the request is invalid
@@ -126,7 +127,7 @@ class RetryHandler:
 class DefaultWorkloadApiClient(WorkloadApiClient):
     """Default implementation for a SPIFFE Workload API Client."""
 
-    def __init__(self, spiffe_socket: Optional[str]) -> None:
+    def __init__(self, spiffe_socket: Optional[str] = None) -> None:
         """Creates a new Workload API Client.
 
         Args:
@@ -139,6 +140,9 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         Raises:
             ArgumentError: If spiffe_socket_path is invalid or not provided and SPIFFE_ENDPOINT_SOCKET environment variable doesn't exist.
         """
+
+        if spiffe_socket:
+            self._check_spiffe_socket_exists(spiffe_socket)
 
         try:
             self._config = ConfigSetter(
@@ -309,6 +313,41 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
         svid = response.svids[0].svid
         return JwtSvid.parse_insecure(svid, audiences)
 
+    @handle_error(error_cls=FetchJwtSvidError)
+    def fetch_jwt_svids(
+        self, audiences: List[str], subject: Optional[SpiffeId] = None
+    ) -> List[JwtSvid]:
+        """Fetches all SPIFFE JWT-SVIDs.
+
+        Args:
+            audiences: List of audiences for the JWT SVID.
+            subject: SPIFFE ID subject for the JWT.
+
+        Raises:
+            ArgumentError: In case audience is empty.
+            FetchJwtSvidError: In case there is an error in fetching the JWT-SVID from the Workload API.
+        """
+        if not audiences:
+            raise ArgumentError('Parameter audiences cannot be empty')
+
+        subject_str = str(subject) if subject is not None else ''
+        response = self._spiffe_workload_api_stub.FetchJWTSVID(
+            request=workload_pb2.JWTSVIDRequest(
+                audience=audiences,
+                spiffe_id=subject_str,
+            )
+        )
+
+        if len(response.svids) == 0:
+            raise FetchJwtSvidError('JWT SVID response is empty')
+
+        svids = []
+
+        for s in response.svids:
+            svids.append(JwtSvid.parse_insecure(s.svid, audiences))
+
+        return svids
+
     @handle_error(error_cls=FetchJwtBundleError)
     def fetch_jwt_bundles(self) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
@@ -457,7 +496,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
 
     def _create_bundle_set(self, resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
         x509_bundles = [
-            self._create_x509_bundle(TrustDomain.parse(td), resp_bundles[td])
+            self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
             for td in resp_bundles
         ]
         return X509BundleSet.of(x509_bundles)
@@ -484,7 +523,7 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
             x509_svid = self._create_x509_svid(svid)
             svids.append(x509_svid)
 
-            trust_domain = x509_svid.spiffe_id().trust_domain()
+            trust_domain = x509_svid.spiffe_id.trust_domain
             bundle_set.put(self._create_x509_bundle(trust_domain, svid.bundle))
 
         return X509Context(svids, bundle_set)
@@ -603,8 +642,18 @@ class DefaultWorkloadApiClient(WorkloadApiClient):
     ) -> Dict[TrustDomain, JwtBundle]:
         jwt_bundles = {}
         for td, jwk_set in jwt_bundle_response.bundles.items():
-            jwt_bundles[TrustDomain.parse(td)] = JwtBundle.parse(
-                TrustDomain.parse(td), jwk_set
-            )
+            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
 
         return jwt_bundles
+
+    def __enter__(self) -> 'DefaultWorkloadApiClient':
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def _check_spiffe_socket_exists(self, spiffe_socket: str) -> None:
+        if spiffe_socket.startswith('unix:'):
+            spiffe_socket = spiffe_socket[5:]
+        if not os.path.exists(spiffe_socket):
+            raise ArgumentError(f'SPIFFE socket file "{spiffe_socket}" does not exist.')

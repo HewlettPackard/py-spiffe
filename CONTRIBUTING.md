@@ -60,7 +60,7 @@ dependencies.
 If changes are made to the protobuf definition `workload.proto`, regenerate the Python code by running:
 
 ```sh
-make pb_generate
+make compile-proto
 ```
 
 Amend `workload_pb2_grpc.py` by replacing the import line with:
