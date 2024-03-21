@@ -19,6 +19,11 @@ build: deps ## Build the distributable packages.
 test: ## Run unit tests.
 	$(POETRY_CMD) run pytest
 
+.PHONY: compile-proto
+compile-proto:
+	@echo "Compiling protobuf files..."
+	$(POETRY_CMD) run python -m grpc_tools.protoc -I$(PROTO_DIR) --python_out=$(PROTO_DIR) --grpc_python_out=$(PROTO_DIR) $(PROTO_DIR)/*.proto
+
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage reporting
 	@echo "Running tests with coverage reporting..."

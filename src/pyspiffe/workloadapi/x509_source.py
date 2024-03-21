@@ -30,7 +30,7 @@ class X509Source(ABC):
     """Source of X509-SVIDs and X.509 bundles maintained via the Workload API."""
 
     @abstractmethod
-    def get_x509_svid(self) -> X509Svid:
+    def get_svid(self) -> X509Svid:
         """Returns an X509-SVID from the source."""
         pass
 

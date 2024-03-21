@@ -78,18 +78,22 @@ class X509Svid(object):
         self._cert_chain = cert_chain
         self._private_key = private_key
 
+    @property
     def leaf(self) -> Certificate:
         """Returns the Leaf X.509 certificate of the chain."""
         return self._cert_chain[0]
 
+    @property
     def cert_chain(self) -> List[Certificate]:
         """Returns the X.509 chain of certificates."""
         return self._cert_chain.copy()
 
+    @property
     def private_key(self) -> PRIVATE_KEY_TYPES:
         """Returns the private key."""
         return self._private_key
 
+    @property
     def spiffe_id(self) -> SpiffeId:
         """Returns the SpiffeId."""
         return self._spiffe_id
@@ -264,7 +268,7 @@ def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
         raise InvalidLeafCertificateError(
             'Certificate does not contain a SPIFFE ID in the URI SAN'
         )
-    return SpiffeId.parse(sans[0])
+    return SpiffeId(sans[0])
 
 
 def _validate_chain(cert_chain: List[Certificate]) -> None:

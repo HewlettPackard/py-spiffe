@@ -32,12 +32,14 @@ class JwtSource(ABC):
     """Source of JWT-SVIDs and JWT bundles maintained via the Workload API."""
 
     @abstractmethod
-    def get_jwt_svid(self, audiences: Set[str], subject: Optional[SpiffeId]) -> JwtSvid:
+    def fetch_svid(self, audiences: Set[str], subject: Optional[SpiffeId]) -> JwtSvid:
         """Returns an JWT-SVID from the source."""
         pass
 
     @abstractmethod
-    def get_jwt_bundle(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
+    def get_bundle_for_trust_domain(
+        self, trust_domain: TrustDomain
+    ) -> Optional[JwtBundle]:
         """Returns the JWT bundle for the given trust domain."""
         pass
 

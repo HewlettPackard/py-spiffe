@@ -19,7 +19,7 @@ This module manages JwtBundleSet objects.
 """
 
 import threading
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 
@@ -34,7 +34,26 @@ class JwtBundleSet(object):
             bundles: A dictionary of JwtBundle objects keyed by TrustDomain to initialize the JwtBundleSet.
         """
         self.lock = threading.Lock()
-        self._bundles = bundles.copy() if bundles else {}
+        self._bundles: Dict[str, JwtBundle] = {}
+
+        if bundles:
+            for trust_domain, bundle in bundles.items():
+                self._bundles[trust_domain.name] = bundle
+
+    def get_bundle_for_trust_domain(
+        self, trust_domain: TrustDomain
+    ) -> Optional[JwtBundle]:
+        """Returns the JWT bundle of the given trust domain.
+
+        Args:
+            trust_domain: The TrustDomain to get a JwtBundle.
+
+        Returns:
+            A JwtBundle object for the given TrustDomain.
+            None if the TrustDomain is not found in the set.
+        """
+        with self.lock:
+            return self._bundles.get(trust_domain.name)
 
     def put(self, jwt_bundle: JwtBundle):
         """Adds a new bundle into the set.
@@ -46,17 +65,17 @@ class JwtBundleSet(object):
             jwt_bundle: The new JwtBundle to add.
         """
         with self.lock:
-            self._bundles[jwt_bundle.trust_domain()] = jwt_bundle
+            self._bundles[jwt_bundle.trust_domain.name] = jwt_bundle
 
-    def get(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
-        """Returns the JWT bundle of the given trust domain.
+    @classmethod
+    def of(cls, bundle_list: List[JwtBundle]) -> 'JwtBundleSet':
+        """Creates a new initialized JwtBundleSet with the given JwtBundle objects keyed by TrustDomain.
 
         Args:
-            trust_domain: The TrustDomain to get a JwtBundle.
-
-        Returns:
-            A JwtBundle object for the given TrustDomain.
-            None if the TrustDomain is not found in the set.
+            bundle_list: A list JwtBundle objects to store in the new JwtBundleSet.
         """
-        with self.lock:
-            return self._bundles.get(trust_domain)
+        bundles = {}
+        for b in bundle_list:
+            bundles[b.trust_domain] = b
+
+        return JwtBundleSet(bundles)

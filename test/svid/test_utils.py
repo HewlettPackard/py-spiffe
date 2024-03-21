@@ -54,7 +54,7 @@ def get_keys_pems(private_key: PRIVATE_KEY_TYPES):
     return private_key_pem, public_key_pem
 
 
-DEFAULT_TRUST_DOMAIN = TrustDomain.parse('test.com')
+DEFAULT_TRUST_DOMAIN = TrustDomain('test.com')
 """Default Trust Domain to be used when creating a default test JWT. Trust Domain=test.com/"""
 
 DEFAULT_SPIFFE_ID = 'spiffe://test.com'

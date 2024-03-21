@@ -30,7 +30,7 @@ from test.utils.utils import (
 )
 
 # Default trust domain to run test cases.
-trust_domain = TrustDomain.parse("spiffe://any.domain")
+trust_domain = TrustDomain("spiffe://any.domain")
 
 # Default authorities to run test cases.
 ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
@@ -44,23 +44,23 @@ authorities = {
 def test_create_jwt_bundle():
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
-    assert jwt_bundle.trust_domain() == trust_domain
-    assert len(jwt_bundle.jwt_authorities().keys()) == len(authorities.keys())
+    assert jwt_bundle.trust_domain == trust_domain
+    assert len(jwt_bundle.jwt_authorities.keys()) == len(authorities.keys())
 
 
 def test_create_jwt_bundle_no_trust_domain():
     with pytest.raises(JwtBundleError) as exc_info:
         JwtBundle(None, authorities)
 
-    assert str(exc_info.value) == 'Trust domain is missing.'
+    assert str(exc_info.value) == 'Trust domain cannot be empty.'
 
 
 def test_create_jwt_bundle_no_authorities():
     jwt_bundle = JwtBundle(trust_domain, None)
 
-    assert jwt_bundle.trust_domain() == trust_domain
-    assert isinstance(jwt_bundle.jwt_authorities(), dict)
-    assert len(jwt_bundle.jwt_authorities().keys()) == 0
+    assert jwt_bundle.trust_domain == trust_domain
+    assert isinstance(jwt_bundle.jwt_authorities, dict)
+    assert len(jwt_bundle.jwt_authorities.keys()) == 0
 
 
 """
@@ -110,7 +110,7 @@ def test_parse(test_bytes, expected_authorities):
     jwt_bundle = JwtBundle.parse(trust_domain, test_bytes)
 
     assert jwt_bundle
-    assert len(jwt_bundle.jwt_authorities()) == expected_authorities
+    assert len(jwt_bundle.jwt_authorities) == expected_authorities
 
 
 @pytest.mark.parametrize(
@@ -121,7 +121,7 @@ def test_parse_invalid_trust_domain(test_trust_domain):
     with pytest.raises(ArgumentError) as exception:
         JwtBundle.parse(test_trust_domain, JWKS_1_EC_KEY)
 
-    assert str(exception.value) == 'Trust domain is missing.'
+    assert str(exception.value) == 'Trust domain cannot be empty.'
 
 
 @pytest.mark.parametrize(

@@ -14,277 +14,175 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import re
+
 """
-This module manages SpiffeId objects.
+This module manages SpiffeId and TrustDomain objects.
 """
 
-from typing import Any, Union, List, Optional
-
-from pyspiffe.exceptions import SpiffeIdError, ArgumentError
-from pyspiffe.spiffe_id import SCHEME_PREFIX
-from pyspiffe.spiffe_id import SPIFFE_SCHEME
-from pyspiffe.spiffe_id.errors import (
-    EMPTY,
-    WRONG_SCHEME,
-    EMPTY_SEGMENT,
-    DOT_SEGMENT,
-    BAD_PATH_SEGMENT_CHAR,
-    BAD_TRUST_DOMAIN_CHAR,
-    TRAILING_SLASH,
-    MISSING_TRUST_DOMAIN,
-)
+SCHEME_PREFIX = "spiffe://"
 
 
-class TrustDomain(object):
-    """Represents the name of a SPIFFE trust domain (e.g. 'domain.test')."""
+class SpiffeIdError(Exception):
+    """Custom exception for SpiffeId related errors."""
 
-    @classmethod
-    def parse(cls, id_or_name: str) -> 'TrustDomain':
-        """Creates a new TrustDomain Object.
+    pass
 
-        Args:
-            id_or_name: The name of a Trust Domain or a string representing a SPIFFE ID.
 
-        Raises:
-            ArgumentError: If the name of the trust domain is empty.
-            SpiffeIdError: If the name contains an invalid char.
+class TrustDomainError(Exception):
+    """Custom exception for TrustDomain related errors."""
 
-        Examples:
-            >>> trust_domain = TrustDomain.parse('domain.test')
-            >>> print(trust_domain)
-            domain.test
+    pass
 
-            >>> print(trust_domain.as_str_id())
-            spiffe://domain.test
 
-        """
+class TrustDomain:
+    """
+    Represents the name of a SPIFFE Trust Domain.
 
-        if not id_or_name:
-            raise ArgumentError(MISSING_TRUST_DOMAIN)
+    The TrustDomain can be initialized with a name or a full SPIFFE ID, from
+    which the trust domain part is extracted.
 
-        # Something looks kinda like a scheme separator, let's try to parse as
-        # an ID. We use :/ instead of :// since the diagnostics are better for
-        # a bad input like spiffe:/trustdomain.
-        if ':/' in id_or_name:
-            spiffe_id = SpiffeId.parse(id_or_name)
-            return spiffe_id.trust_domain()
+    Examples:
+        >>> td = TrustDomain("example.org")
+        >>> print(td)
+        example.org
 
-        validate_trust_domain_name(id_or_name)
+        >>> td = TrustDomain("spiffe://example.org/service")
+        >>> print(td)
+        example.org
+    """
 
-        result = TrustDomain()
-        result._set_name(id_or_name)
-        return result
+    def __init__(self, id_or_name: str):
+        self._name = extract_and_validate_trust_domain(id_or_name)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def as_spiffe_id(self) -> str:
+        return f"{SCHEME_PREFIX}{self._name}"
 
     def __str__(self) -> str:
         return self._name
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, self.__class__):
-            return self._name == other.name()
+    def __eq__(self, other) -> bool:
+        if isinstance(other, TrustDomain):
+            return self._name == other._name
+        elif isinstance(other, str):
+            return self._name == other
         return False
 
     def __hash__(self) -> int:
         return hash(self._name)
 
-    def name(self) -> str:
-        return self._name
 
-    def _set_name(self, name):
-        self._name = name
+class SpiffeId:
+    """
+    Represents a SPIFFE Identifier according to the SPIFFE standard.
 
-    def as_str_id(self) -> str:
-        return '{}://{}'.format(SPIFFE_SCHEME, self._name)
+    A SPIFFE ID is composed of a scheme ('spiffe'), a trust domain, and a path.
+    It uniquely identifies a workload within a trust domain. The path is
+    optional and is used to identify specific entities within the trust domain.
 
+    Examples:
+        Creating a SpiffeId with a path:
+            >>> id = SpiffeId('spiffe://example.org/service')
+            >>> print(id)
+            spiffe://example.org/service
 
-class SpiffeId(object):
-    """Represents a SPIFFE ID as defined in the `SPIFFE standard <https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md>`_."""
+        Creating a SpiffeId without a path:
+            >>> id = SpiffeId('spiffe://example.org')
+            >>> print(id)
+            spiffe://example.org
+    """
 
-    @classmethod
-    def parse(cls, id: str) -> 'SpiffeId':
-        """Parses a SPIFFE ID from a string into a SpiffeId type instance.
-
-        Args:
-            id: A string representing a SPIFFE ID.
-
-        Returns:
-            An instance of a compliant SPIFFE ID (SpiffeId type).
-
-        Raises:
-            ArgumentError: If the id is emtpy.
-            SpiffeIdError: If the string spiffe_id doesn't comply the the SPIFFE standard.
-
-        Examples:
-            >>> spiffe_id = SpiffeId.parse('spiffe://domain.test/path/element')
-            >>> print(spiffe_id.trust_domain())
-            domain.test
-            >>> print(spiffe_id.path())
-            /path/element
-        """
-
+    def __init__(self, id: str):
         if not id:
-            raise ArgumentError(EMPTY)
+            raise SpiffeIdError("SPIFFE ID cannot be empty.")
 
-        if SCHEME_PREFIX not in id:
-            raise SpiffeIdError(WRONG_SCHEME)
+        if not id.startswith(SCHEME_PREFIX):
+            raise SpiffeIdError("Invalid SPIFFE ID: does not start with 'spiffe://'.")
 
         rest = id[len(SCHEME_PREFIX) :]
+        path_idx = rest.find("/")
+        if path_idx == -1:
+            # No path found; entire `rest` is the trust domain
+            trust_domain_name = rest
+            path = ""
+        else:
+            trust_domain_name = rest[:path_idx]
+            path = rest[path_idx:]  # Include the leading '/' in the path
 
-        i = 0
-        for c in rest:
-            if c == '/':
-                break
-            if not is_valid_trustdomain_char(c):
-                raise SpiffeIdError(BAD_TRUST_DOMAIN_CHAR)
-            i += 1
-
-        if i == 0:
-            raise SpiffeIdError(MISSING_TRUST_DOMAIN)
-
-        td = rest[:i]
-        path = rest[i:]
+        try:
+            self._trust_domain = TrustDomain(trust_domain_name)
+        except TrustDomainError as e:
+            raise SpiffeIdError(str(e))
 
         if path:
-            validate_path(path)
+            self._validate_path(path)
+        self._path = path
 
-        result = SpiffeId()
-        trust_domain = TrustDomain()
-        trust_domain._set_name(td)
-        result._set_trust_domain(trust_domain)
-        result._set_path(path)
-        return result
+    def __str__(self) -> str:
+        return f"{SCHEME_PREFIX}{self._trust_domain}{self._path}"
 
-    @classmethod
-    def from_segments(
-        cls, trust_domain: TrustDomain, path_segments: Optional[Union[str, List[str]]]
-    ) -> 'SpiffeId':
-        """Creates SpiffeId type instance from a Trust Domain and one or more paths.
-
-        Args:
-            trust_domain: The trust domain corresponds to the trust root of a system.
-            path_segments: A single string or a list of path segments.
-
-        Returns:
-            An instance of a compliant SPIFFE ID (SpiffeId type).
-
-        Raises:
-            ArgumentError: If the trust_domain is None.
-            SpiffeIdError: If the path segments are not SPIFFE conformant.
-
-        Examples:
-            >>> spiffe_id_1 = SpiffeId.from_segments(TrustDomain.parse('example.org'), 'path')
-            >>> print(spiffe_id_1)
-            spiffe://example.org/path
-
-            an array of paths:
-            >>> spiffe_id_2 = SpiffeId.from_segments(TrustDomain.parse('example.org'), ['path1', 'path2', 'element'])
-            >>> print(spiffe_id_2)
-            spiffe://example.org/path1/path2/element
-        """
-
-        if not trust_domain:
-            raise ArgumentError(MISSING_TRUST_DOMAIN)
-
-        result = SpiffeId()
-        result._set_trust_domain(trust_domain)
-
-        if path_segments is not None:
-            path = ''
-
-            if isinstance(path_segments, List):
-                for p in path_segments:
-                    validate_path(p)
-                    path += '/' + p
-            else:
-                validate_path(path_segments)
-                path = '/' + path_segments
-
-            result._set_path(path)
-
-        return result
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        return self._trust_domain == other._trust_domain and self._path == other.path()
+    def __eq__(self, other) -> bool:
+        if isinstance(other, SpiffeId):
+            return (self._trust_domain, self._path) == (
+                other._trust_domain,
+                other._path,
+            )
+        elif isinstance(other, str):
+            return str(self) == other
+        return False
 
     def __hash__(self) -> int:
         return hash((self._trust_domain, self._path))
 
-    def __str__(self) -> str:
-        if self._path:
-            return '{}://{}{}'.format(
-                SPIFFE_SCHEME, self._trust_domain.name(), self._path
-            )
-        return '{}://{}'.format(SPIFFE_SCHEME, self._trust_domain.name())
-
-    def path(self) -> str:
-        return self._path
-
+    @property
     def trust_domain(self) -> TrustDomain:
         return self._trust_domain
 
-    def is_member_of(self, trust_domain: TrustDomain) -> bool:
-        return self._trust_domain == trust_domain
+    @staticmethod
+    def _validate_path(path: str):
+        if not path.startswith("/"):
+            raise SpiffeIdError("Path must start with '/'.")
 
-    def _set_trust_domain(self, trust_domain: TrustDomain) -> None:
-        self._trust_domain = trust_domain
-
-    def _set_path(self, path: str):
-        self._path = path
-
-
-def validate_trust_domain_name(name):
-    for c in name:
-        if not is_valid_trustdomain_char(c):
-            raise SpiffeIdError(BAD_TRUST_DOMAIN_CHAR)
-
-
-def is_valid_trustdomain_char(c) -> bool:
-    if 'a' <= c <= 'z':
-        return True
-    if '0' <= c <= '9':
-        return True
-    return c == '-' or c == '.' or c == '_'
+        segments = path.split("/")
+        for segment in segments[
+            1:
+        ]:  # Skip the first segment since it's empty due to the leading '/'
+            if not segment:
+                raise SpiffeIdError("Path cannot contain empty segments.")
+            if segment in [".", ".."]:
+                raise SpiffeIdError("Path segments '.' and '..' are not allowed.")
+            if not re.match(r"^[a-zA-Z0-9._-]+$", segment):
+                raise SpiffeIdError("Invalid character in path segment.")
 
 
-def is_valid_path_segment_char(c):
-    if 'a' <= c <= 'z':
-        return True
-    if 'A' <= c <= 'Z':
-        return True
-    if '0' <= c <= '9':
-        return True
-    return c == '-' or c == '.' or c == '_'
+def extract_and_validate_trust_domain(id_or_name: str) -> str:
+    if ":/" in id_or_name:
+        if not id_or_name.startswith(SCHEME_PREFIX):
+            raise TrustDomainError(
+                "Invalid SPIFFE ID: does not start with 'spiffe://'."
+            )
+        trust_domain = id_or_name[len(SCHEME_PREFIX) :].split("/", 1)[0]
+    else:
+        trust_domain = id_or_name
 
+    # Validate trust domain
+    if not trust_domain:
+        raise TrustDomainError("Trust domain cannot be empty.")
 
-# Validates that a path string is a conformant path for a SPIFFE ID.
-# See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
-def validate_path(path):
-    if not path:
-        raise ArgumentError(EMPTY)
+    if trust_domain[0] in ['-', '.'] or trust_domain[-1] in ['-', '.']:
+        raise TrustDomainError("Trust domain cannot start or end with '-' or '.'.")
 
-    segment_start = 0
-    segment_end = 0
+    if '..' in trust_domain:
+        raise TrustDomainError("Trust domain cannot contain consecutive dots.")
 
-    while segment_end < len(path):
-        c = path[segment_end]
-        if c == '/':
-            sub = path[segment_start:segment_end]
-            if sub == '/':
-                raise SpiffeIdError(EMPTY_SEGMENT)
-            if sub == '/.' or sub == '/..':
-                raise SpiffeIdError(DOT_SEGMENT)
-            segment_start = segment_end
-            segment_end += 1
-            continue
+    if not re.match(
+        r'^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*$',
+        trust_domain,
+    ):
+        raise TrustDomainError("Invalid trust domain: contains disallowed characters.")
 
-        if not is_valid_path_segment_char(c):
-            raise SpiffeIdError(BAD_PATH_SEGMENT_CHAR)
-
-        segment_end += 1
-
-    sub = path[segment_start:segment_end]
-    if sub == '/':
-        raise SpiffeIdError(TRAILING_SLASH)
-    if sub == '/.' or sub == '/..':
-        raise SpiffeIdError(DOT_SEGMENT)
+    return trust_domain

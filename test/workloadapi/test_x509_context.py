@@ -33,13 +33,13 @@ _BUNDLE_SET = X509BundleSet(None)
 def test_default_svid():
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
-    assert x509_context.default_svid() == _SVID1
+    assert x509_context.default_svid == _SVID1
 
 
 def test_x509_bundle_set():
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
-    assert x509_context.x509_bundle_set() == _BUNDLE_SET
+    assert x509_context.x509_bundle_set == _BUNDLE_SET
 
 
 def test_default_svid_emtpy_list():
@@ -52,4 +52,4 @@ def test_default_svid_emtpy_list():
 def test_x509_svids():
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
-    assert x509_context.x509_svids() == svids
+    assert x509_context.x509_svids == svids

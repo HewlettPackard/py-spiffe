@@ -32,7 +32,7 @@ from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.exceptions import ArgumentError
 
 _TEST_CERTS_PATH = 'test/bundle/x509bundle/certs/{}'
-trust_domain = TrustDomain.parse('domain.test')
+trust_domain = TrustDomain('domain.test')
 
 
 def test_parse_raw_bundle_single_authority():
@@ -40,10 +40,10 @@ def test_parse_raw_bundle_single_authority():
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain() == trust_domain
-    assert len(x509_bundle.x509_authorities()) == 1
+    assert x509_bundle.trust_domain == trust_domain
+    assert len(x509_bundle.x509_authorities) == 1
 
-    authority = x509_bundle.x509_authorities().pop()
+    authority = x509_bundle.x509_authorities.pop()
     assert isinstance(authority, Certificate)
     assert 'CN=PEMUTILTEST1' == authority.subject.rfc4514_string()
 
@@ -53,15 +53,15 @@ def test_parse_raw_bundle_multiple_authorities():
 
     x509_bundle = X509Bundle.parse_raw(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain() == trust_domain
-    assert len(x509_bundle.x509_authorities()) == 2
+    assert x509_bundle.trust_domain == trust_domain
+    assert len(x509_bundle.x509_authorities) == 2
 
     expected_subjects = ['O=SPIRE,C=US', 'O=SPIFFE,C=US']
-    authority1 = x509_bundle.x509_authorities().pop()
+    authority1 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities().pop()
+    authority2 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -71,9 +71,9 @@ def test_parse_bundle_single_authority():
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain() == trust_domain
-    assert len(x509_bundle.x509_authorities()) == 1
-    authority = x509_bundle.x509_authorities().pop()
+    assert x509_bundle.trust_domain == trust_domain
+    assert len(x509_bundle.x509_authorities) == 1
+    authority = x509_bundle.x509_authorities.pop()
     assert isinstance(authority, Certificate)
     assert 'CN=PEMUTILTEST1' == authority.subject.rfc4514_string()
 
@@ -83,15 +83,15 @@ def test_parse_bundle_multiple_authorities():
 
     x509_bundle = X509Bundle.parse(trust_domain, bundle_bytes)
 
-    assert x509_bundle.trust_domain() == trust_domain
-    assert len(x509_bundle.x509_authorities()) == 2
+    assert x509_bundle.trust_domain == trust_domain
+    assert len(x509_bundle.x509_authorities) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = x509_bundle.x509_authorities().pop()
+    authority1 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities().pop()
+    authority2 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -102,7 +102,7 @@ def test_parse_raw_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse_raw(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain is missing.'
+    assert str(exception.value) == 'Trust domain cannot be empty.'
 
 
 def test_parse_trust_domain_is_emtpy():
@@ -111,7 +111,7 @@ def test_parse_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain is missing.'
+    assert str(exception.value) == 'Trust domain cannot be empty.'
 
 
 def test_parse_bundle_from_empty():
@@ -143,15 +143,15 @@ def test_load_bundle():
 
     x509_bundle = X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.PEM)
 
-    assert x509_bundle.trust_domain() == trust_domain
-    assert len(x509_bundle.x509_authorities()) == 2
+    assert x509_bundle.trust_domain == trust_domain
+    assert len(x509_bundle.x509_authorities) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = x509_bundle.x509_authorities().pop()
+    authority1 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = x509_bundle.x509_authorities().pop()
+    authority2 = x509_bundle.x509_authorities.pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -171,7 +171,7 @@ def test_load_bundle_empty_trust_domain():
     with pytest.raises(Exception) as exception:
         X509Bundle.load(None, bundle_path, serialization.Encoding.PEM)
 
-    assert str(exception.value) == 'Trust domain is missing.'
+    assert str(exception.value) == 'Trust domain cannot be empty.'
 
 
 def test_load_bundle_invalid_encoding():
@@ -198,15 +198,15 @@ def test_save_bundle_pem_encoded(tmpdir):
         trust_domain, bundle_path, serialization.Encoding.PEM
     )
 
-    assert saved_bundle.trust_domain() == trust_domain
-    assert len(saved_bundle.x509_authorities()) == 2
+    assert saved_bundle.trust_domain == trust_domain
+    assert len(saved_bundle.x509_authorities) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = saved_bundle.x509_authorities().pop()
+    authority1 = saved_bundle.x509_authorities.pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = saved_bundle.x509_authorities().pop()
+    authority2 = saved_bundle.x509_authorities.pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -223,15 +223,15 @@ def test_save_bundle_der_encoded(tmpdir):
         trust_domain, bundle_path, serialization.Encoding.DER
     )
 
-    assert saved_bundle.trust_domain() == trust_domain
-    assert len(saved_bundle.x509_authorities()) == 2
+    assert saved_bundle.trust_domain == trust_domain
+    assert len(saved_bundle.x509_authorities) == 2
 
     expected_subjects = ['CN=PEMUTILTEST1', 'CN=PEMUTILTEST2']
-    authority1 = saved_bundle.x509_authorities().pop()
+    authority1 = saved_bundle.x509_authorities.pop()
     assert isinstance(authority1, Certificate)
     assert authority1.subject.rfc4514_string() in expected_subjects
 
-    authority2 = saved_bundle.x509_authorities().pop()
+    authority2 = saved_bundle.x509_authorities.pop()
     assert isinstance(authority2, Certificate)
     assert authority2.subject.rfc4514_string() in expected_subjects
 
@@ -282,26 +282,26 @@ def test_add_and_remove_authority():
     )
 
     # adding an object to the returned set, as it is a copy, it doesn't change the bundle
-    bundle.x509_authorities().add(x509_cert_1)
-    assert len(bundle.x509_authorities()) == 0
+    bundle.x509_authorities.add(x509_cert_1)
+    assert len(bundle.x509_authorities) == 0
 
     bundle.add_authority(x509_cert_1)
     bundle.add_authority(x509_cert_2)
-    assert len(bundle.x509_authorities()) == 2
+    assert len(bundle.x509_authorities) == 2
 
     # repeat the adds
     bundle.add_authority(x509_cert_1)
     bundle.add_authority(x509_cert_2)
-    assert len(bundle.x509_authorities()) == 2
+    assert len(bundle.x509_authorities) == 2
 
-    for a in bundle.x509_authorities():
+    for a in bundle.x509_authorities:
         assert isinstance(a, Certificate)
         assert 'CN=PEMUTILTEST' in a.subject.rfc4514_string()
 
     bundle.remove_authority(x509_cert_1)
-    assert len(bundle.x509_authorities()) == 1
+    assert len(bundle.x509_authorities) == 1
     bundle.remove_authority(x509_cert_2)
-    assert len(bundle.x509_authorities()) == 0
+    assert len(bundle.x509_authorities) == 0
 
     # removing an authority that is not present, do nothing
     bundle.remove_authority(x509_cert_1)
