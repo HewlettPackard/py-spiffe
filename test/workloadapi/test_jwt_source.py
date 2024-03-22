@@ -21,7 +21,7 @@ import pytest
 from src.pyspiffe.workloadapi.default_workload_api_client import (
     DefaultWorkloadApiClient,
 )
-from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
+from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
@@ -33,7 +33,7 @@ from test.utils.utils import (
     JWKS_2_EC_1_RSA_KEYS,
 )
 
-SPIFFE_ID = SpiffeId('spiffe://example.org/my_service')
+SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def client():
 
 
 def mock_client_get_jwt_svid(mocker, client):
-    jwt_svid = create_jwt(spiffe_id=str(SPIFFE_ID))
+    jwt_svid = generate_test_jwt_token(spiffe_id=str(SPIFFE_ID))
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(
@@ -62,7 +62,7 @@ def mock_client_get_jwt_svid(mocker, client):
 
 
 def mock_client_fetch_jwt_bundles(mocker, client):
-    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+    jwt_bundles = {'domain.test': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         return_value=[
@@ -77,10 +77,10 @@ def test_get_jwt_svid(mocker, client):
     mock_client_fetch_jwt_bundles(mocker, client)
 
     jwt_source = DefaultJwtSource(client)
-    jwt_svid = jwt_source.fetch_svid(DEFAULT_AUDIENCE, subject=SPIFFE_ID)
+    jwt_svid = jwt_source.fetch_svid(TEST_AUDIENCE, subject=SPIFFE_ID)
 
     assert jwt_svid._spiffe_id == SPIFFE_ID
-    assert jwt_svid._audience == DEFAULT_AUDIENCE
+    assert jwt_svid._audience == TEST_AUDIENCE
 
 
 def test_get_jwt_svid_no_subject(mocker, client):
@@ -88,10 +88,10 @@ def test_get_jwt_svid_no_subject(mocker, client):
     mock_client_fetch_jwt_bundles(mocker, client)
 
     jwt_source = DefaultJwtSource(client)
-    jwt_svid = jwt_source.fetch_svid(DEFAULT_AUDIENCE)
+    jwt_svid = jwt_source.fetch_svid(TEST_AUDIENCE)
 
     assert jwt_svid._spiffe_id == SPIFFE_ID
-    assert jwt_svid._audience == DEFAULT_AUDIENCE
+    assert jwt_svid._audience == TEST_AUDIENCE
 
 
 def test_get_jwt_svid_exception(mocker, client):
@@ -112,7 +112,7 @@ def test_error_new(mocker, client):
     mock_client_fetch_jwt_bundles(mocker, client)
     jwt_source = DefaultJwtSource(client)
     with pytest.raises(FetchJwtSvidError) as exception:
-        _ = jwt_source.fetch_svid(DEFAULT_AUDIENCE)
+        _ = jwt_source.fetch_svid(TEST_AUDIENCE)
 
     assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
 
@@ -154,13 +154,13 @@ def get_jwt_bundle(mocker, client):
 
     jwt_source = DefaultJwtSource(client)
 
-    jwt_bundle = jwt_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+    jwt_bundle = jwt_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities) == 1
 
 
 def test_get_jwt_bundle_exception(mocker, client):
-    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+    jwt_bundles = {'domain.test': JWKS_1_EC_KEY, 'domain.other': JWKS_2_EC_1_RSA_KEYS}
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         return_value=[
@@ -172,7 +172,7 @@ def test_get_jwt_bundle_exception(mocker, client):
     jwt_source = DefaultJwtSource(client)
 
     with pytest.raises(JwtSourceError) as exception:
-        _ = jwt_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+        _ = jwt_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
 
     assert (
         str(exception.value)
