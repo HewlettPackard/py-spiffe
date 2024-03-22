@@ -137,3 +137,19 @@ class JwtBundle(object):
             jwt_authorities[jwk.key_id] = jwk.key
 
         return JwtBundle(trust_domain, jwt_authorities)
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, JwtBundle):
+            return False
+        with self.lock:
+            return (
+                self._trust_domain.__eq__(o._trust_domain)
+                and self._jwt_authorities == o._jwt_authorities
+            )
+
+    def __hash__(self):
+        trust_domain_hash = hash(self.trust_domain)
+        authorities_hash = hash(
+            tuple(hash(authority) for authority in self._jwt_authorities)
+        )
+        return hash((trust_domain_hash, authorities_hash))

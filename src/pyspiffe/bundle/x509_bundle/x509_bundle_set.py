@@ -19,7 +19,7 @@ This module manages X509BundleSet objects.
 """
 
 import threading
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Set
 
 from pyspiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
@@ -62,6 +62,12 @@ class X509BundleSet(object):
         """
         with self.lock:
             return self._bundles.get(trust_domain.name)
+
+    @property
+    def bundles(self) -> Set[X509Bundle]:
+        """Returns the set of all X509Bundles."""
+        with self.lock:
+            return set(self._bundles.values())
 
     def put(self, bundle: X509Bundle) -> None:
         """Adds a new X509Bundle object or replace an existing one into the set.

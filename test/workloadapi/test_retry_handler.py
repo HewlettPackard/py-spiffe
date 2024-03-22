@@ -14,7 +14,7 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
-from pyspiffe.workloadapi.default_workload_api_client import RetryHandler
+from pyspiffe.workloadapi.workload_api_client import RetryHandler
 
 
 class Observer:
