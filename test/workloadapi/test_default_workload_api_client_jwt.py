@@ -27,7 +27,7 @@ from calendar import timegm
 from src.pyspiffe.workloadapi.default_workload_api_client import (
     DefaultWorkloadApiClient,
 )
-from test.svid.test_utils import create_jwt, DEFAULT_AUDIENCE
+from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
@@ -61,7 +61,7 @@ def client():
 
 def test_fetch_jwt_svid_aud_sub(mocker, client):
     spiffe_id = SpiffeId('spiffe://test.com/my_service')
-    jwt_svid = create_jwt(spiffe_id=str(spiffe_id))
+    jwt_svid = generate_test_jwt_token(spiffe_id=str(spiffe_id))
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(
@@ -74,17 +74,17 @@ def test_fetch_jwt_svid_aud_sub(mocker, client):
         )
     )
 
-    svid = client.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE, subject=spiffe_id)
+    svid = client.fetch_jwt_svid(audiences=TEST_AUDIENCE, subject=spiffe_id)
     utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
     assert svid._spiffe_id == spiffe_id
     assert svid._token == jwt_svid
-    assert svid._claims['aud'] == DEFAULT_AUDIENCE
+    assert svid.audience == TEST_AUDIENCE
     assert int(svid._expiry) > utc_time
 
 
 def test_fetch_jwt_svid_aud(mocker, client):
     spiffe_id = 'spiffe://test.com/my_service'
-    jwt_svid = create_jwt(spiffe_id=spiffe_id)
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(
@@ -96,19 +96,19 @@ def test_fetch_jwt_svid_aud(mocker, client):
         )
     )
 
-    svid = client.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
+    svid = client.fetch_jwt_svid(audiences=TEST_AUDIENCE)
     utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
     assert svid._spiffe_id == SpiffeId(spiffe_id)
     assert svid._token == jwt_svid
-    assert svid._claims['aud'] == DEFAULT_AUDIENCE
+    assert svid.audience == TEST_AUDIENCE
     assert int(svid._expiry) > utc_time
 
 
 def test_fetch_jwt_svids(mocker, client):
     spiffe_id = 'spiffe://test.com/my_service'
-    jwt_svid = create_jwt(spiffe_id=spiffe_id)
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
     spiffe_id2 = 'spiffe://test.com/my_service2'
-    jwt_svid2 = create_jwt(spiffe_id=spiffe_id2)
+    jwt_svid2 = generate_test_jwt_token(spiffe_id=spiffe_id2)
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(
@@ -123,19 +123,19 @@ def test_fetch_jwt_svids(mocker, client):
         )
     )
 
-    svids = client.fetch_jwt_svids(audiences=DEFAULT_AUDIENCE)
+    svids = client.fetch_jwt_svids(audiences=TEST_AUDIENCE)
     utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
 
     svid = svids[0]
     assert svid._spiffe_id == SpiffeId(spiffe_id)
     assert svid._token == jwt_svid
-    assert svid._claims['aud'] == DEFAULT_AUDIENCE
+    assert svid.audience == TEST_AUDIENCE
     assert int(svid._expiry) > utc_time
 
     svid = svids[1]
     assert svid._spiffe_id == SpiffeId(spiffe_id2)
     assert svid._token == jwt_svid2
-    assert svid._claims['aud'] == DEFAULT_AUDIENCE
+    assert svid.audience == TEST_AUDIENCE
     assert int(svid._expiry) > utc_time
 
 
@@ -159,13 +159,13 @@ def test_fetch_jwt_svid_fetch_error(mocker, client):
     )
 
     with pytest.raises(FetchJwtSvidError) as exception:
-        client.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
+        client.fetch_jwt_svid(audiences=TEST_AUDIENCE)
 
     assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
 
 
 def test_fetch_jwt_svid_wrong_token(mocker, client):
-    jwt_svid = create_jwt(spiffe_id='')
+    jwt_svid = generate_test_jwt_token(spiffe_id='')
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(
@@ -177,7 +177,7 @@ def test_fetch_jwt_svid_wrong_token(mocker, client):
         )
     )
     with pytest.raises(FetchJwtSvidError) as exception:
-        client.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
+        client.fetch_jwt_svid(audiences=TEST_AUDIENCE)
 
     assert (
         str(exception.value) == 'Error fetching JWT SVID: Missing required claim: sub.'
@@ -189,7 +189,7 @@ def test_fetch_jwt_svid_no_token_returned(mocker, client):
         return_value=workload_pb2.JWTSVIDResponse(svids=[])
     )
     with pytest.raises(FetchJwtSvidError) as exception:
-        client.fetch_jwt_svid(audiences=DEFAULT_AUDIENCE)
+        client.fetch_jwt_svid(audiences=TEST_AUDIENCE)
 
     assert (
         str(exception.value) == 'Error fetching JWT SVID: JWT SVID response is empty.'
@@ -306,7 +306,7 @@ def test_fetch_jwt_bundles_raise_error(mocker, client):
 def test_validate_jwt_svid(mocker, client):
     audience = 'spire'
     spiffe_id = 'spiffe://test.com/my_service'
-    jwt_svid = create_jwt(audience=[audience], spiffe_id=spiffe_id)
+    jwt_svid = generate_test_jwt_token(audience=[audience], spiffe_id=spiffe_id)
 
     client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(
         return_value=workload_pb2.ValidateJWTSVIDResponse(
@@ -316,10 +316,9 @@ def test_validate_jwt_svid(mocker, client):
 
     svid = client.validate_jwt_svid(token=jwt_svid, audience=audience)
 
-    assert svid._spiffe_id == SpiffeId(spiffe_id)
-    assert svid._token == jwt_svid
-    assert svid._claims['aud'] == [audience]
-    assert svid._audience == [audience]
+    assert svid.spiffe_id == SpiffeId(spiffe_id)
+    assert svid.token == jwt_svid
+    assert svid.audience == {audience}
 
 
 @pytest.mark.parametrize(
@@ -344,7 +343,7 @@ def test_validate_jwt_svid_invalid_input(
 
 
 def test_validate_jwt_svid_raise_error(mocker, client):
-    jwt_svid = create_jwt()
+    jwt_svid = generate_test_jwt_token()
 
     client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(
         side_effect=Exception('Mocked error')

@@ -19,7 +19,7 @@ This module manages the validations of JWT tokens.
 """
 
 import datetime
-from typing import List, Dict, Any
+from typing import Dict, Any, Set
 from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
@@ -93,13 +93,13 @@ class JwtSvidValidator(object):
             raise InvalidTypeError(typ)
 
     def validate_claims(
-        self, payload: Dict[str, Any], expected_audience: List[str]
+        self, payload: Dict[str, Any], expected_audience: Set[str]
     ) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:
             payload: Token payload.
-            expected_audience: Audience as a list of strings used to validate the 'aud' claim.
+            expected_audience: Audience as a set of strings used to validate the 'aud' claim.
 
         Returns:
             None
@@ -117,7 +117,8 @@ class JwtSvidValidator(object):
         self._validate_exp(str(payload.get('exp')))
         self._validate_aud(payload.get('aud', []), expected_audience)
 
-    def _validate_exp(self, expiration_date: str) -> None:
+    @staticmethod
+    def _validate_exp(expiration_date: str) -> None:
         """Verifies expiration.
 
         Note: If and when https://github.com/jpadilla/pyjwt/issues/599 is fixed, this can be simplified/removed.
@@ -133,9 +134,8 @@ class JwtSvidValidator(object):
         if int_date < utctime:
             raise TokenExpiredError()
 
-    def _validate_aud(
-        self, audience_claim: List[str], expected_audience: List[str]
-    ) -> None:
+    @staticmethod
+    def _validate_aud(audience_claim: Set[str], expected_audience: Set[str]) -> None:
         """Verifies if expected_audience is present in audience_claim. The aud claim MUST be present.
 
         Args:

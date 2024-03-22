@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from typing import Set
+
 import pytest
 import datetime
 from calendar import timegm
@@ -32,17 +34,17 @@ from pyspiffe.svid.exceptions import (
     MissingClaimError,
 )
 from pyspiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
-from test.svid.test_utils import (
-    get_keys_pems,
-    create_jwt,
-    DEFAULT_SPIFFE_ID,
-    DEFAULT_AUDIENCE,
-    DEFAULT_KEY,
-    DEFAULT_TRUST_DOMAIN,
-    DEFAULT_EXPIRY,
+from test.utils.jwt_utils import (
+    extract_key_pair_pems,
+    generate_test_jwt_token,
+    TEST_SPIFFE_ID,
+    TEST_AUDIENCE,
+    TEST_KEY,
+    TEST_TRUST_DOMAIN,
+    TEST_EXPIRY,
 )
 
-JWT_BUNDLE = JwtBundle(DEFAULT_TRUST_DOMAIN, {'kid1': DEFAULT_KEY.public_key()})
+JWT_BUNDLE = JwtBundle(TEST_TRUST_DOMAIN, {'kid1': TEST_KEY.public_key()})
 
 rsa_private_key = rsa.generate_private_key(
     backend=default_backend(), public_exponent=65537, key_size=2048
@@ -68,13 +70,15 @@ ec_private_key = ec.generate_private_key(
 @pytest.mark.parametrize(
     'test_input_token,test_input_audience, expected',
     [
-        ('', [], INVALID_INPUT_ERROR.format('token cannot be empty.')),
+        ('', {}, INVALID_INPUT_ERROR.format('token cannot be empty.')),
         ('', None, INVALID_INPUT_ERROR.format('token cannot be empty.')),
-        (None, [], INVALID_INPUT_ERROR.format('token cannot be empty.')),
+        (None, {}, INVALID_INPUT_ERROR.format('token cannot be empty.')),
         (None, None, INVALID_INPUT_ERROR.format('token cannot be empty.')),
     ],
 )
-def test_parse_insecure_invalid_input(test_input_token, test_input_audience, expected):
+def test_parse_insecure_invalid_input(
+    test_input_token, test_input_audience: Set[str], expected
+):
     with pytest.raises(ArgumentError) as exception:
         JwtSvid.parse_insecure(test_input_token, test_input_audience)
 
@@ -97,25 +101,25 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 rsa_private_key,
                 headers={'alg': 'RS256', 'typ': 'JOSE'},
             ),
-            ["spire"],
+            {'spire'},
             str(MissingClaimError('aud')),
         ),  # no aud
         (
             jwt.encode(
                 {
-                    'aud': ['spire'],
+                    'aud': ['test-audience', 'other'],
                     'sub': 'spiffeid://somewhere.over.the',
                 },
                 ec_private_key,
                 headers={'alg': 'ES384', 'typ': 'JWT'},
             ),
-            ["spire"],
+            {"test-audience", "other"},
             str(MissingClaimError('exp')),
         ),  # no exp
         (
             jwt.encode(
                 {
-                    'aud': ['spire'],
+                    'aud': ['test-audience', 'other'],
                     'exp': timegm(
                         (
                             datetime.datetime.utcnow() - datetime.timedelta(hours=1)
@@ -125,13 +129,13 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 rsa_private_key,
                 headers={'alg': 'RS512', 'typ': 'JWT'},
             ),
-            ["spire"],
+            {'test-audience', 'other'},
             str(MissingClaimError('sub')),
         ),  # no sub
         (
             jwt.encode(
                 {
-                    'aud': ['spire'],
+                    'aud': ['test-audience', 'other'],
                     'sub': 'spiffeid://somewhere.over.the',
                     'exp': timegm(
                         (
@@ -142,7 +146,7 @@ def test_parse_insecure_invalid_input(test_input_token, test_input_audience, exp
                 rsa_private_key,
                 headers={'alg': 'PS512', 'typ': 'JOSE'},
             ),
-            ['spire'],
+            {'test-audience', 'other'},
             str(TokenExpiredError()),
         ),  # expired token
     ],
@@ -159,11 +163,11 @@ def test_parse_insecure_invalid_claims(test_input_token, test_input_audience, ex
     [
         (
             'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
-            ['spire'],
+            {'spire'},
         ),  # middle
         (
             'errJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3BpZmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
-            ['spire'],
+            {'spire'},
         ),  # first
     ],
 )
@@ -178,7 +182,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
         (
             jwt.encode(
                 {
-                    'aud': ['spire'],
+                    'aud': ['joe'],
                     'sub': 'spiffe://test.org',
                     'exp': timegm(
                         (
@@ -189,13 +193,13 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                 rsa_private_key,
                 headers={'alg': 'RS256', 'typ': 'JWT'},
             ),
-            ['spire'],
+            {'joe'},
             'spiffe://test.org',
         ),
         (
             jwt.encode(
                 {
-                    'aud': ['spire', 'test', 'valid'],
+                    'aud': ['joe', 'test', 'valid'],
                     'sub': 'spiffe://test.com.br',
                     'exp': timegm(
                         (
@@ -206,7 +210,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                 rsa_private_key,
                 headers={'alg': 'PS384', 'typ': 'JOSE'},
             ),
-            {'spire', 'test'},
+            {'joe', 'test', 'valid'},
             "spiffe://test.com.br",
         ),
     ],
@@ -229,13 +233,13 @@ def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
         (
             '',
             None,
-            ['spire'],
+            {'spire'},
             INVALID_INPUT_ERROR.format('token cannot be empty.'),
         ),
         (
             'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
             None,
-            ['spire'],
+            {'spire'},
             INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty.'),
         ),
     ],
@@ -251,83 +255,83 @@ def test_parse_and_validate_invalid_parameters(
 
 
 def test_parse_and_validate_invalid_missing_kid_header():
-    token = create_jwt(kid='')
+    token = generate_test_jwt_token(kid='')
 
     with pytest.raises(InvalidTokenError) as exception:
-        JwtSvid.parse_and_validate(token, JWT_BUNDLE, ['spire'])
+        JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
     assert str(exception.value) == 'key_id cannot be empty.'
 
 
 def test_parse_and_validate_invalid_missing_sub():
-    token = create_jwt(spiffe_id='')
+    token = generate_test_jwt_token(spiffe_id='')
 
     with pytest.raises(InvalidTokenError) as exception:
-        JwtSvid.parse_and_validate(token, JWT_BUNDLE, ['spire'])
+        JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
     assert str(exception.value) == 'SPIFFE ID cannot be empty.'
 
 
 def test_parse_and_validate_invalid_missing_kid():
     key_id = 'kid10'
-    token = create_jwt(kid=key_id)
+    token = generate_test_jwt_token(kid=key_id)
 
     with pytest.raises(AuthorityNotFoundError) as exception:
-        JwtSvid.parse_and_validate(token, JWT_BUNDLE, ['spire'])
+        JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
     assert str(exception.value) == 'Key (' + key_id + ') not found in authorities.'
 
 
 def test_parse_and_validate_invalid_kid_mismatch():
     rsa_key2 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(
-        DEFAULT_TRUST_DOMAIN,
-        {'kid1': DEFAULT_KEY.public_key(), 'kid10': rsa_key2.public_key()},
+        TEST_TRUST_DOMAIN,
+        {'kid1': TEST_KEY.public_key(), 'kid10': rsa_key2.public_key()},
     )
-    token = create_jwt(kid='kid10')
+    token = generate_test_jwt_token(kid='kid10')
 
     with pytest.raises(InvalidTokenError) as exception:
-        JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
+        JwtSvid.parse_and_validate(token, jwt_bundle, {'test'})
     assert str(exception.value) == 'Signature verification failed.'
 
 
 def test_parse_and_validate_valid_token_RSA():
-    token = create_jwt()
-    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, ['spire'])
-    assert jwt_svid._audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid._spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid._expiry == DEFAULT_EXPIRY
+    token = generate_test_jwt_token()
+    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
+    assert jwt_svid._audience == TEST_AUDIENCE
+    assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
+    assert jwt_svid._expiry == TEST_EXPIRY
     assert jwt_svid._token == token
 
 
 def test_parse_and_validate_valid_token_EC():
     ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
-    jwt_bundle = JwtBundle(DEFAULT_TRUST_DOMAIN, {'kid_ec': ec_key.public_key()})
+    jwt_bundle = JwtBundle(TEST_TRUST_DOMAIN, {'kid_ec': ec_key.public_key()})
 
-    ec_key_pem, _ = get_keys_pems(ec_key)
-    token = create_jwt(ec_key_pem, 'kid_ec', alg='ES512')
-    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
-    assert jwt_svid._audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid._spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid._expiry == DEFAULT_EXPIRY
+    ec_key_pem, _ = extract_key_pair_pems(ec_key)
+    token = generate_test_jwt_token(ec_key_pem, 'kid_ec', alg='ES512')
+    jwt_svid = JwtSvid.parse_and_validate(token, jwt_bundle, {'test'})
+    assert jwt_svid._audience == TEST_AUDIENCE
+    assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
+    assert jwt_svid._expiry == TEST_EXPIRY
     assert jwt_svid._token == token
 
 
 def test_parse_and_validate_valid_token_multiple_keys_bundle():
     ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
     jwt_bundle = JwtBundle(
-        DEFAULT_TRUST_DOMAIN,
-        {'kid_rsa': DEFAULT_KEY.public_key(), 'kid_ec': ec_key.public_key()},
+        TEST_TRUST_DOMAIN,
+        {'kid_rsa': TEST_KEY.public_key(), 'kid_ec': ec_key.public_key()},
     )
-    ec_key_pem, _ = get_keys_pems(ec_key)
+    ec_key_pem, _ = extract_key_pair_pems(ec_key)
 
-    token = create_jwt(ec_key_pem, kid='kid_ec', alg='ES512')
-    jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, ['spire'])
-    assert jwt_svid1._audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid1._spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid1._expiry == DEFAULT_EXPIRY
+    token = generate_test_jwt_token(ec_key_pem, kid='kid_ec', alg='ES512')
+    jwt_svid1 = JwtSvid.parse_and_validate(token, jwt_bundle, {'test'})
+    assert jwt_svid1._audience == TEST_AUDIENCE
+    assert str(jwt_svid1._spiffe_id) == TEST_SPIFFE_ID
+    assert jwt_svid1._expiry == TEST_EXPIRY
     assert jwt_svid1._token == token
 
-    token2 = create_jwt(kid='kid_rsa')
-    jwt_svid2 = JwtSvid.parse_and_validate(token2, jwt_bundle, ['spire'])
-    assert jwt_svid2._audience == DEFAULT_AUDIENCE
-    assert str(jwt_svid2._spiffe_id) == DEFAULT_SPIFFE_ID
-    assert jwt_svid2._expiry == DEFAULT_EXPIRY
+    token2 = generate_test_jwt_token(kid='kid_rsa')
+    jwt_svid2 = JwtSvid.parse_and_validate(token2, jwt_bundle, {'test'})
+    assert jwt_svid2._audience == TEST_AUDIENCE
+    assert str(jwt_svid2._spiffe_id) == TEST_SPIFFE_ID
+    assert jwt_svid2._expiry == TEST_EXPIRY
     assert jwt_svid2._token == token2
