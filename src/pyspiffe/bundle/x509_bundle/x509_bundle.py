@@ -67,15 +67,6 @@ class X509Bundle(object):
         self._trust_domain = trust_domain
         self._x509_authorities = x509_authorities.copy() if x509_authorities else set()
 
-    def __eq__(self, o: object) -> bool:
-        if not isinstance(o, X509Bundle):
-            return False
-        with self.lock:
-            return (
-                self._trust_domain.__eq__(o._trust_domain)
-                and self._x509_authorities == o._x509_authorities
-            )
-
     @property
     def trust_domain(self) -> TrustDomain:
         """Returns the trust domain of the bundle."""
@@ -211,3 +202,19 @@ class X509Bundle(object):
         raise ArgumentError(
             'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
         )
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, X509Bundle):
+            return False
+        with self.lock:
+            return (
+                self.trust_domain.__eq__(o.trust_domain)
+                and self._x509_authorities == o._x509_authorities
+            )
+
+    def __hash__(self):
+        trust_domain_hash = hash(self.trust_domain)
+        authorities_hash = hash(
+            tuple(hash(authority) for authority in self._x509_authorities)
+        )
+        return hash((trust_domain_hash, authorities_hash))

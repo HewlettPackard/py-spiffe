@@ -21,11 +21,11 @@ import pytest
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
-from pyspiffe.workloadapi.default_x509_source import DefaultX509Source
 from pyspiffe.workloadapi.exceptions import X509SourceError
+from pyspiffe.workloadapi.x509_source import X509Source
 
-from src.pyspiffe.workloadapi.default_workload_api_client import (
-    DefaultWorkloadApiClient,
+from src.pyspiffe.workloadapi.workload_api_client import (
+    WorkloadApiClient,
 )
 from test.workloadapi.test_constants import (
     FEDERATED_BUNDLE,
@@ -39,11 +39,9 @@ from test.workloadapi.test_constants import (
 
 @pytest.fixture
 def client():
-    with patch.object(
-        DefaultWorkloadApiClient, '_check_spiffe_socket_exists'
-    ) as mock_check:
+    with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
-        client_instance = DefaultWorkloadApiClient('unix:///dummy.path')
+        client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
@@ -78,18 +76,18 @@ def mock_client_return_multiple_svids(mocker, client):
 def test_x509_source_get_default_x509_svid(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(client)
+    x509_source = X509Source(client)
 
-    x509_svid = x509_source.get_svid()
+    x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
 
 
 def test_x509_source_get_x509_svid_with_picker(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(client, picker=lambda svids: svids[1])
+    x509_source = X509Source(client, picker=lambda svids: svids[1])
 
-    x509_svid = x509_source.get_svid()
+    x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
 
 
@@ -97,11 +95,11 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
     # the picker selects an element from the list that doesn't exist
-    x509_source = DefaultX509Source(client, picker=lambda svids: svids[2])
+    x509_source = X509Source(client, picker=lambda svids: svids[2])
 
     # the source should be closed, as it couldn't get the X.509 context set
     with pytest.raises(X509SourceError) as exception:
-        x509_source.get_svid()
+        x509_source.svid
 
     assert (
         str(exception.value)
@@ -112,7 +110,7 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
 def test_x509_source_get_bundle_for_trust_domain(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(client)
+    x509_source = X509Source(client)
 
     bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
     assert bundle.trust_domain == TrustDomain('example.org')
@@ -126,12 +124,12 @@ def test_x509_source_get_bundle_for_trust_domain(mocker, client):
 def test_x509_source_is_closed_get_svid(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(client)
+    x509_source = X509Source(client)
 
     x509_source.close()
 
     with pytest.raises(X509SourceError) as exception:
-        x509_source.get_svid()
+        x509_source.svid
 
     assert (
         str(exception.value)
@@ -142,7 +140,7 @@ def test_x509_source_is_closed_get_svid(mocker, client):
 def test_x509_source_is_closed_get_bundle(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = DefaultX509Source(client)
+    x509_source = X509Source(client)
 
     x509_source.close()
 

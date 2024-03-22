@@ -19,9 +19,11 @@ This module manages JwtBundleSet objects.
 """
 
 import threading
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set
 from pyspiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
+
+__all__ = ['JwtBundleSet']
 
 
 class JwtBundleSet(object):
@@ -39,6 +41,11 @@ class JwtBundleSet(object):
         if bundles:
             for trust_domain, bundle in bundles.items():
                 self._bundles[trust_domain.name] = bundle
+
+    @property
+    def bundles(self) -> Set[JwtBundle]:
+        """Returns the set of all JwtBundles."""
+        return set(self._bundles.values())
 
     def get_bundle_for_trust_domain(
         self, trust_domain: TrustDomain

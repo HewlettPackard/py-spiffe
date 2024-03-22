@@ -24,9 +24,7 @@ import grpc
 import threading
 from calendar import timegm
 
-from src.pyspiffe.workloadapi.default_workload_api_client import (
-    DefaultWorkloadApiClient,
-)
+from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
@@ -51,11 +49,9 @@ from test.utils.utils import (
 
 @pytest.fixture
 def client():
-    with patch.object(
-        DefaultWorkloadApiClient, '_check_spiffe_socket_exists'
-    ) as mock_check:
+    with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
-        client_instance = DefaultWorkloadApiClient('unix:///dummy.path')
+        client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 

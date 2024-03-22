@@ -18,14 +18,12 @@ from unittest.mock import patch
 
 import pytest
 
-from src.pyspiffe.workloadapi.default_workload_api_client import (
-    DefaultWorkloadApiClient,
-)
+from pyspiffe.workloadapi.jwt_source import JwtSource
+from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
 from pyspiffe.spiffe_id.spiffe_id import TrustDomain
 from pyspiffe.proto.spiffe import workload_pb2
 from pyspiffe.spiffe_id.spiffe_id import SpiffeId
-from pyspiffe.workloadapi.default_jwt_source import DefaultJwtSource
 from pyspiffe.workloadapi.exceptions import JwtSourceError, FetchJwtSvidError
 from pyspiffe.exceptions import ArgumentError
 from test.utils.utils import (
@@ -38,11 +36,9 @@ SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
 
 @pytest.fixture
 def client():
-    with patch.object(
-        DefaultWorkloadApiClient, '_check_spiffe_socket_exists'
-    ) as mock_check:
+    with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
-        client_instance = DefaultWorkloadApiClient('unix:///dummy.path')
+        client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
@@ -76,7 +72,7 @@ def test_get_jwt_svid(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     jwt_svid = jwt_source.fetch_svid(TEST_AUDIENCE, subject=SPIFFE_ID)
 
     assert jwt_svid._spiffe_id == SPIFFE_ID
@@ -87,7 +83,7 @@ def test_get_jwt_svid_no_subject(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     jwt_svid = jwt_source.fetch_svid(TEST_AUDIENCE)
 
     assert jwt_svid._spiffe_id == SPIFFE_ID
@@ -98,7 +94,7 @@ def test_get_jwt_svid_exception(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     with pytest.raises(ArgumentError) as exception:
         _ = jwt_source.fetch_svid("")
 
@@ -110,7 +106,7 @@ def test_error_new(mocker, client):
         side_effect=Exception('Mocked Error')
     )
     mock_client_fetch_jwt_bundles(mocker, client)
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     with pytest.raises(FetchJwtSvidError) as exception:
         _ = jwt_source.fetch_svid(TEST_AUDIENCE)
 
@@ -121,7 +117,7 @@ def test_close(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     jwt_source.close()
 
     assert jwt_source.is_closed()
@@ -131,7 +127,7 @@ def test_close_twice(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     jwt_source.close()
     jwt_source.close()
 
@@ -142,7 +138,7 @@ def test_is_closed(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
     assert not jwt_source.is_closed()
     jwt_source.close()
     assert jwt_source.is_closed()
@@ -152,7 +148,7 @@ def get_jwt_bundle(mocker, client):
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
 
     jwt_bundle = jwt_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
     assert jwt_bundle
@@ -169,7 +165,7 @@ def test_get_jwt_bundle_exception(mocker, client):
         side_effect=Exception('Mocked Error'),
     )
 
-    jwt_source = DefaultJwtSource(client)
+    jwt_source = JwtSource(client)
 
     with pytest.raises(JwtSourceError) as exception:
         _ = jwt_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
