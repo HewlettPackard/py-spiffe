@@ -130,7 +130,7 @@ class JwtSvidValidator(object):
             TokenExpiredError: In case it is expired.
         """
         int_date = int(expiration_date)
-        utctime = timegm(datetime.datetime.utcnow().utctimetuple())
+        utctime = datetime.datetime.now(datetime.timezone.utc).timestamp()
         if int_date < utctime:
             raise TokenExpiredError()
 
