@@ -94,7 +94,8 @@ def test_parse_insecure_invalid_input(
                     'sub': 'spiffeid://somewhere.over.the',
                     'exp': timegm(
                         (
-                            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=72)
+                            datetime.datetime.now(datetime.timezone.utc)
+                            + datetime.timedelta(hours=72)
                         ).utctimetuple()
                     ),
                 },
@@ -122,7 +123,8 @@ def test_parse_insecure_invalid_input(
                     'aud': ['test-audience', 'other'],
                     'exp': timegm(
                         (
-                            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+                            datetime.datetime.now(datetime.timezone.utc)
+                            - datetime.timedelta(hours=1)
                         ).utctimetuple()
                     ),
                 },
@@ -139,7 +141,8 @@ def test_parse_insecure_invalid_input(
                     'sub': 'spiffeid://somewhere.over.the',
                     'exp': timegm(
                         (
-                            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+                            datetime.datetime.now(datetime.timezone.utc)
+                            - datetime.timedelta(hours=1)
                         ).utctimetuple()
                     ),
                 },
@@ -186,7 +189,8 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                     'sub': 'spiffe://test.org',
                     'exp': timegm(
                         (
-                            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=100)
+                            datetime.datetime.now(datetime.timezone.utc)
+                            + datetime.timedelta(hours=100)
                         ).utctimetuple()
                     ),
                 },
@@ -203,7 +207,8 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
                     'sub': 'spiffe://test.com.br',
                     'exp': timegm(
                         (
-                            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+                            datetime.datetime.now(datetime.timezone.utc)
+                            + datetime.timedelta(hours=1)
                         ).utctimetuple()
                     ),
                 },

@@ -20,7 +20,6 @@ This module manages the validations of JWT tokens.
 
 import datetime
 from typing import Dict, Any, Set
-from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.exceptions import ArgumentError

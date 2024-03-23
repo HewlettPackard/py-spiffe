@@ -22,7 +22,6 @@ import pytest
 import datetime
 import grpc
 import threading
-from calendar import timegm
 
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
