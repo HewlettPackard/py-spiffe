@@ -22,7 +22,6 @@ import pytest
 import datetime
 import grpc
 import threading
-from calendar import timegm
 
 from pyspiffe.workloadapi.workload_api_client import WorkloadApiClient
 from test.utils.jwt_utils import generate_test_jwt_token, TEST_AUDIENCE
@@ -71,7 +70,7 @@ def test_fetch_jwt_svid_aud_sub(mocker, client):
     )
 
     svid = client.fetch_jwt_svid(audiences=TEST_AUDIENCE, subject=spiffe_id)
-    utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
+    utc_time = datetime.datetime.now(datetime.timezone.utc).timestamp()
     assert svid._spiffe_id == spiffe_id
     assert svid._token == jwt_svid
     assert svid.audience == TEST_AUDIENCE
@@ -93,7 +92,7 @@ def test_fetch_jwt_svid_aud(mocker, client):
     )
 
     svid = client.fetch_jwt_svid(audiences=TEST_AUDIENCE)
-    utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
+    utc_time = datetime.datetime.now(datetime.timezone.utc).timestamp()
     assert svid._spiffe_id == SpiffeId(spiffe_id)
     assert svid._token == jwt_svid
     assert svid.audience == TEST_AUDIENCE
@@ -120,7 +119,7 @@ def test_fetch_jwt_svids(mocker, client):
     )
 
     svids = client.fetch_jwt_svids(audiences=TEST_AUDIENCE)
-    utc_time = timegm(datetime.datetime.utcnow().utctimetuple())
+    utc_time = datetime.datetime.now(datetime.timezone.utc).timestamp()
 
     svid = svids[0]
     assert svid._spiffe_id == SpiffeId(spiffe_id)

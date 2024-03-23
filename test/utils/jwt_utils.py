@@ -64,7 +64,9 @@ TEST_AUDIENCE = {'joe', 'test', 'other'}
 TEST_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 TEST_KEY_PEM = extract_key_pair_pems(TEST_KEY)[0]
 TEST_EXPIRY = timegm(
-    (datetime.datetime.utcnow() + datetime.timedelta(hours=4)).utctimetuple()
+    (
+        datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=4)
+    ).utctimetuple()
 )
 
 

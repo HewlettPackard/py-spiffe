@@ -20,7 +20,6 @@ This module manages the validations of JWT tokens.
 
 import datetime
 from typing import Dict, Any, Set
-from calendar import timegm
 
 from pyspiffe.svid import INVALID_INPUT_ERROR
 from pyspiffe.exceptions import ArgumentError
@@ -130,7 +129,7 @@ class JwtSvidValidator(object):
             TokenExpiredError: In case it is expired.
         """
         int_date = int(expiration_date)
-        utctime = timegm(datetime.datetime.utcnow().utctimetuple())
+        utctime = datetime.datetime.now(datetime.timezone.utc).timestamp()
         if int_date < utctime:
             raise TokenExpiredError()
 

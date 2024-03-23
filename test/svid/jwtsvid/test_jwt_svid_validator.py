@@ -45,7 +45,8 @@ from pyspiffe.svid.exceptions import (
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': 'None',
@@ -58,7 +59,8 @@ from pyspiffe.svid.exceptions import (
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['test'],
@@ -83,7 +85,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': [''],
@@ -96,7 +99,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['', '', ''],
@@ -109,7 +113,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
@@ -122,7 +127,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
@@ -135,7 +141,8 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
@@ -168,7 +175,8 @@ def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expe
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() - datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
@@ -180,7 +188,8 @@ def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expe
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - datetime.timedelta(hours=1)
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
@@ -192,7 +201,8 @@ def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expe
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - datetime.timedelta(minutes=1)
                     ).utctimetuple()
                 ),
                 'aud': {'something', 'more things', 'even more things'},
@@ -244,7 +254,8 @@ def test_validate_claims_missing_required_claim(
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
                     ).utctimetuple()
                 ),
                 'aud': ['something'],
@@ -256,7 +267,8 @@ def test_validate_claims_missing_required_claim(
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(minutes=5)
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things'],
@@ -268,7 +280,8 @@ def test_validate_claims_missing_required_claim(
             {
                 'exp': timegm(
                     (
-                        datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(minutes=15)
                     ).utctimetuple()
                 ),
                 'aud': ['something', 'more things', 'even more things'],
