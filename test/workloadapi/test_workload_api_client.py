@@ -26,7 +26,9 @@ SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
 
 
 # No SPIFFE_ENDPOINT_SOCKET, and no path passed, raises exception
-def test_instantiate_default_without_var():
+def test_instantiate_default_without_var(monkeypatch):
+    # Ensure the SPIFFE_ENDPOINT_SOCKET environment variable is unset
+    monkeypatch.delenv("SPIFFE_ENDPOINT_SOCKET", raising=False)
     with pytest.raises(ArgumentError) as exception:
         WorkloadApiClient(None)
 
