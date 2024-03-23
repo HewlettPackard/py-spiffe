@@ -16,7 +16,7 @@ under the License.
 
 import os
 import pytest
-from pyspiffe.config import ConfigSetter
+from pyspiffe.config import ConfigSetter, _SPIFFE_ENDPOINT_SOCKET
 from pyspiffe.exceptions import ArgumentError
 
 
@@ -28,7 +28,10 @@ def restore_env_vars():
     os.environ.update(env_vars)
 
 
-def test_socket_must_be_set():
+def test_socket_must_be_set(monkeypatch):
+    # Ensure the SPIFFE_ENDPOINT_SOCKET environment variable is unset
+    monkeypatch.delenv(_SPIFFE_ENDPOINT_SOCKET, raising=False)
+
     with pytest.raises(ArgumentError) as exception:
         ConfigSetter(None)
 
