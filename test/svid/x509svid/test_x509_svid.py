@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import os
+
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
@@ -36,6 +38,18 @@ from pyspiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 _TEST_CERTS_PATH = 'test/svid/x509svid/certs/{}'
+
+
+@pytest.fixture
+def clean_files():
+    files_to_clean = []
+
+    yield files_to_clean
+
+    # Cleanup code
+    for file_path in files_to_clean:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 def test_create_x509_svid(mocker):
@@ -374,7 +388,7 @@ def test_load_cannot_read_key_bytes(mocker):
     )
 
 
-def test_save_chain_and_ec_key_as_pem(tmpdir):
+def test_save_chain_and_ec_key_as_pem(tmpdir, clean_files):
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -384,6 +398,9 @@ def test_save_chain_and_ec_key_as_pem(tmpdir):
 
     chain_pem_file = tmpdir.join('chain.pem')
     key_pem_file = tmpdir.join('key.pem')
+
+    # Add files to the cleanup list
+    clean_files.extend([chain_pem_file, key_pem_file])
 
     x509_svid.save(chain_pem_file, key_pem_file, serialization.Encoding.PEM)
 
@@ -398,7 +415,7 @@ def test_save_chain_and_ec_key_as_pem(tmpdir):
     assert _extract_spiffe_id(saved_svid.leaf) == expected_spiffe_id
 
 
-def test_save_chain_and_rsa_key_as_der(tmpdir):
+def test_save_chain_and_rsa_key_as_der(tmpdir, clean_files):
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -406,13 +423,16 @@ def test_save_chain_and_rsa_key_as_der(tmpdir):
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
     # temp files to store the certs and private_key
-    chain_der_file = tmpdir.join('chain.der')
-    key_der_file = tmpdir.join('key.der')
+    chain_file = tmpdir.join('chain.der')
+    key_file = tmpdir.join('key.der')
 
-    x509_svid.save(chain_der_file, key_der_file, serialization.Encoding.DER)
+    # Add files to the cleanup list
+    clean_files.extend([chain_file, key_file])
+
+    x509_svid.save(chain_file, key_file, serialization.Encoding.DER)
 
     # now load the saved svid, and check that everything was stored correctly
-    saved_svid = X509Svid.load(chain_der_file, key_der_file, serialization.Encoding.DER)
+    saved_svid = X509Svid.load(chain_file, key_file, serialization.Encoding.DER)
     expected_spiffe_id = SpiffeId('spiffe://example.org/workload-1')
     assert saved_svid.spiffe_id == expected_spiffe_id
     assert len(saved_svid.cert_chain) == 1
@@ -421,15 +441,21 @@ def test_save_chain_and_rsa_key_as_der(tmpdir):
     assert _extract_spiffe_id(saved_svid.leaf) == expected_spiffe_id
 
 
-def test_save_non_supported_encoding():
+def test_save_non_supported_encoding(tmpdir, clean_files):
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
+    chain_file = tmpdir.join('chain_file')
+    key_file = tmpdir.join('key_file')
+
+    # Add files to the cleanup list
+    clean_files.extend([chain_file, key_file])
+
     with pytest.raises(ArgumentError) as err:
-        x509_svid.save('chain_file', 'key_file', serialization.Encoding.Raw)
+        x509_svid.save(chain_file, key_file, serialization.Encoding.Raw)
 
     assert (
         str(err.value)
@@ -437,16 +463,22 @@ def test_save_non_supported_encoding():
     )
 
 
-def test_save_error_writing_x509_svid_to_file(mocker):
+def test_save_error_writing_x509_svid_to_file(mocker, tmpdir, clean_files):
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
     # create the X509Svid to be saved
     x509_svid = X509Svid.parse(chain_bytes, key_bytes)
 
+    chain_file = tmpdir.join('chain_file')
+    key_file = tmpdir.join('key_file')
+
+    # Add files to the cleanup list
+    clean_files.extend([chain_file, key_file])
+
     mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospec=True)
     with pytest.raises(StoreCertificateError) as exception:
-        x509_svid.save('chain_file', 'key_file', serialization.Encoding.PEM)
+        x509_svid.save(chain_file, key_file, serialization.Encoding.PEM)
 
     assert (
         str(exception.value)
@@ -454,7 +486,7 @@ def test_save_error_writing_x509_svid_to_file(mocker):
     )
 
 
-def test_save_error_extracting_private_key(mocker):
+def test_save_error_extracting_private_key(mocker, tmpdir, clean_files):
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -465,8 +497,14 @@ def test_save_error_extracting_private_key(mocker):
     mock_private_key.private_bytes.side_effect = Exception('Error msg')
     x509_svid._private_key = mock_private_key
 
+    chain_file = tmpdir.join('chain_file')
+    key_file = tmpdir.join('key_file')
+
+    # Add files to the cleanup list
+    clean_files.extend([chain_file, key_file])
+
     with pytest.raises(StorePrivateKeyError) as exception:
-        x509_svid.save('chain_file', 'key_file', serialization.Encoding.PEM)
+        x509_svid.save(chain_file, key_file, serialization.Encoding.PEM)
 
     assert (
         str(exception.value)
