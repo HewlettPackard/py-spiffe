@@ -11,5 +11,6 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   pyspiffe.workloadapi.default_workload_api_client
    pyspiffe.workloadapi.workload_api_client
+   pyspiffe.workloadapi.x509_source
+   pyspiffe.workloadapi.jwt_source
