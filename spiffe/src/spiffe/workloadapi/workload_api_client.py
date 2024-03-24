@@ -75,7 +75,7 @@ class RetryHandler:
         max_retries: int = UNLIMITED_RETRIES,
         base_backoff_in_seconds: float = 0.1,
         backoff_factor: int = 2,
-        max_delay_in_seconds: float = 60,
+        max_delay_in_seconds: float = 5,
     ) -> None:
         """Creates a RetryHandler that keeps track of retries and allows the execution of a callable using an
            exponential backoff policy.
