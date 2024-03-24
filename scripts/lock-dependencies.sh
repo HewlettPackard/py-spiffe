@@ -1,6 +1,6 @@
 #!/bin/bash
 
-modules=("pyspiffe" "pyspiffe-tls")
+modules=("spiffe" "spiffe-tls")
 
 # Check if pyproject.toml is in the list of staged changes
 if git diff --cached --name-only | grep -q 'pyproject.toml'; then

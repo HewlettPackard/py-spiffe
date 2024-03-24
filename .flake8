@@ -12,4 +12,4 @@ ignore =
     E402
 statistics = True
 doctests = True
-exclude = pyspiffe/src/pyspiffe/proto
+exclude = spiffe/src/spiffe/proto
