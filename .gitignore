@@ -5,8 +5,8 @@ __pycache__
 .vscode
 *.log
 dist/*
-docs/_build/*
-build/*
+*/_build/*
+*/build/*
 reports/*
 .coverage
 .tox/
