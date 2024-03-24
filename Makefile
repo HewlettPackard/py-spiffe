@@ -1,8 +1,8 @@
-# Root Makefile for managing pyspiffe modules
+# Root Makefile for managing spiffe modules
 
 # Define module directories
-CORE_DIR=./pyspiffe
-TLS_DIR=./pyspiffe-tls
+CORE_DIR=./spiffe
+TLS_DIR=./spiffe-tls
 
 .DEFAULT_GOAL := help
 

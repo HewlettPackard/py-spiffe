@@ -1,11 +1,11 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
-    directory: "/pyspiffe"
+    directory: "/spiffe"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "pip"
-    directory: "/pyspiffe-tls"
+    directory: "/spiffe-tls"
     schedule:
       interval: "daily"
