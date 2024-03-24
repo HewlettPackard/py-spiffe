@@ -48,7 +48,7 @@ with X509Source() as source:
 
 ### JwtSource
 
-Fetches JWT SVIDs and Bundles:
+Fetches JWT SVIDs and Bundles.
 
 ```python
 from pyspiffe import JwtSource
