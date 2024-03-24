@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "pyspiffe-tls"
+version = "0.1.0"
+description = "TLS Support using SPIFFE"
+authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+
+packages = [
+    { include = "pyspiffetls", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pyspiffe = { path = "../pyspiffe", develop = true }
+pyOpenSSL = "^24.0"
+
+[tool.poetry.dev-dependencies]
+black = "24.3.0"
+mypy = "1.9.0"
+pre-commit = "3.6.2"
+pytest = "8.1.1"
+pytest-mock = "~3.14.0"
+flake8 = "7.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+ignore_missing_imports = true
+files = ["src", "tests"]
+
+
+# Tool configurations
+[tool.black]
+skip-string-normalization = true
+target-version = ['py39']
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--doctest-modules",
+]
+testpaths = [
+    "tests",
+]

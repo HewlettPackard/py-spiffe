@@ -41,7 +41,7 @@ Before starting, please make sure you have the following installed:
     make format
     ```
 
-6. **Build the Project**: If applicable, like creating a distributable package, use:
+6. **Build the Project** 
     ```sh
     make build
     ```

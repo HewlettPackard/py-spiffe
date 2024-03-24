@@ -1,26 +1,26 @@
-# py-spiffe Library
+# py-spiffe
 
-[![Build](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml?branch=main)
-[![Coverage](https://coveralls.io/repos/github/HewlettPackard/py-spiffe/badge.svg?branch=main)](https://coveralls.io/github/HewlettPackard/py-spiffe?branch=main)
+[![CI](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/HewlettPackard/py-spiffe/actions/workflows/build.yaml?branch=main)
 
-## Overview
+`py-spiffe` is a Python library designed to provide support for [SPIFFE](https://spiffe.io). The library is
+structured into two main modules:
 
-The py-spiffe library is a Python solution designed to integrate with the SPIFFE (Secure
-Production Identity Framework For Everyone) ecosystem. By enabling the fetching of SPIFFE Verifiable Identity
-Documents (SVIDs) and trust bundles, this library offers a rich set of classes and types that encapsulate SPIFFE
-standards.
+## Modules
 
-## Status of the Library
+### pyspiffe
 
-This SPIFFE library extends beyond providing a Workload API client for fetching X.509 and JWT SVIDs and trust bundles;
-it also introduces classes and types that closely align with SPIFFE standards. These components are instrumental in
-developing systems that adhere to and take full advantage of SPIFFE specifications for secure and flexible
-cross-platform authentication.
+`pyspiffe` is the foundational module of the `py-spiffe` library, offering key functionalities around SPIFFE
+specification, including the Workload API client implementation, and handling of SVIDs (SPIFFE Verifiable Identity
+Documents). 
 
-**Important:** The current release does not directly support establishing TLS connections using SPIFFE certificates, a
-feature crucial for certain applications requiring secure communication channels. 
+### pyspiffe-tls (In Development)
+
+The `pyspiffe-tls` module, currently in development, is planned to provide TLS utilities that facilitate the easy
+integration of SPIFFE identities into the TLS workflows of Python applications. This module will offer features such as
+mutual TLS (mTLS) support, certificate validation, and automatic SVID fetching and renewal, aimed at simplifying secure
+service-to-service communication using SPIFFE identities.
 
 ## Contributing
 
-* See [CONTRIBUTING](https://github.com/HewlettPackard/py-spiffe/blob/main/CONTRIBUTING.md) to get started.
-* Use [GitHub Issues](https://github.com/HewlettPackard/py-spiffe/issues) to request features or file bugs.
+Contributions to both `pyspiffe` and the `pyspiffe-tls` modules are welcome! Please see
+our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to the project.
