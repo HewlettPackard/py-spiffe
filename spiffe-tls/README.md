@@ -1,3 +1,3 @@
-# spiffe-tls
+# `spiffe-tls` Module
 
 **Module in Development**
