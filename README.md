@@ -7,13 +7,13 @@ structured into two main modules:
 
 ## Modules
 
-### pyspiffe
+### [pyspiffe](pyspiffe/README.md)
 
 `pyspiffe` is the foundational module of the `py-spiffe` library, offering key functionalities around SPIFFE
 specification, including the Workload API client implementation, and handling of SVIDs (SPIFFE Verifiable Identity
 Documents). 
 
-### pyspiffe-tls (In Development)
+### [pyspiffe-tls (In Development)](pyspiffe-tls/README.md)
 
 The `pyspiffe-tls` module, currently in development, is planned to provide TLS utilities that facilitate the easy
 integration of SPIFFE identities into the TLS workflows of Python applications. This module will offer features such as

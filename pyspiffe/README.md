@@ -48,7 +48,7 @@ with X509Source() as source:
 
 ### JwtSource
 
-Fetches and validates JWT SVIDs, facilitating secure service-to-service authentication.
+Fetches JWT SVIDs and Bundles:
 
 ```python
 from pyspiffe import JwtSource
