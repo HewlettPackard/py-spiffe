@@ -20,11 +20,10 @@ from calendar import timegm
 
 from spiffe.svid.jwt_svid_validator import (
     JwtSvidValidator,
-    INVALID_INPUT_ERROR,
     AUDIENCE_NOT_MATCH_ERROR,
 )
-from spiffe.exceptions import ArgumentError
-from spiffe.svid.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.svid.errors import (
     TokenExpiredError,
     InvalidClaimError,
     InvalidAlgorithmError,
@@ -53,7 +52,7 @@ from spiffe.svid.exceptions import (
                 'sub': 'spiffeid://somewhere.over.the',
             },
             None,
-            INVALID_INPUT_ERROR.format('expected_audience cannot be empty.'),
+            'expected_audience cannot be empty',
         ),
         (
             {
@@ -67,7 +66,7 @@ from spiffe.svid.exceptions import (
                 'sub': 'spiffeid://somewhere.over.the',
             },
             set(),
-            INVALID_INPUT_ERROR.format('expected_audience cannot be empty.'),
+            'expected_audience cannot be empty',
         ),
     ],
 )
@@ -307,17 +306,17 @@ def test_validate_claims_valid_input(test_input_claim, test_input_audience):
     [
         (
             None,
-            INVALID_INPUT_ERROR.format('header cannot be empty.'),
+            'header cannot be empty',
         ),
         (
             '',
-            INVALID_INPUT_ERROR.format('header cannot be empty.'),
+            'header cannot be empty',
         ),
         (
             {'ttt': 'eee'},
-            INVALID_INPUT_ERROR.format('header alg cannot be empty.'),
+            'header alg cannot be empty',
         ),
-        ({'alg': ''}, INVALID_INPUT_ERROR.format('header alg cannot be empty.')),
+        ({'alg': ''}, 'header alg cannot be empty'),
     ],
 )
 def test_validate_header_invalid_input(test_input_header, expected):

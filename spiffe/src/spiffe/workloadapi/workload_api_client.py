@@ -29,14 +29,14 @@ from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from spiffe.config import ConfigSetter
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from spiffe.proto import (
     workload_pb2,
 )
 from spiffe.proto import workload_pb2_grpc
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.workloadapi.handle_error import handle_error
-from spiffe.workloadapi.exceptions import (
+from spiffe.workloadapi.errors import (
     FetchX509SvidError,
     FetchX509BundleError,
     FetchJwtSvidError,
@@ -192,8 +192,6 @@ class WorkloadApiClient:
            or grpc.StatusCode.INVALID_ARGUMENT, it will attempt to establish a new connection
            to the Workload API, using an exponential backoff policy to perform the retries, starting with a delay of 0.1 seconds,
            incrementing it then to 0.2, 0.4, 0.8, 1.6 and so on (until the max backoff of 60 seconds). It retries indefinitely.
-
-           # TODO: make the backoff policy configurable
 
         Args:
             on_success: A Callable accepting a X509Context as argument and returning None, to be executed when a new update
@@ -594,8 +592,9 @@ class WorkloadApiClient:
             )
         else:
             # don't retry, instead report error to user on the on_error callback
-            error = FetchX509SvidError(str(grpc_error_code))
-            on_error(error)
+            if grpc_error_code != grpc.StatusCode.CANCELLED:
+                error = FetchX509SvidError(str(grpc_error_code))
+                on_error(error)
 
     def _call_watch_jwt_bundles(
         self,

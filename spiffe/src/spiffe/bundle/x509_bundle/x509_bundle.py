@@ -23,8 +23,8 @@ from typing import Set, Optional
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
-from spiffe.exceptions import ArgumentError
-from spiffe.bundle.x509_bundle.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.bundle.x509_bundle.errors import (
     X509BundleError,
     SaveX509BundleError,
     ParseX509BundleError,
@@ -116,9 +116,7 @@ class X509Bundle(object):
         try:
             write_certificates_to_file(bundle_path, encoding, self._x509_authorities)
         except Exception as err:
-            raise SaveX509BundleError(
-                'Error writing X.509 bundle to file: {}'.format(str(err))
-            )
+            raise SaveX509BundleError(bundle_path) from err
 
     @classmethod
     def parse(cls, trust_domain: TrustDomain, bundle_bytes: bytes) -> 'X509Bundle':
@@ -138,8 +136,8 @@ class X509Bundle(object):
 
         try:
             authorities = parse_pem_certificates(bundle_bytes)
-        except Exception as e:
-            raise ParseX509BundleError(str(e))
+        except Exception as err:
+            raise ParseX509BundleError(str(err)) from err
 
         return X509Bundle(trust_domain, set(authorities))
 
@@ -161,8 +159,8 @@ class X509Bundle(object):
 
         try:
             authorities = parse_der_certificates(bundle_bytes)
-        except Exception as e:
-            raise ParseX509BundleError(str(e))
+        except Exception as err:
+            raise ParseX509BundleError(str(err)) from err
 
         return X509Bundle(trust_domain, set(authorities))
 
@@ -190,8 +188,8 @@ class X509Bundle(object):
 
         try:
             bundle_bytes = load_certificates_bytes_from_file(bundle_path)
-        except Exception as e:
-            raise LoadX509BundleError(str(e))
+        except Exception as err:
+            raise LoadX509BundleError(str(err)) from err
 
         if encoding == serialization.Encoding.PEM:
             return cls.parse(trust_domain, bundle_bytes)

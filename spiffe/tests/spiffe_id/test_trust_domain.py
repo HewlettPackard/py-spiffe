@@ -37,24 +37,39 @@ def test_valid_trust_domain(input, expected):
 @pytest.mark.parametrize(
     "input,expected_error",
     [
-        ("", "Trust domain cannot be empty."),
-        ("http://example.org", "Invalid SPIFFE ID: does not start with 'spiffe://'."),
-        ("spiffe://example..org", "Trust domain cannot contain consecutive dots."),
+        ("", "Invalid trust domain: cannot be empty"),
+        (
+            "http://example.org",
+            "Invalid trust domain 'http://example.org': ID form does not start with 'spiffe://'",
+        ),
+        (
+            "spiffe://example..org",
+            "Invalid trust domain 'spiffe://example..org': cannot contain consecutive dots",
+        ),
         (
             "spiffe://example-.org",
-            "Invalid trust domain: contains disallowed characters.",
+            "Invalid trust domain 'spiffe://example-.org': contains disallowed characters",
         ),
-        ("spiffe://-example.org", "Trust domain cannot start or end with '-' or '.'."),
+        (
+            "spiffe://-example.org",
+            "Invalid trust domain 'spiffe://-example.org': cannot start or end with '-' or '.'",
+        ),
         (
             "spiffe://example.org?query",
-            "Invalid trust domain: contains disallowed characters.",
+            "Invalid trust domain 'spiffe://example.org?query': contains disallowed characters",
         ),
         (
             "spiffe://example.org#fragment",
-            "Invalid trust domain: contains disallowed characters.",
+            "Invalid trust domain 'spiffe://example.org#fragment': contains disallowed characters",
         ),
-        ("example$org", "Invalid trust domain: contains disallowed characters."),
-        ("UPPERCASE.org", "Invalid trust domain: contains disallowed characters."),
+        (
+            "example$org",
+            "Invalid trust domain 'example$org': contains disallowed characters",
+        ),
+        (
+            "UPPERCASE.org",
+            "Invalid trust domain 'UPPERCASE.org': contains disallowed characters",
+        ),
     ],
 )
 def test_invalid_trust_domain(input, expected_error):

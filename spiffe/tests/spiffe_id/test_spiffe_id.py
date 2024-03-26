@@ -36,23 +36,38 @@ def test_spiffe_id_valid(id_str):
 @pytest.mark.parametrize(
     "id_str, expected_error",
     [
-        ("", "SPIFFE ID cannot be empty."),
+        ("", "Invalid SPIFFE ID: cannot be empty"),
         (
             "notspiffe://example.org",
-            "Invalid SPIFFE ID: does not start with 'spiffe://'.",
+            "Invalid SPIFFE ID 'notspiffe://example.org': does not start with 'spiffe://'",
         ),
-        ("spiffe://", "Trust domain cannot be empty."),
+        (
+            "spiffe://",
+            "Invalid SPIFFE ID 'spiffe://': Invalid trust domain: cannot be empty",
+        ),
         (
             "spiffe://example.org?query=123",
-            "Invalid trust domain: contains disallowed characters.",
+            "Invalid SPIFFE ID 'spiffe://example.org?query=123': Invalid trust domain 'example.org?query=123': contains disallowed characters",
         ),
-        ("spiffe://example.org/..", "Path segments '.' and '..' are not allowed."),
-        ("spiffe://example.org//service", "Path cannot contain empty segments."),
-        ("spiffe://example.org/service/", "Path cannot contain empty segments."),
-        ("spiffe://example..org/path", "Trust domain cannot contain consecutive dots."),
+        (
+            "spiffe://example.org/..",
+            "Invalid SPIFFE ID 'spiffe://example.org/..': path segments '.' and '..' are not allowed",
+        ),
+        (
+            "spiffe://example.org//service",
+            "Invalid SPIFFE ID 'spiffe://example.org//service': path cannot contain empty segments",
+        ),
+        (
+            "spiffe://example.org/service/",
+            "Invalid SPIFFE ID 'spiffe://example.org/service/': path cannot contain empty segments",
+        ),
+        (
+            "spiffe://example..org/path",
+            "Invalid SPIFFE ID 'spiffe://example..org/path': Invalid trust domain 'example..org': cannot contain consecutive dots",
+        ),
         (
             "spiffe://example-.org",
-            "Invalid trust domain: contains disallowed characters.",
+            "Invalid SPIFFE ID 'spiffe://example-.org': Invalid trust domain 'example-.org': contains disallowed characters",
         ),
     ],
 )

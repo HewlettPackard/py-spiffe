@@ -19,8 +19,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from jwt.exceptions import InvalidKeyError
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from spiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
-from spiffe.exceptions import ArgumentError
+from spiffe.bundle.jwt_bundle.errors import JwtBundleError, ParseJWTBundleError
+from spiffe.errors import ArgumentError
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from utils.jwt import (
     JWKS_1_EC_KEY,
@@ -52,7 +52,7 @@ def test_create_jwt_bundle_no_trust_domain():
     with pytest.raises(JwtBundleError) as exc_info:
         JwtBundle(None, authorities)
 
-    assert str(exc_info.value) == 'Trust domain cannot be empty.'
+    assert str(exc_info.value) == 'Trust domain cannot be empty'
 
 
 def test_create_jwt_bundle_no_authorities():
@@ -90,7 +90,7 @@ def test_get_jwt_authority_invalid_input():
     with pytest.raises(ArgumentError) as exception:
         jwt_bundle.get_jwt_authority('')
 
-    assert str(exception.value) == 'key_id cannot be empty.'
+    assert str(exception.value) == 'key_id cannot be empty'
 
 
 def test_get_jwt_authority_empty_authority_dict():
@@ -121,7 +121,7 @@ def test_parse_invalid_trust_domain(test_trust_domain):
     with pytest.raises(ArgumentError) as exception:
         JwtBundle.parse(test_trust_domain, JWKS_1_EC_KEY)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain cannot be empty'
 
 
 @pytest.mark.parametrize(
@@ -132,7 +132,7 @@ def test_parse_missing_bundle_bytes(test_bundle_bytes):
     with pytest.raises(ArgumentError) as exception:
         JwtBundle.parse(trust_domain, test_bundle_bytes)
 
-    assert str(exception.value) == 'Bundle bytes cannot be empty.'
+    assert str(exception.value) == 'Bundle bytes cannot be empty'
 
 
 @pytest.mark.parametrize(
@@ -145,7 +145,7 @@ def test_parse_invalid_bytes(test_bytes):
 
     assert (
         str(exception.value)
-        == 'Error parsing JWT bundle: Cannot parse jwks. bundle_bytes does not represent a valid jwks.'
+        == 'Error parsing JWT bundle: "bundle_bytes" does not represent a valid jwks'
     )
 
 
@@ -156,13 +156,10 @@ def test_parse_bundle_bytes_invalid_key(mocker):
         autospec=True,
     )
 
-    with pytest.raises(ParseJWTBundleError) as exception:
+    with pytest.raises(ParseJWTBundleError) as err:
         JwtBundle.parse(trust_domain, JWKS_MISSING_X)
 
-    assert (
-        str(exception.value)
-        == 'Error parsing JWT bundle: Cannot parse jwks from bundle_bytes: Invalid Key.'
-    )
+    assert str(err.value) == 'Error parsing JWT bundle: Invalid Key'
 
 
 def test_parse_corrupted_key_missing_key_id():
@@ -171,5 +168,5 @@ def test_parse_corrupted_key_missing_key_id():
 
     assert (
         str(exception.value)
-        == 'Error parsing JWT bundle: Error adding authority from JWKS: keyID cannot be empty.'
+        == 'Error parsing JWT bundle: Error adding authority from JWKS: "keyID" cannot be empty'
     )

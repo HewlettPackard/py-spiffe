@@ -21,12 +21,12 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
 
 from spiffe.spiffe_id.spiffe_id import SpiffeId
-from spiffe.exceptions import ArgumentError
-from spiffe.svid.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.svid.errors import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
 )
-from spiffe.utils.exceptions import (
+from spiffe.utils.errors import (
     LoadCertificateError,
     LoadPrivateKeyError,
     StoreCertificateError,
@@ -72,21 +72,21 @@ def test_create_x509_svid_no_spiffe_id(mocker):
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=None, cert_chain=[mocker.Mock()], private_key=mocker.Mock())
 
-    assert str(exc_info.value) == 'spiffe_id cannot be None.'
+    assert str(exc_info.value) == 'spiffe_id cannot be None'
 
 
 def test_create_x509_svid_no_cert_chain(mocker):
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[], private_key=mocker.Mock())
 
-    assert str(exc_info.value) == 'cert_chain cannot be empty.'
+    assert str(exc_info.value) == 'cert_chain cannot be empty'
 
 
 def test_create_x509_svid_no_private_key(mocker):
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[mocker.Mock()], private_key=None)
 
-    assert str(exc_info.value) == 'private_key cannot be None.'
+    assert str(exc_info.value) == 'private_key cannot be None'
 
 
 def test_parse_raw_chain_and_ec_key():
@@ -139,7 +139,10 @@ def test_parse_raw_missing_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert str(exception.value) == 'Unable to parse DER X.509 certificate.'
+    assert (
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate'
+    )
 
 
 def test_parse_missing_certificate():
@@ -149,7 +152,10 @@ def test_parse_missing_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert str(exception.value) == 'Unable to parse PEM X.509 certificate.'
+    assert (
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate'
+    )
 
 
 def test_parse_raw_missing_key():
@@ -185,7 +191,10 @@ def test_parse_raw_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert 'Unable to parse DER X.509 certificate.' in str(exception.value)
+    assert (
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse DER X.509 certificate'
+    )
 
 
 def test_parse_corrupted_certificate():
@@ -195,7 +204,10 @@ def test_parse_corrupted_certificate():
     with pytest.raises(ParseCertificateError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert 'Unable to parse PEM X.509 certificate.' in str(exception.value)
+    assert (
+        str(exception.value)
+        == 'Error parsing certificate: Unable to parse PEM X.509 certificate'
+    )
 
 
 def test_parse_raw_corrupted_private_key():
@@ -233,7 +245,7 @@ def test_parse_invalid_spiffe_id():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Certificate does not contain a SPIFFE ID in the URI SAN.'
+        == 'Invalid leaf certificate: Certificate does not contain a SPIFFE ID in the URI SAN'
     )
 
 
@@ -246,7 +258,7 @@ def test_parse_leaf_ca_true():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Leaf certificate must not have CA flag set to true.'
+        == 'Invalid leaf certificate: Leaf certificate must not have CA flag set to true'
     )
 
 
@@ -259,7 +271,7 @@ def test_parse_no_digital_signature():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Leaf certificate must have \'digitalSignature\' as key usage.'
+        == 'Invalid leaf certificate: Leaf certificate must have \'digitalSignature\' as key usage'
     )
 
 
@@ -272,7 +284,7 @@ def test_parse_key_cert_sign():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Leaf certificate must not have \'keyCertSign\' as key usage.'
+        == 'Invalid leaf certificate: Leaf certificate must not have \'keyCertSign\' as key usage'
     )
 
 
@@ -285,7 +297,7 @@ def test_parse_crl_sign():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Leaf certificate must not have \'cRLSign\' as key usage.'
+        == 'Invalid leaf certificate: Leaf certificate must not have \'cRLSign\' as key usage'
     )
 
 
@@ -298,7 +310,7 @@ def test_parse_intermediate_no_ca():
 
     assert (
         str(exception.value)
-        == 'Invalid intermediate certificate: Signing certificate must have CA flag set to true.'
+        == 'Invalid intermediate certificate: Signing certificate must have CA flag set to true'
     )
 
 
@@ -311,7 +323,7 @@ def test_parse_intermediate_no_key_cert_sign():
 
     assert (
         str(exception.value)
-        == 'Invalid intermediate certificate: Signing certificate must have \'keyCertSign\' as key usage.'
+        == 'Invalid intermediate certificate: Signing certificate must have \'keyCertSign\' as key usage'
     )
 
 
@@ -358,7 +370,7 @@ def test_load_non_existent_cert_file():
 
     assert (
         str(exception.value)
-        == 'Error loading certificate from file: Certificates file not found: no-exists.'
+        == 'Error loading certificate from file: File not found: no-exists'
     )
 
 
@@ -371,7 +383,7 @@ def test_load_non_existent_key_bytes():
 
     assert (
         str(exception.value)
-        == 'Error loading private key from file: Private key file not found: no-exists.'
+        == 'Error loading private key from file: File not found: no-exists'
     )
 
 
@@ -383,12 +395,12 @@ def test_load_cannot_read_key_bytes(mocker):
     )
     mocker.patch('builtins.open', side_effect=Exception('Error msg'), autospec=True)
 
-    with pytest.raises(LoadPrivateKeyError) as exception:
+    with pytest.raises(LoadPrivateKeyError) as err:
         X509Svid.load('chain_path', 'key-no-exists', serialization.Encoding.PEM)
 
     assert (
-        str(exception.value)
-        == 'Error loading private key from file: Private key file could not be read: Error msg.'
+        'Error loading private key from file: File could not be read: Error msg'
+        == str(err.value)
     )
 
 
@@ -463,7 +475,7 @@ def test_save_non_supported_encoding(tmpdir, clean_files):
 
     assert (
         str(err.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
+        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
     )
 
 
@@ -484,10 +496,7 @@ def test_save_error_writing_x509_svid_to_file(mocker, tmpdir, clean_files):
     with pytest.raises(StoreCertificateError) as exception:
         x509_svid.save(chain_file, key_file, serialization.Encoding.PEM)
 
-    assert (
-        str(exception.value)
-        == 'Error saving certificate to file: Error writing X.509 SVID to file: Error msg.'
-    )
+    assert str(exception.value) == 'Error saving certificate to file: Error msg'
 
 
 def test_save_error_extracting_private_key(mocker, tmpdir, clean_files):
@@ -512,7 +521,8 @@ def test_save_error_extracting_private_key(mocker, tmpdir, clean_files):
 
     assert (
         str(exception.value)
-        == 'Error saving private key to file: Could not write private key bytes to file: Could not extract private key bytes from object: Error msg.'
+        == 'Error saving private key to file: Could not serialize private key from '
+        'bytes: Error msg'
     )
 
 
@@ -524,7 +534,7 @@ def test_load_non_supported_encoding():
 
     assert (
         str(err.value)
-        == 'Encoding not supported: Encoding.OpenSSH. Expected \'PEM\' or \'DER\'.'
+        == "Encoding not supported: Encoding.OpenSSH. Expected 'PEM' or 'DER'"
     )
 
 

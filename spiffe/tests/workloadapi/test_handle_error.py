@@ -17,8 +17,8 @@ under the License.
 import pytest
 import grpc
 from spiffe.workloadapi.handle_error import handle_error
-from spiffe.exceptions import PySpiffeError, ArgumentError
-from spiffe.workloadapi.exceptions import WorkloadApiError
+from spiffe.errors import PySpiffeError, ArgumentError
+from spiffe.workloadapi.errors import WorkloadApiError
 from utils.utils import FakeCall
 
 
@@ -40,7 +40,7 @@ def test_handle_error_on_workload_api_error():
     with pytest.raises(WorkloadApiError) as exc_info:
         func_that_raises_workload_api_error()
 
-    assert str(exc_info.value) == 'Workload API Error.'
+    assert str(exc_info.value) == 'Workload API Error'
 
 
 def test_handle_error_on_argument_error():
@@ -51,7 +51,7 @@ def test_handle_error_on_argument_error():
     with pytest.raises(ArgumentError) as exc_info:
         func_that_raises_workload_api_error()
 
-    assert str(exc_info.value) == 'Argument Error.'
+    assert str(exc_info.value) == 'Argument Error'
 
 
 def test_handle_error_on_py_spiffe_error():
@@ -62,7 +62,7 @@ def test_handle_error_on_py_spiffe_error():
     with pytest.raises(PySpiffeError) as exc_info:
         func_that_raises_py_spiffe_error()
 
-    assert str(exc_info.value) == 'PySPIFFE Error.'
+    assert str(exc_info.value) == 'PySPIFFE Error'
 
 
 def test_handle_error_on_grpc_error():
@@ -73,7 +73,7 @@ def test_handle_error_on_grpc_error():
     with pytest.raises(PySpiffeError) as exc_info:
         func_that_raises_grpc_error()
 
-    assert str(exc_info.value) == 'Could not process response from the Workload API.'
+    assert str(exc_info.value) == 'Could not process response from the Workload API'
 
 
 def test_handle_error_on_grpc_call_error():
@@ -84,7 +84,7 @@ def test_handle_error_on_grpc_call_error():
     with pytest.raises(PySpiffeError) as exc_info:
         func_that_raises_grpc_call_error()
 
-    assert str(exc_info.value) == 'Error details from Workload API.'
+    assert str(exc_info.value) == 'Error details from Workload API'
 
 
 def test_handle_error_on_exception():
@@ -95,4 +95,4 @@ def test_handle_error_on_exception():
     with pytest.raises(PySpiffeError) as exc_info:
         func_that_raises_exception()
 
-    assert str(exc_info.value) == 'Some random message.'
+    assert str(exc_info.value) == 'Some random message'

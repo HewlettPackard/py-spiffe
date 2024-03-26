@@ -25,7 +25,7 @@ from cryptography.x509 import Certificate
 from spiffe.proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.workloadapi.exceptions import FetchX509SvidError, FetchX509BundleError
+from spiffe.workloadapi.errors import FetchX509SvidError, FetchX509BundleError
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from utils.utils import (
     FakeCall,
@@ -85,7 +85,7 @@ def test_fetch_x509_svid_empty_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
     )
 
 
@@ -97,7 +97,7 @@ def test_fetch_x509_svid_invalid_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
     )
 
 
@@ -109,7 +109,7 @@ def test_fetch_x509_svid_raise_grpc_error_call(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API.'
+        == 'Error fetching X.509 SVID: Error details from Workload API'
     )
 
 
@@ -121,7 +121,7 @@ def test_fetch_x509_svid_raise_exception(mocker, client):
     with pytest.raises(FetchX509SvidError) as exception:
         client.fetch_x509_svid()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_svid_corrupted_response(mocker, client):
@@ -151,7 +151,7 @@ def test_fetch_x509_svid_corrupted_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -204,7 +204,7 @@ def test_fetch_x509_svids_empty_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
     )
 
 
@@ -216,7 +216,7 @@ def test_fetch_x509_svids_invalid_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
     )
 
 
@@ -228,7 +228,7 @@ def test_fetch_x509_svids_raise_grpc_error_call(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API.'
+        == 'Error fetching X.509 SVID: Error details from Workload API'
     )
 
 
@@ -240,7 +240,7 @@ def test_fetch_x509_svids_raise_exception(mocker, client):
     with pytest.raises(FetchX509SvidError) as exception:
         client.fetch_x509_svids()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_svids_corrupted_response(mocker, client):
@@ -270,7 +270,7 @@ def test_fetch_x509_svids_corrupted_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -341,7 +341,7 @@ def test_fetch_x509_context_empty_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
     )
 
 
@@ -353,7 +353,7 @@ def test_fetch_x509_context_invalid_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid.'
+        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
     )
 
 
@@ -365,7 +365,7 @@ def test_fetch_x509_context_raise_grpc_error(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API.'
+        == 'Error fetching X.509 SVID: Error details from Workload API'
     )
 
 
@@ -377,7 +377,7 @@ def test_fetch_x509_context_raise_exception(mocker, client):
     with pytest.raises(FetchX509SvidError) as exception:
         client.fetch_x509_context()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error.'
+    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_context_corrupted_svid(mocker, client):
@@ -447,7 +447,7 @@ def test_fetch_x509_context_corrupted_bundle(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -483,7 +483,8 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
+        'certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -523,7 +524,7 @@ def test_fetch_x509_bundles_empty_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: X.509 Bundles response is empty.'
+        == 'Error fetching X.509 Bundle: X.509 Bundles response is empty'
     )
 
 
@@ -537,7 +538,7 @@ def test_fetch_x509_bundles_invalid_response(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: X.509 Bundles response is invalid.'
+        == 'Error fetching X.509 Bundle: X.509 Bundles response is invalid'
     )
 
 
@@ -551,7 +552,7 @@ def test_fetch_x509_bundles_raise_grpc_error(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Error details from Workload API.'
+        == 'Error fetching X.509 Bundle: Error details from Workload API'
     )
 
 
@@ -563,7 +564,7 @@ def test_fetch_x509_bundles_raise_exception(mocker, client):
     with pytest.raises(FetchX509BundleError) as exception:
         client.fetch_x509_bundles()
 
-    assert str(exception.value) == 'Error fetching X.509 Bundles: mocked error.'
+    assert str(exception.value) == 'Error fetching X.509 Bundle: mocked error'
 
 
 def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
@@ -584,7 +585,8 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
+        'certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -606,7 +608,8 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker, client):
 
     assert (
         str(exception.value)
-        == 'Error fetching X.509 Bundles: Error parsing X.509 bundle: Unable to parse DER X.509 certificate.'
+        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
+        'certificate: Unable to parse DER X.509 certificate'
     )
 
 

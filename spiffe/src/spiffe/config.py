@@ -21,7 +21,7 @@ import os
 import ipaddress
 from urllib.parse import ParseResult, urlparse
 from typing import List, Optional, Tuple, Dict, cast
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 
 
 _SPIFFE_ENDPOINT_SOCKET = 'SPIFFE_ENDPOINT_SOCKET'

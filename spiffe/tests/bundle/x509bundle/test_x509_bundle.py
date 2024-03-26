@@ -21,7 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
 
-from spiffe.bundle.x509_bundle.exceptions import (
+from spiffe.bundle.x509_bundle.errors import (
     X509BundleError,
     ParseX509BundleError,
     LoadX509BundleError,
@@ -29,7 +29,7 @@ from spiffe.bundle.x509_bundle.exceptions import (
 )
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from utils.certs import TEST_BUNDLE_CERTS_DIR
 
 trust_domain = TrustDomain('domain.test')
@@ -102,7 +102,7 @@ def test_parse_raw_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse_raw(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain cannot be empty'
 
 
 def test_parse_trust_domain_is_emtpy():
@@ -111,7 +111,7 @@ def test_parse_trust_domain_is_emtpy():
     with pytest.raises(X509BundleError) as exception:
         X509Bundle.parse(None, bundle_bytes)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain cannot be empty'
 
 
 def test_parse_bundle_from_empty():
@@ -122,7 +122,7 @@ def test_parse_bundle_from_empty():
 
     assert (
         str(exception.value)
-        == 'Error parsing X.509 bundle: Unable to parse PEM X.509 certificate.'
+        == 'Error parsing X.509 bundle: Error parsing certificate: Unable to parse PEM X.509 certificate'
     )
 
 
@@ -134,7 +134,7 @@ def test_parse_bundle_from_not_pem():
 
     assert (
         str(exception.value)
-        == 'Error parsing X.509 bundle: Unable to parse PEM X.509 certificate.'
+        == 'Error parsing X.509 bundle: Error parsing certificate: Unable to parse PEM X.509 certificate'
     )
 
 
@@ -157,12 +157,13 @@ def test_load_bundle():
 
 
 def test_load_bundle_non_existent_file():
-    with pytest.raises(LoadX509BundleError) as exception:
+    with pytest.raises(LoadX509BundleError) as err:
         X509Bundle.load(trust_domain, 'no-exists', serialization.Encoding.PEM)
 
     assert (
-        str(exception.value)
-        == 'Error loading X.509 bundle: Error loading certificate from file: Certificates file not found: no-exists.'
+        str(err.value)
+        == 'Error loading X.509 bundle from Error loading certificate from file: File '
+        'not found: no-exists'
     )
 
 
@@ -171,7 +172,7 @@ def test_load_bundle_empty_trust_domain():
     with pytest.raises(Exception) as exception:
         X509Bundle.load(None, str(bundle_path), serialization.Encoding.PEM)
 
-    assert str(exception.value) == 'Trust domain cannot be empty.'
+    assert str(exception.value) == 'Trust domain cannot be empty'
 
 
 def test_load_bundle_invalid_encoding():
@@ -182,7 +183,7 @@ def test_load_bundle_invalid_encoding():
 
     assert (
         str(exception.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
+        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
     )
 
 
@@ -248,7 +249,7 @@ def test_save_non_supported_encoding(tmpdir):
 
     assert (
         str(err.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\'.'
+        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
     )
 
 
@@ -263,12 +264,11 @@ def test_save_error_writing_bundle_to_file(mocker):
         autospec=True,
     )
     with pytest.raises(SaveX509BundleError) as err:
-        x509_bundle.save('bundle_path', serialization.Encoding.PEM)
+        x509_bundle.save('some_bundle_path', serialization.Encoding.PEM)
 
-    assert (
-        str(err.value)
-        == 'Error saving X.509 bundle: Error writing X.509 bundle to file: Error msg.'
-    )
+    assert 'Error saving X.509 bundle to some_bundle_path' in str(err.value)
+    assert err.value.__cause__ is not None
+    assert str(err.value.__cause__) == 'Error msg'
 
 
 def test_add_and_remove_authority():

@@ -21,9 +21,8 @@ This module manages the validations of JWT tokens.
 import datetime
 from typing import Dict, Any, Set
 
-from spiffe.svid import INVALID_INPUT_ERROR
-from spiffe.exceptions import ArgumentError
-from spiffe.svid.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.svid.errors import (
     TokenExpiredError,
     InvalidClaimError,
     InvalidAlgorithmError,
@@ -76,13 +75,11 @@ class JwtSvidValidator(object):
             InvalidTypeError: In case 'typ' is present in header but is not set to 'JWT' or 'JOSE'.
         """
         if not parameters:
-            raise ArgumentError(INVALID_INPUT_ERROR.format('header cannot be empty'))
+            raise ArgumentError('header cannot be empty')
 
         alg = parameters.get('alg')
         if not alg:
-            raise ArgumentError(
-                INVALID_INPUT_ERROR.format('header alg cannot be empty')
-            )
+            raise ArgumentError('header alg cannot be empty')
 
         if alg not in self._SUPPORTED_ALGORITHMS:
             raise InvalidAlgorithmError(alg)
@@ -146,9 +143,7 @@ class JwtSvidValidator(object):
             ArgumentError: In case expected_audience is empty.
         """
         if not expected_audience:
-            raise ArgumentError(
-                INVALID_INPUT_ERROR.format('expected_audience cannot be empty')
-            )
+            raise ArgumentError('expected_audience cannot be empty')
 
         if not audience_claim or all(aud == '' for aud in audience_claim):
             raise InvalidClaimError('audience_claim cannot be empty')

@@ -21,14 +21,13 @@ This module manages JWT SVID objects.
 import jwt
 from jwt import PyJWTError
 from typing import Dict, Set
-from spiffe.svid import INVALID_INPUT_ERROR
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from cryptography.hazmat.primitives import serialization
 from spiffe.spiffe_id.spiffe_id import SpiffeId, SpiffeIdError
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from spiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
+from spiffe.bundle.jwt_bundle.errors import AuthorityNotFoundError
 from spiffe.svid.jwt_svid_validator import JwtSvidValidator
-from spiffe.svid.exceptions import InvalidTokenError
+from spiffe.svid.errors import InvalidTokenError
 
 
 class JwtSvid(object):
@@ -103,7 +102,7 @@ class JwtSvid(object):
             InvalidTokenError: If token is malformed and fails to decode.
         """
         if not token:
-            raise ArgumentError(INVALID_INPUT_ERROR.format('token cannot be empty'))
+            raise ArgumentError('token cannot be empty')
         try:
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -144,12 +143,10 @@ class JwtSvid(object):
             InvalidTokenError: In case token is malformed and fails to decode.
         """
         if not token:
-            raise ArgumentError(INVALID_INPUT_ERROR.format('token cannot be empty'))
+            raise ArgumentError('token cannot be empty')
 
         if not jwt_bundle:
-            raise ArgumentError(
-                INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty')
-            )
+            raise ArgumentError('jwt_bundle cannot be empty')
         try:
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
@@ -180,8 +177,8 @@ class JwtSvid(object):
 
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
-            raise InvalidTokenError(str(err))
-        except ArgumentError as value_err:
-            raise InvalidTokenError(str(value_err))
-        except SpiffeIdError as value_err:
-            raise InvalidTokenError(str(value_err))
+            raise InvalidTokenError(str(err)) from err
+        except ArgumentError as err:
+            raise InvalidTokenError(str(err)) from err
+        except SpiffeIdError as err:
+            raise InvalidTokenError(str(err)) from err

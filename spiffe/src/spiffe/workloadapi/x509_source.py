@@ -21,7 +21,7 @@ from typing import Optional, Callable, List, Set
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.x509_svid import X509Svid
-from spiffe.workloadapi.exceptions import X509SourceError
+from spiffe.workloadapi.errors import X509SourceError
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from spiffe.workloadapi.x509_context import X509Context
 
@@ -133,6 +133,7 @@ class X509Source:
         It is recommended that when an instance of an X509Source is no longer used the close() method be called on it,
         in order to liberate the resources used by the underlying connection with the Workload API.
         """
+        _logger.info("Closing X.509 Source")
         with self._lock:
             try:
                 self._client_cancel_handler.cancel()
@@ -172,6 +173,7 @@ class X509Source:
         else:
             svid = x509_context.default_svid
 
+        _logger.debug('X.509 Source: setting new update')
         with self._lock:
             self._x509_svid = svid
             self._x509_bundle_set = x509_context.x509_bundle_set
@@ -191,7 +193,6 @@ class X509Source:
     @staticmethod
     def _log_error(err: Exception) -> None:
         _logger.error('X.509 Source: Workload API client error: {}.'.format(str(err)))
-        _logger.error('X.509 Source: closing.')
 
     def __enter__(self) -> 'X509Source':
         return self
