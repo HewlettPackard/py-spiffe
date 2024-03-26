@@ -21,7 +21,7 @@ import pytest
 from spiffe.proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.workloadapi.exceptions import X509SourceError
+from spiffe.workloadapi.errors import X509SourceError
 from spiffe.workloadapi.x509_source import X509Source
 
 from spiffe.workloadapi.workload_api_client import (
@@ -103,7 +103,7 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
 
     assert (
         str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 SVID: source is closed.'
+        == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
     )
 
 
@@ -133,7 +133,7 @@ def test_x509_source_is_closed_get_svid(mocker, client):
 
     assert (
         str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 SVID: source is closed.'
+        == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
     )
 
 
@@ -149,5 +149,5 @@ def test_x509_source_is_closed_get_bundle(mocker, client):
 
     assert (
         str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 Bundle: source is closed.'
+        == 'X.509 Source error: Cannot get X.509 Bundle: source is closed'
     )

@@ -26,8 +26,8 @@ from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.bundle.jwt_bundle.exceptions import JwtBundleError, ParseJWTBundleError
-from spiffe.exceptions import ArgumentError
+from spiffe.bundle.jwt_bundle.errors import JwtBundleError, ParseJWTBundleError
+from spiffe.errors import ArgumentError
 
 _PUBLIC_KEY_TYPES = Union[
     dsa.DSAPublicKey,
@@ -118,20 +118,18 @@ class JwtBundle(object):
 
         try:
             jwks = PyJWKSet.from_json(bundle_bytes.decode('utf-8'))
-        except InvalidKeyError as ike:
+        except InvalidKeyError as err:
+            raise ParseJWTBundleError(str(err)) from err
+        except (JSONDecodeError, AttributeError) as err:
             raise ParseJWTBundleError(
-                'Cannot parse jwks from bundle_bytes: ' + str(ike)
-            )
-        except (JSONDecodeError, AttributeError):
-            raise ParseJWTBundleError(
-                'Cannot parse jwks. bundle_bytes does not represent a valid jwks'
-            )
+                '"bundle_bytes" does not represent a valid jwks'
+            ) from err
 
         jwt_authorities = {}
         for jwk in jwks.keys:
             if not jwk.key_id:
                 raise ParseJWTBundleError(
-                    'Error adding authority from JWKS: keyID cannot be empty'
+                    'Error adding authority from JWKS: "keyID" cannot be empty'
                 )
 
             jwt_authorities[jwk.key_id] = jwk.key

@@ -24,8 +24,8 @@ from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.jwt_svid import JwtSvid
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
-from spiffe.workloadapi.exceptions import JwtSourceError
-from spiffe.exceptions import ArgumentError
+from spiffe.workloadapi.errors import JwtSourceError
+from spiffe.errors import ArgumentError
 
 """
 This module defines the default source implementation for JWT Bundles and SVIDs.
@@ -162,6 +162,7 @@ class JwtSource:
         IMPORTANT: client code must call this method when the JwtSource is not needed anymore as the connection with Workload API will
         only be closed when this method is invoked.
         """
+        _logger.info("Closing JWT Source")
         with self._lock:
             # the cancel method throws a grpc exception, that can be discarded
             try:
@@ -188,6 +189,7 @@ class JwtSource:
             self._subscribers.append(callback)
 
     def _set_jwt_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
+        _logger.debug('JWT Source: setting new bundle update')
         with self._lock:
             self._jwt_bundle_set = jwt_bundle_set
             self._initialized.set()
@@ -205,7 +207,6 @@ class JwtSource:
     @staticmethod
     def _log_error(err: Exception) -> None:
         _logger.error('JWT Source: Workload API client error: {}'.format(str(err)))
-        _logger.error('JWT Source: closing.')
 
     def __enter__(self) -> 'JwtSource':
         return self

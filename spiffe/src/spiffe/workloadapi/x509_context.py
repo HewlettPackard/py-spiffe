@@ -21,7 +21,7 @@ This module provides an object for transferring X.509 SVID and Bundles materials
 from typing import List
 
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from spiffe.svid.x509_svid import X509Svid
 
 

@@ -33,8 +33,8 @@ from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
-from spiffe.exceptions import ArgumentError
-from spiffe.workloadapi.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.workloadapi.errors import (
     FetchJwtSvidError,
     ValidateJwtSvidError,
     FetchJwtBundleError,
@@ -139,8 +139,8 @@ def test_fetch_jwt_svids(mocker, client):
 @pytest.mark.parametrize(
     'test_input_audience, expected',
     [
-        (None, 'Parameter audiences cannot be empty.'),
-        ([], 'Parameter audiences cannot be empty.'),
+        (None, 'Parameter audiences cannot be empty'),
+        ([], 'Parameter audiences cannot be empty'),
     ],
 )
 def test_fetch_jwt_svid_no_audience(test_input_audience, expected, client):
@@ -158,7 +158,7 @@ def test_fetch_jwt_svid_fetch_error(mocker, client):
     with pytest.raises(FetchJwtSvidError) as exception:
         client.fetch_jwt_svid(audience=TEST_AUDIENCE)
 
-    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
+    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error'
 
 
 def test_fetch_jwt_svid_wrong_token(mocker, client):
@@ -177,7 +177,7 @@ def test_fetch_jwt_svid_wrong_token(mocker, client):
         client.fetch_jwt_svid(audience=TEST_AUDIENCE)
 
     assert (
-        str(exception.value) == 'Error fetching JWT SVID: Missing required claim: sub.'
+        str(exception.value) == 'Error fetching JWT SVID: Missing required claim: sub'
     )
 
 
@@ -188,9 +188,7 @@ def test_fetch_jwt_svid_no_token_returned(mocker, client):
     with pytest.raises(FetchJwtSvidError) as exception:
         client.fetch_jwt_svid(audience=TEST_AUDIENCE)
 
-    assert (
-        str(exception.value) == 'Error fetching JWT SVID: JWT SVID response is empty.'
-    )
+    assert str(exception.value) == 'Error fetching JWT SVID: JWT SVID response is empty'
 
 
 def test_fetch_jwt_bundles(mocker, client):
@@ -235,7 +233,7 @@ def test_fetch_jwt_bundles_empty_response(mocker, client):
 
     assert (
         str(exc_info.value)
-        == 'Error fetching JWT Bundle: JWT Bundles response is empty.'
+        == 'Error fetching JWT Bundle: JWT Bundles response is empty'
     )
 
 
@@ -257,7 +255,8 @@ def test_fetch_jwt_bundles_error_parsing_jwks(mocker, client):
 
     assert (
         str(exc_info.value)
-        == 'Error fetching JWT Bundle: Error parsing JWT bundle: Error adding authority from JWKS: keyID cannot be empty.'
+        == 'Error fetching JWT Bundle: Error parsing JWT bundle: Error adding authority '
+        'from JWKS: "keyID" cannot be empty'
     )
 
 
@@ -271,7 +270,7 @@ def test_fetch_jwt_bundles_raise_grpc_call(mocker, client):
 
     assert (
         str(exc_info.value)
-        == 'Error fetching JWT Bundle: Error details from Workload API.'
+        == 'Error fetching JWT Bundle: Error details from Workload API'
     )
 
 
@@ -285,7 +284,7 @@ def test_fetch_jwt_bundles_raise_grpc_error(mocker, client):
 
     assert (
         str(exc_info.value)
-        == 'Error fetching JWT Bundle: Could not process response from the Workload API.'
+        == 'Error fetching JWT Bundle: Could not process response from the Workload API'
     )
 
 
@@ -297,7 +296,7 @@ def test_fetch_jwt_bundles_raise_error(mocker, client):
     with pytest.raises(FetchJwtBundleError) as exc_info:
         client.fetch_jwt_bundles()
 
-    assert str(exc_info.value) == 'Error fetching JWT Bundle: Mocked error.'
+    assert str(exc_info.value) == 'Error fetching JWT Bundle: Mocked error'
 
 
 def test_validate_jwt_svid(mocker, client):
@@ -321,10 +320,10 @@ def test_validate_jwt_svid(mocker, client):
 @pytest.mark.parametrize(
     'test_input_token, test_input_audience, expected',
     [
-        (None, 'audience', 'Token cannot be empty.'),
-        ('', 'audience', 'Token cannot be empty.'),
-        ('token', None, 'Audience cannot be empty.'),
-        ('token', '', 'Audience cannot be empty.'),
+        (None, 'audience', 'Token cannot be empty'),
+        ('', 'audience', 'Token cannot be empty'),
+        ('token', None, 'Audience cannot be empty'),
+        ('token', '', 'Audience cannot be empty'),
     ],
 )
 def test_validate_jwt_svid_invalid_input(
@@ -349,7 +348,7 @@ def test_validate_jwt_svid_raise_error(mocker, client):
     with pytest.raises(ValidateJwtSvidError) as exception:
         client.validate_jwt_svid(token=jwt_svid, audience='audience')
 
-    assert str(exception.value) == 'JWT SVID is not valid: Mocked error.'
+    assert str(exception.value) == 'JWT SVID is not valid: Mocked error'
 
 
 def test_watch_jwt_bundle_success(mocker, client):
@@ -482,7 +481,7 @@ def test_watch_jwt_bundle_no_retry_on_grpc_error_no_call(mocker, client):
         ]
     )
 
-    expected_error = FetchJwtBundleError('Cannot process response from Workload API.')
+    expected_error = FetchJwtBundleError('Cannot process response from Workload API')
     event = threading.Event()
     response_holder = ResponseHolder()
 

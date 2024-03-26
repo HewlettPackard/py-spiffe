@@ -23,17 +23,16 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
-from spiffe.svid import INVALID_INPUT_ERROR
 from spiffe.svid.jwt_svid import JwtSvid
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from spiffe.exceptions import ArgumentError
-from spiffe.svid.exceptions import (
+from spiffe.errors import ArgumentError
+from spiffe.svid.errors import (
     TokenExpiredError,
     JwtSvidError,
     InvalidTokenError,
     MissingClaimError,
 )
-from spiffe.bundle.jwt_bundle.exceptions import AuthorityNotFoundError
+from spiffe.bundle.jwt_bundle.errors import AuthorityNotFoundError
 from utils.jwt import (
     extract_key_pair_pems,
     generate_test_jwt_token,
@@ -70,10 +69,10 @@ ec_private_key = ec.generate_private_key(
 @pytest.mark.parametrize(
     'test_input_token,test_input_audience, expected',
     [
-        ('', {}, INVALID_INPUT_ERROR.format('token cannot be empty.')),
-        ('', None, INVALID_INPUT_ERROR.format('token cannot be empty.')),
-        (None, {}, INVALID_INPUT_ERROR.format('token cannot be empty.')),
-        (None, None, INVALID_INPUT_ERROR.format('token cannot be empty.')),
+        ('', {}, 'token cannot be empty'),
+        ('', None, 'token cannot be empty'),
+        (None, {}, 'token cannot be empty'),
+        (None, None, 'token cannot be empty'),
     ],
 )
 def test_parse_insecure_invalid_input(
@@ -239,24 +238,24 @@ def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
             '',
             None,
             {'spire'},
-            INVALID_INPUT_ERROR.format('token cannot be empty.'),
+            'token cannot be empty',
         ),
         (
             'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
             None,
             {'spire'},
-            INVALID_INPUT_ERROR.format('jwt_bundle cannot be empty.'),
+            'jwt_bundle cannot be empty',
         ),
     ],
 )
 def test_parse_and_validate_invalid_parameters(
     test_input_token, test_input_jwt_bundle, test_input_audience, expected
 ):
-    with pytest.raises(ArgumentError) as exception:
+    with pytest.raises(ArgumentError) as err:
         JwtSvid.parse_and_validate(
             test_input_token, test_input_jwt_bundle, test_input_audience
         )
-    assert str(exception.value) == expected
+    assert str(err.value) == expected
 
 
 def test_parse_and_validate_invalid_missing_kid_header():
@@ -264,7 +263,7 @@ def test_parse_and_validate_invalid_missing_kid_header():
 
     with pytest.raises(InvalidTokenError) as exception:
         JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
-    assert str(exception.value) == 'key_id cannot be empty.'
+    assert str(exception.value) == 'key_id cannot be empty'
 
 
 def test_parse_and_validate_invalid_missing_sub():
@@ -272,7 +271,7 @@ def test_parse_and_validate_invalid_missing_sub():
 
     with pytest.raises(InvalidTokenError) as exception:
         JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
-    assert str(exception.value) == 'SPIFFE ID cannot be empty.'
+    assert str(exception.value) == 'Invalid SPIFFE ID: cannot be empty'
 
 
 def test_parse_and_validate_invalid_missing_kid():
@@ -281,7 +280,7 @@ def test_parse_and_validate_invalid_missing_kid():
 
     with pytest.raises(AuthorityNotFoundError) as exception:
         JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
-    assert str(exception.value) == 'Key (' + key_id + ') not found in authorities.'
+    assert str(exception.value) == 'Authority not found for key ID: kid10'
 
 
 def test_parse_and_validate_invalid_kid_mismatch():
@@ -294,7 +293,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
 
     with pytest.raises(InvalidTokenError) as exception:
         JwtSvid.parse_and_validate(token, jwt_bundle, {'test'})
-    assert str(exception.value) == 'Signature verification failed.'
+    assert str(exception.value) == 'Signature verification failed'
 
 
 def test_parse_and_validate_valid_token_RSA():

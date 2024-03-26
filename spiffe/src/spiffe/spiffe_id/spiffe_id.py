@@ -16,6 +16,8 @@ under the License.
 
 import re
 
+from spiffe.errors import PySpiffeError
+
 """
 This module manages SpiffeId and TrustDomain objects.
 """
@@ -23,16 +25,40 @@ This module manages SpiffeId and TrustDomain objects.
 SCHEME_PREFIX = "spiffe://"
 
 
-class SpiffeIdError(Exception):
+class SpiffeIdError(PySpiffeError):
     """Custom exception for SpiffeId related errors."""
 
-    pass
+    def __init__(self, detail: str, input_value: str = "") -> None:
+        """
+        Initializes a SpiffeIdError with a detailed error message.
+
+        Args:
+            detail (str): A description of the error.
+            input_value (str, optional): The input value that caused the error. Defaults to an empty string.
+        """
+        if input_value:
+            message = f"Invalid SPIFFE ID '{input_value}': {detail}"
+        else:
+            message = f"Invalid SPIFFE ID: {detail}"
+        super().__init__(message)
 
 
-class TrustDomainError(Exception):
+class TrustDomainError(PySpiffeError):
     """Custom exception for TrustDomain related errors."""
 
-    pass
+    def __init__(self, detail: str, input_value: str = "") -> None:
+        """
+        Initializes a SpiffeIdError with a detailed error message.
+
+        Args:
+            detail (str): A description of the error.
+            input_value (str, optional): The input value that caused the error. Defaults to an empty string.
+        """
+        if input_value:
+            message = f"Invalid trust domain '{input_value}': {detail}"
+        else:
+            message = f"Invalid trust domain: {detail}"
+        super().__init__(message)
 
 
 class TrustDomain:
@@ -98,10 +124,10 @@ class SpiffeId:
 
     def __init__(self, id: str):
         if not id:
-            raise SpiffeIdError("SPIFFE ID cannot be empty.")
+            raise SpiffeIdError("cannot be empty")
 
         if not id.startswith(SCHEME_PREFIX):
-            raise SpiffeIdError("Invalid SPIFFE ID: does not start with 'spiffe://'.")
+            raise SpiffeIdError("does not start with 'spiffe://'", id)
 
         rest = id[len(SCHEME_PREFIX) :]
         path_idx = rest.find("/")
@@ -115,11 +141,14 @@ class SpiffeId:
 
         try:
             self._trust_domain = TrustDomain(trust_domain_name)
-        except TrustDomainError as e:
-            raise SpiffeIdError(str(e))
+        except TrustDomainError as err:
+            raise SpiffeIdError(str(err), id)
 
         if path:
-            self._validate_path(path)
+            try:
+                self._validate_path(path)
+            except ValueError as err:
+                raise SpiffeIdError(str(err), id)
         self._path = path
 
     def __str__(self) -> str:
@@ -145,25 +174,25 @@ class SpiffeId:
     @staticmethod
     def _validate_path(path: str):
         if not path.startswith("/"):
-            raise SpiffeIdError("Path must start with '/'.")
+            raise ValueError("path must start with '/'")
 
         segments = path.split("/")
         for segment in segments[
             1:
         ]:  # Skip the first segment since it's empty due to the leading '/'
             if not segment:
-                raise SpiffeIdError("Path cannot contain empty segments.")
+                raise ValueError("path cannot contain empty segments")
             if segment in [".", ".."]:
-                raise SpiffeIdError("Path segments '.' and '..' are not allowed.")
+                raise ValueError("path segments '.' and '..' are not allowed")
             if not re.match(r"^[a-zA-Z0-9._-]+$", segment):
-                raise SpiffeIdError("Invalid character in path segment.")
+                raise ValueError("invalid character in path segment")
 
 
 def extract_and_validate_trust_domain(id_or_name: str) -> str:
     if ":/" in id_or_name:
         if not id_or_name.startswith(SCHEME_PREFIX):
             raise TrustDomainError(
-                "Invalid SPIFFE ID: does not start with 'spiffe://'."
+                "ID form does not start with 'spiffe://'", id_or_name
             )
         trust_domain = id_or_name[len(SCHEME_PREFIX) :].split("/", 1)[0]
     else:
@@ -171,18 +200,18 @@ def extract_and_validate_trust_domain(id_or_name: str) -> str:
 
     # Validate trust domain
     if not trust_domain:
-        raise TrustDomainError("Trust domain cannot be empty.")
+        raise TrustDomainError("cannot be empty")
 
     if trust_domain[0] in ['-', '.'] or trust_domain[-1] in ['-', '.']:
-        raise TrustDomainError("Trust domain cannot start or end with '-' or '.'.")
+        raise TrustDomainError("cannot start or end with '-' or '.'", id_or_name)
 
     if '..' in trust_domain:
-        raise TrustDomainError("Trust domain cannot contain consecutive dots.")
+        raise TrustDomainError("cannot contain consecutive dots", id_or_name)
 
     if not re.match(
         r'^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*$',
         trust_domain,
     ):
-        raise TrustDomainError("Invalid trust domain: contains disallowed characters.")
+        raise TrustDomainError("contains disallowed characters", id_or_name)
 
     return trust_domain

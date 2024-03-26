@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 
 SPIFFE_SOCKET_ENV = 'SPIFFE_ENDPOINT_SOCKET'
@@ -34,7 +34,7 @@ def test_instantiate_default_without_var(monkeypatch):
 
     assert (
         str(exception.value)
-        == 'Invalid WorkloadApiClient configuration: SPIFFE endpoint socket: socket must be set.'
+        == 'Invalid WorkloadApiClient configuration: SPIFFE endpoint socket: socket must be set'
     )
 
 
@@ -65,6 +65,6 @@ def test_instantiate_default_with_bad_var():
 
     assert (
         str(exception.value)
-        == 'Invalid WorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set.'
+        == 'Invalid WorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set'
     )
     del os.environ[SPIFFE_SOCKET_ENV]

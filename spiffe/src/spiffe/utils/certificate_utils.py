@@ -39,7 +39,7 @@ from cryptography.x509 import Certificate
 from pyasn1.codec.der.decoder import decode
 from pyasn1.codec.der.encoder import encode
 from pyasn1_modules.rfc5280 import Certificate as Pyasn1Certificate
-from spiffe.utils.exceptions import (
+from spiffe.utils.errors import (
     X509CertificateError,
     ParseCertificateError,
     LoadCertificateError,
@@ -86,8 +86,8 @@ def parse_pem_certificates(pem_bytes: bytes) -> List[Certificate]:
             x509.load_pem_x509_certificate(x509_cert.as_bytes(), default_backend())
             for x509_cert in parsed_certs
         ]
-    except Exception:
-        raise ParseCertificateError('Unable to parse PEM X.509 certificate')
+    except Exception as err:
+        raise ParseCertificateError('Unable to parse PEM X.509 certificate') from err
 
 
 def parse_der_certificates(der_bytes: bytes) -> List[Certificate]:
@@ -111,8 +111,8 @@ def parse_der_certificates(der_bytes: bytes) -> List[Certificate]:
             cert, remaining_data = decode(remaining_data, Pyasn1Certificate())
             result.append(x509.load_der_x509_certificate(encode(cert)))
         return result
-    except Exception:
-        raise ParseCertificateError('Unable to parse DER X.509 certificate')
+    except Exception as err:
+        raise ParseCertificateError('Unable to parse DER X.509 certificate') from err
 
 
 def load_certificates_bytes_from_file(certificates_file_path: str) -> bytes:
@@ -131,13 +131,11 @@ def load_certificates_bytes_from_file(certificates_file_path: str) -> bytes:
     try:
         return _load_bytes_from_file(certificates_file_path)
     except FileNotFoundError:
-        raise LoadCertificateError(
-            'Certificates file not found: {}'.format(certificates_file_path)
-        )
+        raise LoadCertificateError('File not found: {}'.format(certificates_file_path))
     except Exception as err:
         raise LoadCertificateError(
-            'Certificates file could not be read: {}'.format(str(err))
-        )
+            'File could not be read: {}'.format(str(err))
+        ) from err
 
 
 def write_certificates_to_file(
@@ -163,9 +161,7 @@ def write_certificates_to_file(
                 cert_bytes = serialize_certificate(cert, encoding)
                 certs_file.write(cert_bytes)
     except Exception as err:
-        raise StoreCertificateError(
-            'Error writing X.509 SVID to file: {}'.format(str(err))
-        )
+        raise StoreCertificateError(format(str(err))) from err
 
 
 def serialize_certificate(
@@ -184,8 +180,8 @@ def serialize_certificate(
         cert_bytes = certificate.public_bytes(encoding)
     except Exception as err:
         raise X509CertificateError(
-            'Could not get bytes from object: {}'.format(str(err))
-        )
+            'Could not serialize certificate from bytes: {}'.format(str(err))
+        ) from err
 
     return cert_bytes
 
@@ -206,13 +202,11 @@ def load_private_key_from_file(private_key_path: str) -> bytes:
     try:
         return _load_bytes_from_file(private_key_path)
     except FileNotFoundError:
-        raise LoadPrivateKeyError(
-            'Private key file not found: {}'.format(private_key_path)
-        )
+        raise LoadPrivateKeyError('File not found: {}'.format(private_key_path))
     except Exception as err:
         raise LoadPrivateKeyError(
-            'Private key file could not be read: {}'.format(str(err))
-        )
+            'File could not be read: {}'.format(str(err))
+        ) from err
 
 
 def write_private_key_to_file(
@@ -237,9 +231,7 @@ def write_private_key_to_file(
             os.chmod(private_key_file.name, _PRIVATE_KEY_FILE_MODE)
             private_key_file.write(private_key_bytes)
     except Exception as err:
-        raise StorePrivateKeyError(
-            'Could not write private key bytes to file: {}'.format(str(err))
-        )
+        raise StorePrivateKeyError(str(err)) from err
 
 
 def parse_der_private_key(der_bytes: bytes) -> PRIVATE_KEY_TYPES:
@@ -257,7 +249,7 @@ def parse_der_private_key(der_bytes: bytes) -> PRIVATE_KEY_TYPES:
     try:
         return load_der_private_key(der_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(str(err))
+        raise ParsePrivateKeyError(str(err)) from err
 
 
 def parse_pem_private_key(pem_bytes: bytes) -> PRIVATE_KEY_TYPES:
@@ -275,7 +267,7 @@ def parse_pem_private_key(pem_bytes: bytes) -> PRIVATE_KEY_TYPES:
     try:
         return load_pem_private_key(pem_bytes, None, None)
     except Exception as err:
-        raise ParsePrivateKeyError(str(err))
+        raise ParsePrivateKeyError(str(err)) from err
 
 
 def _load_bytes_from_file(file_path: str) -> bytes:
@@ -294,5 +286,5 @@ def _extract_private_key_bytes(
         )
     except Exception as err:
         raise Exception(
-            'Could not extract private key bytes from object: {}'.format(str(err))
-        )
+            'Could not serialize private key from bytes: {}'.format(str(err))
+        ) from err

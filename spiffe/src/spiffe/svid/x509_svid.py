@@ -23,9 +23,9 @@ from typing import List
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
-from spiffe.exceptions import ArgumentError
+from spiffe.errors import ArgumentError
 from spiffe.spiffe_id.spiffe_id import SpiffeId
-from spiffe.svid.exceptions import (
+from spiffe.svid.errors import (
     InvalidLeafCertificateError,
     InvalidIntermediateCertificateError,
 )

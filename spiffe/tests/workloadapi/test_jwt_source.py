@@ -24,8 +24,8 @@ from spiffe.workloadapi.jwt_source import JwtSource
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
-from spiffe.workloadapi.exceptions import JwtSourceError, FetchJwtSvidError
-from spiffe.exceptions import ArgumentError
+from spiffe.workloadapi.errors import JwtSourceError, FetchJwtSvidError
+from spiffe.errors import ArgumentError
 from utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
 
 SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
@@ -95,7 +95,7 @@ def test_get_jwt_svid_exception(mocker, client):
     with pytest.raises(ArgumentError) as exception:
         _ = jwt_source.fetch_svid("")
 
-    assert str(exception.value) == 'Audience cannot be empty.'
+    assert str(exception.value) == 'Audience cannot be empty'
 
 
 def test_error_new(mocker, client):
@@ -107,7 +107,7 @@ def test_error_new(mocker, client):
     with pytest.raises(FetchJwtSvidError) as exception:
         _ = jwt_source.fetch_svid(TEST_AUDIENCE)
 
-    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error.'
+    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error'
 
 
 def test_close(mocker, client):
@@ -169,5 +169,5 @@ def test_get_jwt_bundle_exception(mocker, client):
 
     assert (
         str(exception.value)
-        == 'JWT Source error: Cannot get JWT Bundle: source is closed.'
+        == 'JWT Source error: Cannot get JWT Bundle: source is closed'
     )
