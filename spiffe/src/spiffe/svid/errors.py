@@ -54,14 +54,14 @@ class InvalidAlgorithmError(JwtSvidError):
     """Error raised for invalid algorithms in JWT token."""
 
     def __init__(self, algorithm: str) -> None:
-        super().__init__(f'{algorithm} is not a supported algorithm.')
+        super().__init__(f'Algorithm not supported: {algorithm}')
 
 
 class InvalidTypeError(JwtSvidError):
     """Error raised for invalid types in JWT token."""
 
     def __init__(self, token_type: str) -> None:
-        super().__init__(f'{token_type} is not a supported token type.')
+        super().__init__(f'Token type not supported: {token_type}')
 
 
 class X509SvidError(PySpiffeError):
