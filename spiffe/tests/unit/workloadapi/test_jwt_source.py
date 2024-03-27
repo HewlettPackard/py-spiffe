@@ -27,7 +27,7 @@ from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.workloadapi.errors import JwtSourceError, FetchJwtSvidError
 from spiffe.errors import ArgumentError
-from utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
+from unit.utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
 
 SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
 

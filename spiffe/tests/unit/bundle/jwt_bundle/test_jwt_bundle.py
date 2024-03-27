@@ -22,7 +22,7 @@ from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from spiffe.bundle.jwt_bundle.errors import JwtBundleError, ParseJWTBundleError
 from spiffe.errors import ArgumentError
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from utils.jwt import (
+from unit.utils.jwt import (
     JWKS_1_EC_KEY,
     JWKS_2_EC_1_RSA_KEYS,
     JWKS_MISSING_X,

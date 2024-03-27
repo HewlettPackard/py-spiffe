@@ -33,7 +33,7 @@ from spiffe.svid.errors import (
     MissingClaimError,
 )
 from spiffe.bundle.jwt_bundle.errors import AuthorityNotFoundError
-from utils.jwt import (
+from unit.utils.jwt import (
     extract_key_pair_pems,
     generate_test_jwt_token,
     TEST_SPIFFE_ID,
