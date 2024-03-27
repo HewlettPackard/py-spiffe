@@ -177,16 +177,29 @@ class JwtSource:
             self._closed = True
 
     def is_closed(self) -> bool:
-        """Returns True if the connection to Workload API is closed."""
+        """Checks if the source has been closed, disallowing further operations."""
         with self._lock:
             return self._closed
 
-    def subscribe_for_updates(self, callback: Callable) -> None:
+    def subscribe_for_updates(self, callback: Callable[[], None]) -> None:
         """
         Allows clients to register a callback function for updates on the source.
+
+        Args:
+            callback (Callable[[], None]): The callback function to register.
         """
         with self._subscribers_lock:
             self._subscribers.append(callback)
+
+    def unsubscribe_for_updates(self, callback: Callable[[], None]) -> None:
+        """
+        Allows clients to unregister a previously registered callback function.
+
+        Args:
+            callback (Callable[[], None]): The callback function to unregister.
+        """
+        with self._subscribers_lock:
+            self._subscribers.remove(callback)
 
     def _set_jwt_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
         _logger.debug('JWT Source: setting new bundle update')
@@ -198,7 +211,10 @@ class JwtSource:
     def _notify_subscribers(self) -> None:
         with self._subscribers_lock:
             for callback in self._subscribers:
-                callback()
+                try:
+                    callback()
+                except Exception:
+                    _logger.exception("An error occurred while notifying a subscriber.")
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)

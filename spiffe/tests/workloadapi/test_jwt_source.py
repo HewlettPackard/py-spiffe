@@ -19,6 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from bundle.jwt_bundle.test_jwt_bundle import JWKS_1_EC_KEY, JWKS_2_EC_1_RSA_KEYS
+from spiffe import JwtBundle, JwtBundleSet
 from spiffe.proto import workload_pb2
 from spiffe.workloadapi.jwt_source import JwtSource
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
@@ -63,6 +64,40 @@ def mock_client_fetch_jwt_bundles(mocker, client):
             workload_pb2.JWTBundlesResponse(bundles=jwt_bundles),
         ]
     )
+
+
+def test_jwt_source_subscription_and_unsubscription_behavior(mocker, client):
+    # Prepare mock callback
+    mock_callback = mocker.MagicMock()
+
+    # Prepare the JwtSource
+    mock_client_fetch_jwt_bundles(mocker, client)
+    jwt_source = JwtSource(client)
+
+    # Subscribe the mock callback to JwtSource updates
+    jwt_source.subscribe_for_updates(mock_callback)
+
+    # Prepare mock JwtBundle data
+    bundle = JwtBundle.parse(TrustDomain('domain.test'), JWKS_1_EC_KEY)
+    bundle_set = JwtBundleSet.of([bundle])
+
+    # Trigger notification updating the source
+    jwt_source._set_jwt_bundle_set(bundle_set)
+
+    # Verify that the mock callback was called
+    mock_callback.assert_called_once_with()
+
+    # Unsubscribe the mock callback
+    jwt_source.unsubscribe_for_updates(mock_callback)
+
+    # Reset mock to clear the call history
+    mock_callback.reset_mock()
+
+    # Trigger notification again
+    jwt_source._set_jwt_bundle_set(bundle_set)
+
+    # Verify that the mock callback wasn't called this time
+    mock_callback.assert_not_called()
 
 
 def test_get_jwt_svid(mocker, client):
