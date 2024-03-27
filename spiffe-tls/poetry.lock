@@ -739,12 +739,12 @@ files = []
 develop = true
 
 [package.dependencies]
-cryptography = "^42.0.5"
-grpcio = "^1.62.1"
-pem = "^23.1.0"
-pyasn1 = "~0.5.0"
-pyasn1-modules = "~0.3.0"
-pyjwt = {version = "^2.8.0", extras = ["crypto"]}
+cryptography = "^42.0"
+grpcio = "^1.62"
+pem = "^23.0"
+pyasn1 = "^0.5.0"
+pyasn1-modules = "^0.3.0"
+pyjwt = {version = "^2.0", extras = ["crypto"]}
 
 [package.source]
 type = "directory"
@@ -795,4 +795,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "933ee4cd1f319426fa464bef65d4e95ae93d151d2a82bfcc57a17d904bcd9670"
+content-hash = "6632c43ea46e7570bd9cb64020d7be814152593ea85b8272391ef95d47ce1f3e"
