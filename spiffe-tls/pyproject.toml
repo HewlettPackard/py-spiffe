@@ -11,17 +11,17 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9"  # >= 3.9, < 4.0
 spiffe = { path = "../spiffe", develop = true }
 pyOpenSSL = "^24.0"
 
 [tool.poetry.dev-dependencies]
-black = "24.3.0"
-mypy = "1.9.0"
-pre-commit = "3.7.0"
-pytest = "8.1.1"
-pytest-mock = "~3.14.0"
-flake8 = "7.0.0"
+black = "^24.3"
+mypy = "^1.9"
+pytest = "^8.1"
+pytest-mock = "^3.14"
+pre-commit = "^3.7"
+flake8 = "^7.0"
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]
