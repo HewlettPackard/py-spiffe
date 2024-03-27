@@ -18,10 +18,12 @@ from unittest.mock import patch
 
 import pytest
 
+from spiffe import X509Svid, X509Bundle, X509BundleSet
 from spiffe.proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.workloadapi.errors import X509SourceError
+from spiffe.workloadapi.x509_context import X509Context
 from spiffe.workloadapi.x509_source import X509Source
 
 from spiffe.workloadapi.workload_api_client import (
@@ -135,6 +137,42 @@ def test_x509_source_is_closed_get_svid(mocker, client):
         str(exception.value)
         == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
     )
+
+
+def test_x509_source_subscription_and_unsubscription_behavior(mocker, client):
+    # Prepare mock callback
+    mock_callback = mocker.MagicMock()
+
+    # Prepare the X509Source
+    mock_client_return_multiple_svids(mocker, client)
+    x509_source = X509Source(client)
+
+    # Subscribe the mock callback to X509Source updates
+    x509_source.subscribe_for_updates(mock_callback)
+
+    # Prepare mock X509Context data
+    svid = X509Svid.parse_raw(CHAIN1, KEY1)
+    bundle = X509Bundle.parse_raw(TrustDomain("example.org"), BUNDLE)
+    bundle_set = X509BundleSet.of([bundle])
+    x509_context = X509Context([svid], bundle_set)
+
+    # Trigger notification updating the source
+    x509_source._set_context(x509_context)
+
+    # Verify that the mock callback was called
+    mock_callback.assert_called_once_with()
+
+    # Unsubscribe the mock callback
+    x509_source.unsubscribe_for_updates(mock_callback)
+
+    # Reset mock to clear the call history
+    mock_callback.reset_mock()
+
+    # Trigger notification again
+    x509_source._set_context(x509_context)
+
+    # Verify that the mock callback wasn't called this time
+    mock_callback.assert_not_called()
 
 
 def test_x509_source_is_closed_get_bundle(mocker, client):
