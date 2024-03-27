@@ -742,8 +742,8 @@ develop = true
 cryptography = "^42.0"
 grpcio = "^1.62"
 pem = "^23.0"
-pyasn1 = "^0.5.0"
-pyasn1-modules = "^0.3.0"
+pyasn1 = "^0.5"
+pyasn1-modules = "^0.3"
 pyjwt = {version = "^2.0", extras = ["crypto"]}
 
 [package.source]
@@ -795,4 +795,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6632c43ea46e7570bd9cb64020d7be814152593ea85b8272391ef95d47ce1f3e"
+content-hash = "9fa4ff0529bad4517490844b1c02ec493e6f68abb168215e841013ee89c7adad"
