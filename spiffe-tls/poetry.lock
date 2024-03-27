@@ -742,8 +742,8 @@ develop = true
 cryptography = "^42.0"
 grpcio = "^1.62"
 pem = "^23.0"
-pyasn1 = "^0.5"
-pyasn1-modules = "^0.3"
+pyasn1 = "~0.5"
+pyasn1-modules = "~0.3"
 pyjwt = {version = "^2.0", extras = ["crypto"]}
 
 [package.source]
