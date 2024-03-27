@@ -1,11 +1,6 @@
 name: Build
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-  workflow_dispatch:
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   lint:
@@ -39,6 +34,8 @@ jobs:
     strategy:
       matrix:
         python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+    env:
+      SPIFFE_ENDPOINT_SOCKET: unix:/tmp/spire-agent/public/api.sock
 
     steps:
       - name: Checkout repo
@@ -62,3 +59,13 @@ jobs:
 
       - name: Run Tests
         run: make test
+
+      - name: Start SPIRE
+        run: .github/workflows/scripts/run-spire.sh &
+
+      - name: Run Integration Tests
+        run: make integration
+
+      - name: Clean up SPIRE
+        run: .github/workflows/scripts/cleanup-spire.sh
+

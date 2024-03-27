@@ -17,7 +17,11 @@ build: deps ## Build the distributable packages.
 
 .PHONY: test
 test: ## Run unit tests.
-	$(POETRY_CMD) run pytest
+	$(POETRY_CMD) run pytest tests/unit
+
+.PHONY: integration
+integration: ## Run integration tests.
+	$(POETRY_CMD) run pytest tests/integration
 
 .PHONY: lint
 lint: black flake8 mypy ## Lint source files.

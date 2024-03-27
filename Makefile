@@ -27,6 +27,12 @@ test:
 	cd $(CORE_DIR) && $(MAKE) test
 	cd $(TLS_DIR) && $(MAKE) test
 
+.PHONY: integration
+integration:
+	@echo "Running integration tests for all modules..."
+	cd $(CORE_DIR) && $(MAKE) integration
+	cd $(TLS_DIR) && $(MAKE) integration
+
 
 .PHONY: format
 format:

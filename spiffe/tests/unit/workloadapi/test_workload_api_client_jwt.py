@@ -30,7 +30,7 @@ from bundle.jwt_bundle.test_jwt_bundle import (
 )
 from spiffe.proto import workload_pb2
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
-from utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
+from unit.utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.errors import ArgumentError
@@ -38,6 +38,7 @@ from spiffe.workloadapi.errors import (
     FetchJwtSvidError,
     ValidateJwtSvidError,
     FetchJwtBundleError,
+    WorkloadApiError,
 )
 from utils.utils import (
     FakeCall,
@@ -454,7 +455,7 @@ def test_watch_jwt_bundle_no_retry_on_grpc_error(mocker, client):
         ]
     )
 
-    expected_error = FetchJwtBundleError(grpc_error.details())
+    expected_error = WorkloadApiError(grpc_error._code)
     event = threading.Event()
     response_holder = ResponseHolder()
 
@@ -471,30 +472,31 @@ def test_watch_jwt_bundle_no_retry_on_grpc_error(mocker, client):
 
 
 def test_watch_jwt_bundle_no_retry_on_grpc_error_no_call(mocker, client):
-    grpc_error = grpc.RpcError
-    jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
+    grpc_error = grpc.RpcError()
+    grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
+
+    mock_error_iter = mocker.MagicMock()
+    mock_error_iter.__iter__.side_effect = grpc_error
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        side_effect=[
-            grpc_error,
-            delayed_responses([workload_pb2.JWTBundlesResponse(bundles=jwt_bundles)]),
-        ]
+        return_value=mock_error_iter
     )
 
-    expected_error = FetchJwtBundleError('Cannot process response from Workload API')
-    event = threading.Event()
+    done = threading.Event()
+    expected_error = WorkloadApiError('StatusCode.INVALID_ARGUMENT')
+
     response_holder = ResponseHolder()
 
     client.watch_jwt_bundles(
-        on_success=lambda r: handle_success(r, response_holder, event),
-        on_error=lambda e: handle_error(e, response_holder, event),
+        lambda r: handle_success(r, response_holder, done),
+        lambda e: handle_error(e, response_holder, done),
+        True,
     )
 
-    event.wait(3)  # add timeout to prevent test from hanging
+    done.wait(5)  # add timeout to prevent test from hanging
 
     assert not response_holder.success
-    assert response_holder.error
-    assert_error(response_holder.error, expected_error)
+    assert str(response_holder.error) == str(expected_error)
 
 
 def test_watch_jwt_bundle_no_retry_on_error(mocker, client):

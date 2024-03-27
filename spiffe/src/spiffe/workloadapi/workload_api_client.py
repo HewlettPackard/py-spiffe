@@ -19,7 +19,7 @@ import os
 import logging
 import threading
 import time
-from typing import Optional, List, Mapping, Iterator, Callable, Dict, Set
+from typing import Optional, List, Mapping, Iterator, Callable, Dict, Set, Any
 
 import grpc
 from spiffe.workloadapi.cancel_handler import CancelHandler
@@ -42,6 +42,7 @@ from spiffe.workloadapi.errors import (
     FetchJwtSvidError,
     FetchJwtBundleError,
     ValidateJwtSvidError,
+    WorkloadApiError,
 )
 from spiffe.workloadapi.grpc import header_manipulator_client_interceptor
 from spiffe.svid.x509_svid import X509Svid
@@ -567,18 +568,20 @@ class WorkloadApiClient:
                 grpc_err,
                 on_success,
                 on_error,
+                self._call_watch_x509_context,
             )
         except Exception as err:
             error = FetchX509SvidError(format(str(err)))
             on_error(error)
 
+    @staticmethod
     def _handle_grpc_error(
-        self,
         cancel_handler: CancelHandler,
         retry_handler: Optional[RetryHandler],
         grpc_error: grpc.RpcError,
-        on_success: Callable[[X509Context], None],
+        on_success: Callable[[Any], None],
         on_error: Callable[[Exception], None],
+        watcher_callback: Callable,
     ):
         grpc_error_code = grpc_error.code()
 
@@ -587,13 +590,13 @@ class WorkloadApiClient:
                 'Error connecting to the Workload API: {}'.format(str(grpc_error_code))
             )
             retry_handler.do_retry(
-                self._call_watch_x509_context,
+                watcher_callback,
                 [cancel_handler, retry_handler, on_success, on_error],
             )
         else:
             # don't retry, instead report error to user on the on_error callback
             if grpc_error_code != grpc.StatusCode.CANCELLED:
-                error = FetchX509SvidError(str(grpc_error_code))
+                error = WorkloadApiError(str(grpc_error_code))
                 on_error(error)
 
     def _call_watch_jwt_bundles(
@@ -616,18 +619,15 @@ class WorkloadApiClient:
                 if retry_handler:
                     retry_handler.reset()
                 on_success(JwtBundleSet(jwt_bundles))
-        except grpc.RpcError as rpc_error:
-            if isinstance(rpc_error, grpc.Call):
-                on_error(FetchJwtBundleError(str(rpc_error.details())))
-                if retry_handler and rpc_error.code() not in _NON_RETRYABLE_CODES:
-                    retry_handler.do_retry(
-                        self._call_watch_jwt_bundles,
-                        [cancel_handler, retry_handler, on_success, on_error],
-                    )
-            else:
-                on_error(
-                    FetchJwtBundleError('Cannot process response from Workload API')
-                )
+        except grpc.RpcError as grpc_err:
+            self._handle_grpc_error(
+                cancel_handler,
+                retry_handler,
+                grpc_err,
+                on_success,
+                on_error,
+                self._call_watch_jwt_bundles,
+            )
         except Exception as error:
             on_error(FetchJwtBundleError(str(error)))
 

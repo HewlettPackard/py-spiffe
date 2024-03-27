@@ -25,7 +25,11 @@ from cryptography.x509 import Certificate
 from spiffe.proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.workloadapi.errors import FetchX509SvidError, FetchX509BundleError
+from spiffe.workloadapi.errors import (
+    FetchX509SvidError,
+    FetchX509BundleError,
+    WorkloadApiError,
+)
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from utils.utils import (
     FakeCall,
@@ -727,7 +731,7 @@ def test_watch_x509_context_raise_unretryable_grpc_error(mocker, client):
     )
 
     done = threading.Event()
-    expected_error = FetchX509SvidError('StatusCode.INVALID_ARGUMENT')
+    expected_error = WorkloadApiError('StatusCode.INVALID_ARGUMENT')
 
     response_holder = ResponseHolder()
 
