@@ -1,8 +1,8 @@
-# `spiffe` module
+# `spiffe` package
 
 ## Overview
 
-The `spiffe` module, part of the `py-spiffe` library, provides Python developers with essential tools for interacting
+The `spiffe` package, part of the `py-spiffe` library, provides Python developers with essential tools for interacting
 with the [SPIFFE Workload API](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md). It
 streamlines the management and validation of SPIFFE identities, including support
 for both [X509-SVIDs](https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md)
@@ -11,7 +11,7 @@ and [SPIFFE Bundles](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE
 
 ## Usage
 
-Below are examples demonstrating the core functionalities of the `spiffe` module.
+Below are examples demonstrating the core functionalities of the `spiffe` package.
 
 Prerequisites:
 
