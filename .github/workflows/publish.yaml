@@ -9,6 +9,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
@@ -29,7 +31,7 @@ jobs:
         run: |
           cd spiffe
           make build
-          poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish 
 
       # Conditional step for spiffe-tls module
       - name: Publish spiffe-tls
@@ -37,4 +39,4 @@ jobs:
         run: |
           cd spiffe-tls
           make build
-          poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish 
