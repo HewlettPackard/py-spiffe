@@ -24,7 +24,7 @@ jobs:
       - name: Install Dependencies
         run: | 
           make deps
-          python -m pip install types-pyOpenSSL
+          python3 -m pip install types-pyOpenSSL
 
       - name: Lint with pre-commit
         run: make lint
