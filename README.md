@@ -13,11 +13,11 @@ The `spiffe` module is the core of the `py-spiffe` library, implementing the SPI
 functionality for managing SPIFFE identities, including the Workload API client and automatic handling of X.509 and
 JWT SVIDs. This module simplifies working with SPIFFE identities by automating SVID fetching and renewal.
 
-### [spiffe-tls (In Development)](spiffe-tls/README.md)
+### [spiffe-tls (Experimental)](spiffe-tls/README.md)
 
-The `spiffe-tls` module, currently in development, will offer TLS utilities for Python applications. It aims to simplify
-the use of SPIFFE identities in TLS contexts, including mutual TLS support and certificate validation. This module will
-enhance secure communication by leveraging SPIFFE identities for authentication.
+The `spiffe-tls` module is currently in experimental development and aims to provide Python applications with advanced
+TLS utilities. Its primary goal is to streamline the integration of SPIFFE identities into TLS contexts, facilitating
+not only mutual TLS configurations but also enhancing certificate validation processes.
 
 ## Contributing
 

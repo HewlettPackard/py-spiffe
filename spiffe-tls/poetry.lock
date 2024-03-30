@@ -751,6 +751,19 @@ type = "directory"
 url = "../spiffe"
 
 [[package]]
+name = "testutils"
+version = "0.1.0"
+description = "Test utilities for py-spiffe"
+optional = false
+python-versions = "*"
+files = []
+develop = false
+
+[package.source]
+type = "directory"
+url = "../testutils"
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -795,4 +808,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "9fa4ff0529bad4517490844b1c02ec493e6f68abb168215e841013ee89c7adad"
+content-hash = "abac6ff76f2ef94a2eef8ba19c45d8907c14520c6a955f3e45f810c5b1f34a9b"
