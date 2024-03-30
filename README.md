@@ -17,9 +17,10 @@ JWT SVIDs. This package simplifies working with SPIFFE identities by automating 
 
 [![PyPI spiffe-tls](https://badge.fury.io/py/spiffe-tls.svg)](https://pypi.org/project/spiffe-tls/)
 
-The `spiffe-tls` package is currently in experimental development and aims to provide Python applications with advanced
-TLS utilities. Its primary goal is to streamline the integration of SPIFFE identities into TLS contexts, facilitating
-not only mutual TLS configurations but also enhancing certificate validation processes.
+The `spiffe-tls` package, still in its experimental stages, is designed to enhance Python applications with TLS utilities
+that simplify the integration of SPIFFE authentication. Its primary objective is to ease the process of incorporating
+SPIFFE identities into TLS contexts. To achieve this, it offers a set of utility functions that allow for the creation
+of TLS listeners and connections, leveraging the [pyOpenSSL](https://pypi.org/project/pyOpenSSL/) library.
 
 ## Installation
 
