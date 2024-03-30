@@ -27,7 +27,7 @@ jobs:
 
       # Conditional step for spiffe module
       - name: Publish spiffe
-        if: startsWith(github.ref, 'refs/tags/spiffe-')
+        if: startsWith(github.ref, 'refs/tags/spiffe-') && !startsWith(github.ref, 'refs/tags/spiffe-tls-')
         run: |
           cd spiffe
           make build
