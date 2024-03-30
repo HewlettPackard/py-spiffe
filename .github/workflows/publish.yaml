@@ -1,0 +1,40 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'spiffe-*'
+      - 'spiffe-tls-*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      # Conditional step for spiffe module
+      - name: Publish spiffe
+        if: startsWith(github.ref, 'refs/tags/spiffe-')
+        run: |
+          cd spiffe
+          make all
+          poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
+
+      # Conditional step for spiffe-tls module
+      - name: Publish spiffe-tls
+        if: startsWith(github.ref, 'refs/tags/spiffe-tls-')
+        run: |
+          cd spiffe-tls
+          make all 
+          poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
