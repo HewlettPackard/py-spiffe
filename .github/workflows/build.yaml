@@ -22,9 +22,7 @@ jobs:
           pip install poetry
 
       - name: Install Dependencies
-        run: | 
-          mypy --install-types
-          make deps
+        run: make deps
 
       - name: Lint with pre-commit
         run: make lint

@@ -23,6 +23,7 @@ pytest-mock = "^3.14"
 pre-commit = "^3.7"
 flake8 = "^7.0"
 testutils = { path = "../testutils" }
+types-pyOpenSSL = "*"
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]
