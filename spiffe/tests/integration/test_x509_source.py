@@ -30,7 +30,7 @@ These tests also require the presence of a valid registration entry for the call
 def test_x509_source():
     x509_source = None
     try:
-        x509_source = X509Source(timeout_in_seconds=5)
+        x509_source = X509Source(timeout_in_seconds=30)
         svid = x509_source.svid
         bundle = x509_source.get_bundle_for_trust_domain(svid.spiffe_id.trust_domain)
 

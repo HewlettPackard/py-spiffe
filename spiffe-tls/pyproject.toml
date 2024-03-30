@@ -19,12 +19,12 @@ pyOpenSSL = "^24.0"
 black = "^24.3"
 mypy = "^1.9"
 mypy-protobuf = "^3.0"
+types-pyOpenSSL = "^24.0"
 pytest = "^8.1"
 pytest-mock = "^3.14"
 pre-commit = "^3.7"
 flake8 = "^7.0"
 testutils = { path = "../testutils" }
-types-pyOpenSSL = "*"
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]

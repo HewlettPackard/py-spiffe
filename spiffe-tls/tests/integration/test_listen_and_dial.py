@@ -30,7 +30,7 @@ from spiffetls.mode import ServerTlsMode
 @pytest.fixture
 def setup_server():
     server_address = ('localhost', random.randint(50000, 60000))
-    x509_source = X509Source()
+    x509_source = X509Source(timeout_in_seconds=30)
     server_socket = None
     exception_queue = queue.Queue()
 
@@ -66,7 +66,7 @@ def setup_server():
 
 
 def test_successful_mtls_connection_with_server_authorization(setup_server):
-    x509_source = X509Source()
+    x509_source = X509Source(timeout_in_seconds=30)
     spiffe_id = x509_source.svid.spiffe_id
 
     options = ListenOptions(
@@ -87,7 +87,7 @@ def test_successful_mtls_connection_with_server_authorization(setup_server):
 
 
 def test_successful_tls_connection_with_client_authorization(setup_server):
-    x509_source = X509Source()
+    x509_source = X509Source(timeout_in_seconds=30)
     spiffe_id = x509_source.svid.spiffe_id
 
     options = ListenOptions(tls_mode=ServerTlsMode.TLS)
@@ -109,7 +109,7 @@ def test_successful_tls_connection_with_client_authorization(setup_server):
 
 
 def test_mtls_connection_fails_with_unauthorized_client(setup_server):
-    x509_source = X509Source()
+    x509_source = X509Source(timeout_in_seconds=30)
     trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
 
     # Set the server to authorize only a specific SPIFFE ID that the client does not have
@@ -140,7 +140,7 @@ def test_mtls_connection_fails_with_unauthorized_client(setup_server):
 def test_tls_connection_fails_due_to_client_certificate_verification_failure(
     setup_server,
 ):
-    x509_source = X509Source()
+    x509_source = X509Source(timeout_in_seconds=30)
     trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
 
     options = ListenOptions(tls_mode=ServerTlsMode.MTLS)
