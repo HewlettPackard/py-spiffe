@@ -191,9 +191,7 @@ class SpiffeId:
 def extract_and_validate_trust_domain(id_or_name: str) -> str:
     if ":/" in id_or_name:
         if not id_or_name.startswith(SCHEME_PREFIX):
-            raise TrustDomainError(
-                "ID form does not start with 'spiffe://'", id_or_name
-            )
+            raise TrustDomainError("ID form does not start with 'spiffe://'", id_or_name)
         trust_domain = id_or_name[len(SCHEME_PREFIX) :].split("/", 1)[0]
     else:
         trust_domain = id_or_name

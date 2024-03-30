@@ -29,14 +29,7 @@ from spiffe.workloadapi.x509_source import X509Source
 from spiffe.workloadapi.workload_api_client import (
     WorkloadApiClient,
 )
-from utils.certs import (
-    FEDERATED_BUNDLE,
-    CHAIN1,
-    KEY1,
-    BUNDLE,
-    CHAIN2,
-    KEY2,
-)
+from testutils.certs import FEDERATED_BUNDLE, CHAIN1, KEY1, BUNDLE, CHAIN2, KEY2
 
 
 @pytest.fixture
@@ -87,7 +80,7 @@ def test_x509_source_get_default_x509_svid(mocker, client):
 def test_x509_source_get_x509_svid_with_picker(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    x509_source = X509Source(client, picker=lambda svids: svids[1])
+    x509_source = X509Source(client, svid_picker=lambda svids: svids[1])
 
     x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
@@ -96,16 +89,13 @@ def test_x509_source_get_x509_svid_with_picker(mocker, client):
 def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
     mock_client_return_multiple_svids(mocker, client)
 
-    # the picker selects an element from the list that doesn't exist
-    x509_source = X509Source(client, picker=lambda svids: svids[2])
-
-    # the source should be closed, as it couldn't get the X.509 context set
-    with pytest.raises(X509SourceError) as exception:
-        x509_source.svid
+    with pytest.raises(X509SourceError) as err:
+        # the picker selects an element from the list that doesn't exist
+        X509Source(client, svid_picker=lambda svids: svids[2])
 
     assert (
-        str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
+        str(err.value)
+        == 'X.509 Source error: Failed to create X509Source: Failed to pick X509 SVID: list index out of range'
     )
 
 
@@ -130,13 +120,10 @@ def test_x509_source_is_closed_get_svid(mocker, client):
 
     x509_source.close()
 
-    with pytest.raises(X509SourceError) as exception:
+    with pytest.raises(X509SourceError) as err:
         x509_source.svid
 
-    assert (
-        str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
-    )
+    assert str(err.value) == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
 
 
 def test_x509_source_subscription_and_unsubscription_behavior(mocker, client):
@@ -182,10 +169,7 @@ def test_x509_source_is_closed_get_bundle(mocker, client):
 
     x509_source.close()
 
-    with pytest.raises(X509SourceError) as exception:
+    with pytest.raises(X509SourceError) as err:
         x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
 
-    assert (
-        str(exception.value)
-        == 'X.509 Source error: Cannot get X.509 Bundle: source is closed'
-    )
+    assert str(err.value) == 'X.509 Source error: Cannot get X.509 Bundle: source is closed'

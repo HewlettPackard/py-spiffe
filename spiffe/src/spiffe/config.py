@@ -114,9 +114,7 @@ class ConfigSetter:
         if not socket.path:
             raise ArgumentError('SPIFFE endpoint socket: path must be set')
 
-        cls._validate_forbidden_components(
-            socket, cls._UNIX_FORBIDDEN_SOCKET_COMPONENTS
-        )
+        cls._validate_forbidden_components(socket, cls._UNIX_FORBIDDEN_SOCKET_COMPONENTS)
 
     @classmethod
     def _validate_tcp_socket(cls, socket: ParseResult) -> None:

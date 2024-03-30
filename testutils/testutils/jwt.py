@@ -16,7 +16,7 @@ under the License.
 
 from pathlib import Path
 
-from utils.utils import read_file_bytes
+from testutils.utils import read_file_bytes
 
 """
 Testing Utilities for Keys and JWT Tokens

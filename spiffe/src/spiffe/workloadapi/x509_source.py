@@ -38,9 +38,9 @@ class X509Source:
     def __init__(
         self,
         workload_api_client: Optional[WorkloadApiClient] = None,
-        spiffe_socket_path: Optional[str] = None,
+        socket_path: Optional[str] = None,
         timeout_in_seconds: Optional[float] = None,
-        picker: Optional[Callable[[List[X509Svid]], X509Svid]] = None,
+        svid_picker: Optional[Callable[[List[X509Svid]], X509Svid]] = None,
     ) -> None:
         """Creates a new X509Source.
 
@@ -54,14 +54,14 @@ class X509Source:
             workload_api_client: A WorkloadApiClient that will be used to fetch the X.509 materials from the Workload API.
                                  In case it's not provided, a default client will be created.
 
-            spiffe_socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
+            socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable must be set.
 
             timeout_in_seconds: Time to wait for the first update of the Workload API. If no timeout is provided, and
                                 the connection with the Workload API fails, it will block Indefinitely while
                                 the connection is retried.
 
-            picker: Function to choose the X.509 SVID from the list returned by the Workload API.
+            svid_picker: Function to choose the X.509 SVID from the list returned by the Workload API.
                     If it is not set, the default SVID is picked. If the picker function throws an error,
                     it will render the X509Source invalid and it will be closed.
 
@@ -74,32 +74,32 @@ class X509Source:
             X509SourceError: In case a timeout was configured and it was reached during the source initialization waiting
                              for the first update from the Workload API.
         """
-
-        self._initialized = threading.Event()
-        self._lock = threading.Lock()
+        self._initialization_event = threading.Event()
+        self._error: Optional[Exception] = None
         self._closed = False
-        self._workload_api_client = (
-            workload_api_client
-            if workload_api_client
-            else WorkloadApiClient(spiffe_socket_path)
-        )
-        self._picker = picker
-
+        self._lock = threading.Lock()
         self._subscribers: List[Callable] = []
         self._subscribers_lock = threading.Lock()
 
-        # set the watcher that will keep the source updated and log the underlying errors
-        self._client_cancel_handler = self._workload_api_client.watch_x509_context(
-            self._set_context, self._on_error
-        )
+        self._workload_api_client = workload_api_client or WorkloadApiClient(socket_path)
+        self._picker = svid_picker
 
-        self._initialized.wait(timeout_in_seconds)
+        # Start the watcher in a separate thread
+        threading.Thread(target=self._start_watcher).start()
 
-        if not self._initialized.is_set():
-            self._client_cancel_handler.cancel()
-            raise X509SourceError(
-                'Could not initialize X.509 Source: reached timeout waiting for the first update'
-            )
+        # Wait for the first update or an error
+        initialized = self._initialization_event.wait(timeout=timeout_in_seconds)
+
+        if not initialized or self._error:
+            self._closed = True
+            if self._error:
+                raise X509SourceError(
+                    f"Failed to create X509Source: {self._error}"
+                ) from self._error
+            else:
+                raise X509SourceError(
+                    "Failed to initialize X509Source: Timeout waiting for the first update."
+                )
 
     @property
     def svid(self) -> X509Svid:
@@ -117,9 +117,7 @@ class X509Source:
                 raise X509SourceError('Cannot get X.509 Bundles: source is closed')
             return self._x509_bundle_set.bundles
 
-    def get_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[X509Bundle]:
+    def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[X509Bundle]:
         """Returns the X.509 bundle for the given trust domain."""
         with self._lock:
             if self._closed:
@@ -143,8 +141,6 @@ class X509Source:
                         str(err)
                     )
                 )
-            # prevents blocking on the constructor
-            self._initialized.set()
             self._closed = True
 
     def is_closed(self) -> bool:
@@ -172,25 +168,31 @@ class X509Source:
         with self._subscribers_lock:
             self._subscribers.remove(callback)
 
+    def _start_watcher(self) -> None:
+        self._client_cancel_handler = self._workload_api_client.stream_x509_contexts(
+            self._set_context, self._on_error
+        )
+
     def _set_context(self, x509_context: X509Context) -> None:
-        if self._picker:
-            try:
-                svid = self._picker(x509_context.x509_svids)
-            except Exception as err:
-                _logger.error(
-                    'X.509 Source: error picking X.509-SVID: {}.'.format(str(err))
-                )
-                _logger.error('X.509 Source: closing due to invalid state.')
-                self.close()
-                return
-        else:
-            svid = x509_context.default_svid
+        try:
+            svid = (
+                self._picker(x509_context.x509_svids)
+                if self._picker
+                else x509_context.default_svid
+            )
+        except Exception as err:
+            wrapped_err = Exception(f"Failed to pick X509 SVID: {err}")
+            _logger.error(f"Error setting X.509 context: {wrapped_err}")
+            self._on_error(wrapped_err)
+            return
 
         _logger.debug('X.509 Source: setting new update')
         with self._lock:
             self._x509_svid = svid
             self._x509_bundle_set = x509_context.x509_bundle_set
-            self._initialized.set()
+
+        # Signal that the X509Source has been successfully initialized
+        self._initialization_event.set()
 
         self._notify_subscribers()
 
@@ -199,16 +201,17 @@ class X509Source:
             for callback in self._subscribers:
                 try:
                     callback()
-                except Exception:
-                    _logger.exception("An error occurred while notifying a subscriber.")
+                except Exception as err:
+                    _logger.exception(f"An error occurred while notifying a subscriber: {err}")
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
-        self.close()
+        self._error = error
+        self._initialization_event.set()
 
     @staticmethod
     def _log_error(err: Exception) -> None:
-        _logger.error('X.509 Source: Workload API client error: {}.'.format(str(err)))
+        _logger.error(f"X509 Source Error: {err}")
 
     def __enter__(self) -> 'X509Source':
         return self

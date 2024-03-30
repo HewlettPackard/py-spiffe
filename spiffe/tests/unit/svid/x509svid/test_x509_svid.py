@@ -37,7 +37,7 @@ from spiffe.utils.errors import (
 from spiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
-from utils.certs import TEST_CERTS_DIR
+from testutils.certs import TEST_CERTS_DIR
 
 
 @pytest.fixture
@@ -331,9 +331,7 @@ def test_load_from_pem_files():
     chain_path = TEST_CERTS_DIR / '2-chain.pem'
     key_path = TEST_CERTS_DIR / '2-key.pem'
 
-    x509_svid = X509Svid.load(
-        str(chain_path), str(key_path), serialization.Encoding.PEM
-    )
+    x509_svid = X509Svid.load(str(chain_path), str(key_path), serialization.Encoding.PEM)
 
     expected_spiffe_id = SpiffeId('spiffe://example.org/service')
     assert x509_svid.spiffe_id == expected_spiffe_id
@@ -348,9 +346,7 @@ def test_load_from_der_files():
     chain_path = TEST_CERTS_DIR / '1-chain.der'
     key_path = TEST_CERTS_DIR / '1-key.der'
 
-    x509_svid = X509Svid.load(
-        str(chain_path), str(key_path), serialization.Encoding.DER
-    )
+    x509_svid = X509Svid.load(str(chain_path), str(key_path), serialization.Encoding.DER)
 
     expected_spiffe_id = SpiffeId('spiffe://example.org/service')
     assert x509_svid.spiffe_id == expected_spiffe_id
@@ -398,9 +394,8 @@ def test_load_cannot_read_key_bytes(mocker):
     with pytest.raises(LoadPrivateKeyError) as err:
         X509Svid.load('chain_path', 'key-no-exists', serialization.Encoding.PEM)
 
-    assert (
-        'Error loading private key from file: File could not be read: Error msg'
-        == str(err.value)
+    assert 'Error loading private key from file: File could not be read: Error msg' == str(
+        err.value
     )
 
 
@@ -474,8 +469,7 @@ def test_save_non_supported_encoding(tmpdir, clean_files):
         x509_svid.save(chain_file, key_file, serialization.Encoding.Raw)
 
     assert (
-        str(err.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
+        str(err.value) == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
     )
 
 
@@ -533,8 +527,7 @@ def test_load_non_supported_encoding():
         X509Svid.load(str(chain_path), str(key_path), serialization.Encoding.OpenSSH)
 
     assert (
-        str(err.value)
-        == "Encoding not supported: Encoding.OpenSSH. Expected 'PEM' or 'DER'"
+        str(err.value) == "Encoding not supported: Encoding.OpenSSH. Expected 'PEM' or 'DER'"
     )
 
 

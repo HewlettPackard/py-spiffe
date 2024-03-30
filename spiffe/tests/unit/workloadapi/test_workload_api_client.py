@@ -53,7 +53,7 @@ def test_instantiate_default_with_var():
 def test_instantiate_socket_path():
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
-        wlapi = WorkloadApiClient(spiffe_socket='unix:///tmp/agent.sock')
+        wlapi = WorkloadApiClient(socket_path='unix:///tmp/agent.sock')
         assert wlapi.get_spiffe_endpoint_socket() == 'unix:///tmp/agent.sock'
 
 

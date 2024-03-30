@@ -42,18 +42,14 @@ class _GenericClientInterceptor(
         response_it = continuation(new_details, next(new_request_iterator))
         return postprocess(response_it) if postprocess else response_it
 
-    def intercept_stream_unary(
-        self, continuation, client_call_details, request_iterator
-    ):
+    def intercept_stream_unary(self, continuation, client_call_details, request_iterator):
         new_details, new_request_iterator, postprocess = self._fn(
             client_call_details, request_iterator, True, False
         )
         response = continuation(new_details, new_request_iterator)
         return postprocess(response) if postprocess else response
 
-    def intercept_stream_stream(
-        self, continuation, client_call_details, request_iterator
-    ):
+    def intercept_stream_stream(self, continuation, client_call_details, request_iterator):
         new_details, new_request_iterator, postprocess = self._fn(
             client_call_details, request_iterator, True, True
         )

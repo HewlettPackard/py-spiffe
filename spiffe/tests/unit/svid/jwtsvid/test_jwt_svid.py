@@ -33,14 +33,14 @@ from spiffe.svid.errors import (
     MissingClaimError,
 )
 from spiffe.bundle.jwt_bundle.errors import AuthorityNotFoundError
-from unit.utils.jwt import (
-    extract_key_pair_pems,
-    generate_test_jwt_token,
-    TEST_SPIFFE_ID,
-    TEST_AUDIENCE,
-    TEST_KEY,
+from testutils.jwt import (
     TEST_TRUST_DOMAIN,
+    TEST_KEY,
+    generate_test_jwt_token,
+    TEST_AUDIENCE,
+    TEST_SPIFFE_ID,
     TEST_EXPIRY,
+    extract_key_pair_pems,
 )
 
 JWT_BUNDLE = JwtBundle(TEST_TRUST_DOMAIN, {'kid1': TEST_KEY.public_key()})
@@ -53,9 +53,7 @@ rsa_private_key = rsa.generate_private_key(
     serialization.NoEncryption(),
 )
 
-ec_private_key = ec.generate_private_key(
-    ec.SECP256R1(), default_backend()
-).private_bytes(
+ec_private_key = ec.generate_private_key(ec.SECP256R1(), default_backend()).private_bytes(
     serialization.Encoding.PEM,
     serialization.PrivateFormat.PKCS8,
     serialization.NoEncryption(),

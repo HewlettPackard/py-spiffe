@@ -23,6 +23,7 @@ pytest = "^8.1"
 pytest-mock = "^3.0"
 pre-commit = "^3.7"
 flake8 = "^7.0"
+testutils = { path = "../testutils" }
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]
@@ -30,6 +31,7 @@ build-backend = "poetry.core.masonry.api"
 
 # Tool configurations
 [tool.black]
+line-length = 95
 skip-string-normalization = true
 target-version = ['py39']
 exclude = '''

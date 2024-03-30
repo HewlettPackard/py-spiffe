@@ -133,9 +133,7 @@ def load_certificates_bytes_from_file(certificates_file_path: str) -> bytes:
     except FileNotFoundError:
         raise LoadCertificateError('File not found: {}'.format(certificates_file_path))
     except Exception as err:
-        raise LoadCertificateError(
-            'File could not be read: {}'.format(str(err))
-        ) from err
+        raise LoadCertificateError('File could not be read: {}'.format(str(err))) from err
 
 
 def write_certificates_to_file(
@@ -164,9 +162,7 @@ def write_certificates_to_file(
         raise StoreCertificateError(format(str(err))) from err
 
 
-def serialize_certificate(
-    certificate: Certificate, encoding: serialization.Encoding
-) -> bytes:
+def serialize_certificate(certificate: Certificate, encoding: serialization.Encoding) -> bytes:
     """Serializes an X.509 certificate using the specified encoding.
 
     Args:
@@ -204,9 +200,7 @@ def load_private_key_from_file(private_key_path: str) -> bytes:
     except FileNotFoundError:
         raise LoadPrivateKeyError('File not found: {}'.format(private_key_path))
     except Exception as err:
-        raise LoadPrivateKeyError(
-            'File could not be read: {}'.format(str(err))
-        ) from err
+        raise LoadPrivateKeyError('File could not be read: {}'.format(str(err))) from err
 
 
 def write_private_key_to_file(

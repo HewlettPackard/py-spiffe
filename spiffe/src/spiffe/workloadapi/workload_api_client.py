@@ -14,28 +14,28 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
-import os
-
 import logging
+import os
 import threading
 import time
-from typing import Optional, List, Mapping, Iterator, Callable, Dict, Set, Any
+from typing import Optional, List, Mapping, Callable, Dict, Set
 
 import grpc
-from spiffe.workloadapi.cancel_handler import CancelHandler
-from spiffe.workloadapi.x509_context import X509Context
+
+from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
-from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
-from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from spiffe.config import ConfigSetter
 from spiffe.errors import ArgumentError
 from spiffe.proto import (
     workload_pb2,
 )
 from spiffe.proto import workload_pb2_grpc
+from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.workloadapi.handle_error import handle_error
+from spiffe.svid.jwt_svid import JwtSvid
+from spiffe.svid.x509_svid import X509Svid
 from spiffe.workloadapi.errors import (
     FetchX509SvidError,
     FetchX509BundleError,
@@ -45,9 +45,8 @@ from spiffe.workloadapi.errors import (
     WorkloadApiError,
 )
 from spiffe.workloadapi.grpc import header_manipulator_client_interceptor
-from spiffe.svid.x509_svid import X509Svid
-from spiffe.svid.jwt_svid import JwtSvid
-from spiffe.spiffe_id.spiffe_id import SpiffeId
+from spiffe.workloadapi.handle_error import handle_error
+from spiffe.workloadapi.x509_context import X509Context
 
 """
 This module provides a Workload API client.
@@ -63,97 +62,96 @@ _logger = logging.getLogger(__name__)
 #  - CANCELLED is not retried because it occurs when the caller has canceled the operation.
 _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUMENT}
 
-__all__ = ['WorkloadApiClient']
+__all__ = ['WorkloadApiClient', 'RetryPolicy']
 
 
-class RetryHandler:
-    """Handler that performs retries using an exponential backoff policy."""
+class RetryPolicy:
+    """Defines the retry policy using an exponential backoff strategy."""
 
-    UNLIMITED_RETRIES = 0
+    UNLIMITED_RETRIES = 0  # Signifies unlimited retries
 
     def __init__(
         self,
         max_retries: int = UNLIMITED_RETRIES,
         base_backoff_in_seconds: float = 0.1,
         backoff_factor: int = 2,
-        max_delay_in_seconds: float = 5,
-    ) -> None:
-        """Creates a RetryHandler that keeps track of retries and allows the execution of a callable using an
-           exponential backoff policy.
+        max_backoff: float = 5,
+    ):
+        self.max_retries = max_retries
+        self.base_backoff = base_backoff_in_seconds
+        self.backoff_factor = backoff_factor
+        self.max_backoff = max_backoff
 
-        Args:
-            max_retries: The maximum number of times that the handler will retry. Default: 0 (no maximum).
-            base_backoff_in_seconds: The initial delay in seconds and base number that will be multiplied by an exponential factor in each
-                                     retry backoff calculation.
-            max_delay_in_seconds: The maximum delay expressed in seconds.
-            backoff_factor: Base of the exponential calculation: base_backoff * pow(backoff_factor, retry_number).
-        """
-        self._max_retries = max_retries
-        self._base_backoff = base_backoff_in_seconds
-        self._backoff_factor = backoff_factor
-        self._max_delay_in_seconds = max_delay_in_seconds
-        self._retries_count = 0
-        self._lock = threading.RLock()
 
-    def do_retry(self, fn: Callable, params: List) -> bool:
-        """Executes the callable after after a backoff delay calculated based on an exponential policy."""
-        with self._lock:
-            if self._max_retries and self._retries_count >= self._max_retries:
-                return False
-            self._retries_count += 1
-            backoff = self._calculate_backoff()
+class RetryHandler:
+    def __init__(self, retry_policy: Optional[RetryPolicy] = None):
+        self.retry_policy = retry_policy if retry_policy is not None else RetryPolicy()
+        self.attempt = 0
 
-        time.sleep(backoff)
-        fn(*params)
+    def should_retry(self, error_code) -> bool:
+        """Determines whether the operation should be retried based on the error code and attempt count."""
+        if error_code in _NON_RETRYABLE_CODES:
+            return False
+        # Allow unlimited retries when max_retries is set to UNLIMITED_RETRIES (0)
+        if (
+            self.retry_policy.max_retries != RetryPolicy.UNLIMITED_RETRIES
+            and self.attempt >= self.retry_policy.max_retries
+        ):
+            return False
         return True
 
-    def reset(self):
-        """Resets the handler setting the retries counting to zero."""
-        with self._lock:
-            self._retries_count = 0
+    def get_backoff(self) -> float:
+        """Calculates the backoff time for the current attempt, then increments the attempt counter."""
+        backoff_time = min(
+            self.retry_policy.base_backoff * (self.retry_policy.backoff_factor**self.attempt),
+            self.retry_policy.max_backoff,
+        )
+        self.attempt += 1
+        return backoff_time
 
-    def _calculate_backoff(self) -> float:
-        with self._lock:
-            backoff = self._base_backoff * pow(
-                self._backoff_factor, self._retries_count
-            )
-            if backoff < self._max_delay_in_seconds:
-                return backoff
-            return self._max_delay_in_seconds
+    def reset(self):
+        """Resets the attempt counter to zero."""
+        self.attempt = 0
+
+
+class StreamCancelHandler:
+    def __init__(self):
+        self.response_iterator = None
+
+    def set_iterator(self, iterator):
+        self.response_iterator = iterator
+
+    def cancel(self):
+        if self.response_iterator:
+            self.response_iterator.cancel()
 
 
 class WorkloadApiClient:
     """A SPIFFE Workload API Client."""
 
-    def __init__(self, spiffe_socket: Optional[str] = None) -> None:
-        """Creates a new Workload API Client.
+    def __init__(self, socket_path: Optional[str] = None) -> None:
+        """
+        Creates a new Workload API Client.
 
-        Args:
-            spiffe_socket: Path to Workload API UDS. If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable
-                           must be set.
+        This client interfaces with the Workload API using a Unix Domain Socket (UDS). If `socket_path` is not explicitly provided,
+        the client attempts to use the path specified by the `SPIFFE_ENDPOINT_SOCKET` environment variable.
 
-        Returns:
-            WorkloadApiClient: New Workload API Client object.
+        Parameters:
+            socket_path (Optional[str]): The file path to the Workload API UDS. If omitted, the client looks for the
+                                        path in the `SPIFFE_ENDPOINT_SOCKET` environment variable.
 
         Raises:
-            ArgumentError: If spiffe_socket_path is invalid or not provided and SPIFFE_ENDPOINT_SOCKET environment
-            variable doesn't exist.
+            ArgumentError: If `socket_path` is not provided and no path is found in the `SPIFFE_ENDPOINT_SOCKET`
+                           environment variable, or if the provided `socket_path` is invalid.
         """
-
         try:
-            self._config = ConfigSetter(
-                spiffe_endpoint_socket=spiffe_socket
-            ).get_config()
+            self._config = ConfigSetter(spiffe_endpoint_socket=socket_path).get_config()
             self._check_spiffe_socket_exists(self._config.spiffe_endpoint_socket)
         except ArgumentError as e:
-            raise ArgumentError(
-                'Invalid WorkloadApiClient configuration: {}'.format(str(e))
-            )
+            raise ArgumentError('Invalid WorkloadApiClient configuration: {}'.format(str(e)))
 
         self._channel = self._get_spiffe_grpc_channel()
-        self._spiffe_workload_api_stub = workload_pb2_grpc.SpiffeWorkloadAPIStub(
-            self._channel
-        )
+        self._spiffe_workload_api_stub = workload_pb2_grpc.SpiffeWorkloadAPIStub(self._channel)
 
     @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_svid(self) -> X509Svid:
@@ -166,63 +164,11 @@ class WorkloadApiClient:
             FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
                                 response payload cannot be processed to be converted to a X509Svid object.
         """
-
         response = self._call_fetch_x509_svid()
 
         svid = response.svids[0]
 
         return self._create_x509_svid(svid)
-
-    def watch_x509_context(
-        self,
-        on_success: Callable[[X509Context], None],
-        on_error: Callable[[Exception], None],
-        retry_connect: bool = True,
-    ) -> CancelHandler:
-        """Watches for X.509 context updates.
-
-           This method returns immediately and spawns a new thread to handle the connection with the Workload API. That thread
-           will keep running until the client calls the method `cancel` on the returned CancelHandler, or in case
-           `retry_connect` is false and there is an error returned by the Workload API.
-
-           A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
-           updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
-           the next update based on the SVIDs TTL.
-
-           In case of an error, if `retry_connect` is True and the error was not grpc.StatusCode.CANCELLED
-           or grpc.StatusCode.INVALID_ARGUMENT, it will attempt to establish a new connection
-           to the Workload API, using an exponential backoff policy to perform the retries, starting with a delay of 0.1 seconds,
-           incrementing it then to 0.2, 0.4, 0.8, 1.6 and so on (until the max backoff of 60 seconds). It retries indefinitely.
-
-        Args:
-            on_success: A Callable accepting a X509Context as argument and returning None, to be executed when a new update
-                        is fetched from the Workload API.
-
-            on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
-                      an error on the connection with the Workload API after what there is no retries.
-
-            retry_connect: Enable retries when the connection with the Workload API returns an error.
-                           Default: True.
-
-        Returns:
-            CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
-                           the Workload API.
-        """
-
-        cancel_handler = CancelHandler(None)
-
-        retry_handler = RetryHandler() if retry_connect else None
-
-        # start listening for updates in a separate thread
-        t = threading.Thread(
-            target=self._call_watch_x509_context,
-            args=(cancel_handler, retry_handler, on_success, on_error),
-            daemon=True,
-        )
-        t.start()
-
-        # this handler is initialized later after the call to the Workload API
-        return cancel_handler
 
     @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_svids(self) -> List[X509Svid]:
@@ -235,7 +181,6 @@ class WorkloadApiClient:
             FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
                                 response payload cannot be processed to be converted to a X509Svid object.
         """
-
         response = self._call_fetch_x509_svid()
 
         result = []
@@ -273,7 +218,7 @@ class WorkloadApiClient:
                                   response payload cannot be processed to be converted to a X509Bundle objects.
         """
         response = self._call_fetch_x509_bundles()
-        return self._create_bundle_set(response.bundles)
+        return self._create_x509_bundle_set(response.bundles)
 
     @handle_error(error_cls=FetchJwtSvidError)
     def fetch_jwt_svid(
@@ -337,7 +282,6 @@ class WorkloadApiClient:
             raise FetchJwtSvidError('JWT SVID response is empty')
 
         svids = []
-
         for s in response.svids:
             svids.append(JwtSvid.parse_insecure(s.svid, audience))
 
@@ -364,51 +308,6 @@ class WorkloadApiClient:
             raise FetchJwtBundleError('JWT Bundles response is empty')
 
         return JwtBundleSet(jwt_bundles)
-
-    def watch_jwt_bundles(
-        self,
-        on_success: Callable[[JwtBundleSet], None],
-        on_error: Callable[[Exception], None],
-        retry_connect: bool = True,
-    ) -> CancelHandler:
-        """Watches for changes to the JWT bundles.
-
-        This method returns immediately and spawns a new thread to handle the connection with the Workload API. That thread
-        will keep running until the client calls the method `cancel` on the returned CancelHandler, or in case
-        `retry_connect` is false and there is an error returned by the Workload API.
-
-        A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
-        updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
-        the next update based on the SVIDs TTL.
-
-        Args:
-            on_success: A Callable accepting a JwtBundleSet as argument and returning None, to be executed when a new
-                        update is fetched from the Workload API.
-
-            on_error: A Callable accepting an Exception as argument and returning None, to be executed when there is
-                      an error on the connection with the Workload API.
-
-            retry_connect: Enable retries when the connection with the Workload API returns an error. Default: True.
-
-        Returns:
-            CancelHandler: An object on which it can be called the method `cancel` to close the stream connection with
-                           the Workload API.
-        """
-
-        cancel_handler = CancelHandler(None)
-
-        retry_handler = RetryHandler() if retry_connect else None
-
-        # start listening for updates in a separate thread
-        t = threading.Thread(
-            target=self._call_watch_jwt_bundles,
-            args=(cancel_handler, retry_handler, on_success, on_error),
-            daemon=True,
-        )
-        t.start()
-
-        # this handler is initialized later after the call to the Workload API
-        return cancel_handler
 
     @handle_error(error_cls=ValidateJwtSvidError)
     def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
@@ -437,8 +336,89 @@ class WorkloadApiClient:
                 svid=token,
             )
         )
-
         return JwtSvid.parse_insecure(token, {audience})
+
+    def stream_x509_contexts(
+        self,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
+        retry_policy: Optional[RetryPolicy] = None,
+    ) -> StreamCancelHandler:
+        """
+        Establishes a streaming gRPC connection to receive continuous updates of X.509 contexts from the Workload API.
+
+        This method asynchronously listens for X.509 context updates, invoking `on_success` with each new context received.
+        If an error occurs during streaming or processing, `on_error` is called with the encountered exception. The method
+        supports automatic reconnection attempts based on the specified `retry_policy`.
+
+        Parameters:
+            on_success (Callable[[X509Context], None]): Callback for each update received.
+            on_error (Callable[[Exception], None]): Callback for handling streaming or processing errors.
+            retry_connect (bool, optional): Enables automatic retries on connection failures. Defaults to True.
+            retry_policy (Optional[RetryPolicy], optional): Custom retry behavior; uses default if None.
+
+        Returns:
+            StreamCancelHandler: A handler that can be used to cancel the streaming operation.
+
+        Usage example:
+            cancel_handler = client.stream_x509_contexts(on_success, on_error)
+            # To cancel the streaming:
+            cancel_handler.cancel()
+        """
+        cancel_handler = StreamCancelHandler()
+        retry_handler = RetryHandler(retry_policy) if retry_connect else None
+
+        def watch_target():
+            self._watch_x509_context_updates(
+                cancel_handler, retry_handler, on_success, on_error
+            )
+
+        t = threading.Thread(target=watch_target, daemon=True)
+        t.start()
+
+        return cancel_handler
+
+    def stream_jwt_bundles(
+        self,
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+        retry_connect: bool = True,
+        retry_policy: Optional[RetryPolicy] = None,
+    ) -> StreamCancelHandler:
+        """
+        Establishes a streaming gRPC connection to receive continuous updates of Jwt Bundles from the Workload API.
+
+        This method asynchronously listens for Jwt Bundles updates, invoking `on_success` with each new update received.
+        If an error occurs during streaming or processing, `on_error` is called with the encountered exception. The method
+        supports automatic reconnection attempts based on the specified `retry_policy`.
+
+        Parameters:
+            on_success (Callable[[X509Context], None]): Callback for each update received.
+            on_error (Callable[[Exception], None]): Callback for handling streaming or processing errors.
+            retry_connect (bool, optional): Enables automatic retries on connection failures. Defaults to True.
+            retry_policy (Optional[RetryPolicy], optional): Custom retry behavior; uses default if None.
+
+        Returns:
+            StreamCancelHandler: A handler that can be used to cancel the streaming operation.
+
+        Usage example:
+            cancel_handler = client.stream_x509_contexts(on_success, on_error)
+            # To cancel the streaming:
+            cancel_handler.cancel()
+        """
+        cancel_handler = StreamCancelHandler()
+        retry_handler = RetryHandler(retry_policy) if retry_connect else None
+
+        def watch_target():
+            self._watch_jwt_bundles_updates(
+                cancel_handler, retry_handler, on_success, on_error
+            )
+
+        t = threading.Thread(target=watch_target, daemon=True)
+        t.start()
+
+        return cancel_handler
 
     def get_spiffe_endpoint_socket(self) -> str:
         """Returns the spiffe endpoint socket config for this WorkloadApiClient.
@@ -453,10 +433,94 @@ class WorkloadApiClient:
         """Closes the WorkloadClient along with the current connections."""
         self._channel.close()
 
+    # Private methods
+    def _watch_x509_context_updates(
+        self,
+        cancel_handler: StreamCancelHandler,
+        retry_handler: Optional[RetryHandler],
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
+    ):
+        while True:
+            try:
+                response_iterator = self._spiffe_workload_api_stub.FetchX509SVID(
+                    workload_pb2.X509SVIDRequest()
+                )
+                cancel_handler.set_iterator(response_iterator)
+
+                for item in response_iterator:
+                    x509_context = self._process_x509_context(item)
+                    on_success(x509_context)
+
+                if retry_handler:
+                    retry_handler.reset()
+                break
+
+            except grpc.RpcError as grpc_err:
+                if retry_handler is None or not retry_handler.should_retry(grpc_err.code()):
+                    on_error(WorkloadApiError(f"gRPC error: {str(grpc_err.code())}"))
+                    break
+
+                time.sleep(retry_handler.get_backoff())
+
+            except Exception as err:
+                on_error(WorkloadApiError(str(err)))
+                break  # Exit on unexpected errors
+
+    def _watch_jwt_bundles_updates(
+        self,
+        cancel_handler: StreamCancelHandler,
+        retry_handler: Optional[RetryHandler],
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+    ):
+        while True:
+            try:
+                response_iterator = self._spiffe_workload_api_stub.FetchJWTBundles(
+                    workload_pb2.JWTBundlesRequest()
+                )
+                cancel_handler.set_iterator(response_iterator)
+
+                for item in response_iterator:
+                    jwt_bundles = self._process_jwt_bundles(item)
+                    on_success(jwt_bundles)
+
+                if retry_handler:
+                    retry_handler.reset()
+                break
+
+            except grpc.RpcError as grpc_err:
+                if retry_handler is None or not retry_handler.should_retry(grpc_err.code()):
+                    on_error(WorkloadApiError(f"gRPC error: {str(grpc_err.code())}"))
+                    break
+
+                time.sleep(retry_handler.get_backoff())
+
+            except Exception as err:
+                on_error(WorkloadApiError(str(err)))
+                break  # Exit on unexpected errors
+
+    def _process_x509_context(
+        self, x509_svid_response: workload_pb2.X509SVIDResponse
+    ) -> X509Context:
+        svids = []
+        bundle_set = self._create_x509_bundle_set(x509_svid_response.federated_bundles)
+        for svid in x509_svid_response.svids:
+            x509_svid = self._create_x509_svid(svid)
+            svids.append(x509_svid)
+
+            trust_domain = x509_svid.spiffe_id.trust_domain
+            bundle_set.put(X509Bundle.parse_raw(trust_domain, svid.bundle))
+
+        return X509Context(svids, bundle_set)
+
+    def _process_jwt_bundles(
+        self, jwt_bundles_response: workload_pb2.JWTBundlesResponse
+    ) -> JwtBundleSet:
+        return self._create_jwt_bundle_set(jwt_bundles_response.bundles)
+
     def _get_spiffe_grpc_channel(self) -> grpc.Channel:
-        grpc_insecure_channel = grpc.insecure_channel(
-            self._config.spiffe_endpoint_socket
-        )
+        grpc_insecure_channel = grpc.insecure_channel(self._config.spiffe_endpoint_socket)
         spiffe_client_interceptor = (
             header_manipulator_client_interceptor.header_adder_interceptor(
                 WORKLOAD_API_HEADER_KEY, WORKLOAD_API_HEADER_VALUE
@@ -466,9 +530,7 @@ class WorkloadApiClient:
         return grpc.intercept_channel(grpc_insecure_channel, spiffe_client_interceptor)
 
     def _call_fetch_x509_svid(self) -> workload_pb2.X509SVIDResponse:
-        response = self._spiffe_workload_api_stub.FetchX509SVID(
-            workload_pb2.X509SVIDRequest()
-        )
+        response = self._spiffe_workload_api_stub.FetchX509SVID(workload_pb2.X509SVIDRequest())
         try:
             item = next(response)
         except StopIteration:
@@ -489,12 +551,19 @@ class WorkloadApiClient:
             raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
 
-    def _create_bundle_set(self, resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
+    @staticmethod
+    def _create_x509_bundle_set(resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
         x509_bundles = [
-            self._create_x509_bundle(TrustDomain(td), resp_bundles[td])
-            for td in resp_bundles
+            X509Bundle.parse_raw(TrustDomain(td), resp_bundles[td]) for td in resp_bundles
         ]
         return X509BundleSet.of(x509_bundles)
+
+    @staticmethod
+    def _create_jwt_bundle_set(resp_bundles: Mapping[str, bytes]) -> JwtBundleSet:
+        jwt_bundles = [
+            JwtBundle.parse(TrustDomain(td), bundle) for td, bundle in resp_bundles.items()
+        ]
+        return JwtBundleSet.of(jwt_bundles)
 
     @staticmethod
     def _create_x509_svid(svid: workload_pb2.X509SVID) -> X509Svid:
@@ -503,143 +572,13 @@ class WorkloadApiClient:
         return X509Svid.parse_raw(cert, key)
 
     @staticmethod
-    def _create_x509_bundle(trust_domain: TrustDomain, bundle: bytes) -> X509Bundle:
-        try:
-            return X509Bundle.parse_raw(trust_domain, bundle)
-        except Exception as e:
-            raise FetchX509BundleError(str(e))
-
-    def _process_x509_context(
-        self, x509_svid_response: workload_pb2.X509SVIDResponse
-    ) -> X509Context:
-        svids = []
-        bundle_set = self._create_bundle_set(x509_svid_response.federated_bundles)
-        for svid in x509_svid_response.svids:
-            x509_svid = self._create_x509_svid(svid)
-            svids.append(x509_svid)
-
-            trust_domain = x509_svid.spiffe_id.trust_domain
-            bundle_set.put(self._create_x509_bundle(trust_domain, svid.bundle))
-
-        return X509Context(svids, bundle_set)
-
-    def _call_watch_x509_context(
-        self,
-        cancel_handler: CancelHandler,
-        retry_handler: Optional[RetryHandler],
-        on_success: Callable[[X509Context], None],
-        on_error: Callable[[Exception], None],
-    ) -> None:
-
-        response_iterator = self._spiffe_workload_api_stub.FetchX509SVID(
-            workload_pb2.X509SVIDRequest()
-        )
-
-        # register the cancel function on the cancel handler returned to the user
-        cancel_handler.set_handler(lambda: response_iterator.cancel())
-
-        self._handle_x509_context_response(
-            cancel_handler,
-            retry_handler,
-            response_iterator,
-            on_success,
-            on_error,
-        )
-
-    def _handle_x509_context_response(
-        self,
-        cancel_handler: CancelHandler,
-        retry_handler: Optional[RetryHandler],
-        response_iterator: Iterator[workload_pb2.X509SVIDResponse],
-        on_success: Callable[[X509Context], None],
-        on_error: Callable[[Exception], None],
-    ) -> None:
-        try:
-            for item in response_iterator:
-                x509_context = self._process_x509_context(item)
-                if retry_handler:
-                    retry_handler.reset()
-                on_success(x509_context)
-
-        except grpc.RpcError as grpc_err:
-            self._handle_grpc_error(
-                cancel_handler,
-                retry_handler,
-                grpc_err,
-                on_success,
-                on_error,
-                self._call_watch_x509_context,
-            )
-        except Exception as err:
-            error = FetchX509SvidError(format(str(err)))
-            on_error(error)
-
-    @staticmethod
-    def _handle_grpc_error(
-        cancel_handler: CancelHandler,
-        retry_handler: Optional[RetryHandler],
-        grpc_error: grpc.RpcError,
-        on_success: Callable[[Any], None],
-        on_error: Callable[[Exception], None],
-        watcher_callback: Callable,
-    ):
-        grpc_error_code = grpc_error.code()
-
-        if retry_handler and grpc_error_code not in _NON_RETRYABLE_CODES:
-            _logger.error(
-                'Error connecting to the Workload API: {}'.format(str(grpc_error_code))
-            )
-            retry_handler.do_retry(
-                watcher_callback,
-                [cancel_handler, retry_handler, on_success, on_error],
-            )
-        else:
-            # don't retry, instead report error to user on the on_error callback
-            if grpc_error_code != grpc.StatusCode.CANCELLED:
-                error = WorkloadApiError(str(grpc_error_code))
-                on_error(error)
-
-    def _call_watch_jwt_bundles(
-        self,
-        cancel_handler: CancelHandler,
-        retry_handler: Optional[RetryHandler],
-        on_success: Callable[[JwtBundleSet], None],
-        on_error: Callable[[Exception], None],
-    ) -> None:
-        try:
-            response_iterator = self._spiffe_workload_api_stub.FetchJWTBundles(
-                workload_pb2.JWTBundlesRequest()
-            )
-
-            # register the cancel function on the cancel handler returned to the user
-            cancel_handler.set_handler(lambda: response_iterator.cancel())
-
-            for item in response_iterator:
-                jwt_bundles = self._create_td_jwt_bundle_dict(item)
-                if retry_handler:
-                    retry_handler.reset()
-                on_success(JwtBundleSet(jwt_bundles))
-        except grpc.RpcError as grpc_err:
-            self._handle_grpc_error(
-                cancel_handler,
-                retry_handler,
-                grpc_err,
-                on_success,
-                on_error,
-                self._call_watch_jwt_bundles,
-            )
-        except Exception as error:
-            on_error(FetchJwtBundleError(str(error)))
-
-    @staticmethod
     def _create_td_jwt_bundle_dict(
         jwt_bundle_response: workload_pb2.JWTBundlesResponse,
     ) -> Dict[TrustDomain, JwtBundle]:
-        jwt_bundles = {}
-        for td, jwk_set in jwt_bundle_response.bundles.items():
-            jwt_bundles[TrustDomain(td)] = JwtBundle.parse(TrustDomain(td), jwk_set)
-
-        return jwt_bundles
+        return {
+            TrustDomain(td): JwtBundle.parse(TrustDomain(td), jwk_set)
+            for td, jwk_set in jwt_bundle_response.bundles.items()
+        }
 
     def __enter__(self) -> 'WorkloadApiClient':
         return self

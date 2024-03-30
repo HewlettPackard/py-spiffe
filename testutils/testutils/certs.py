@@ -16,7 +16,7 @@ under the License.
 
 from pathlib import Path
 
-from utils.utils import read_file_bytes
+from testutils.utils import read_file_bytes
 
 TEST_CERTS_DIR = Path(__file__).parent / 'x509-certs'
 TEST_BUNDLE_CERTS_DIR = Path(__file__).parent / 'x509-bundle-certs'

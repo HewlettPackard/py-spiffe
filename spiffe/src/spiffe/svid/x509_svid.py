@@ -126,18 +126,14 @@ class X509Svid(object):
 
         if encoding not in [encoding.PEM, encoding.DER]:
             raise ArgumentError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
-                    encoding
-                )
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
             )
 
         write_certificates_to_file(certs_chain_path, encoding, self._cert_chain)
         write_private_key_to_file(private_key_path, encoding, self._private_key)
 
     @classmethod
-    def parse_raw(
-        cls, certs_chain_bytes: bytes, private_key_bytes: bytes
-    ) -> 'X509Svid':
+    def parse_raw(cls, certs_chain_bytes: bytes, private_key_bytes: bytes) -> 'X509Svid':
         """Parses the X509-SVID from certificate chain and private key bytes.
 
         The certificate chain must be ASN.1 DER (concatenated with no intermediate padding if there are more than
@@ -259,9 +255,7 @@ class X509Svid(object):
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
-    ext = cert.extensions.get_extension_for_oid(
-        x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
-    )
+    ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
     if isinstance(ext.value, x509.SubjectAlternativeName):
         sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
     if len(sans) == 0:
@@ -284,9 +278,7 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
         x509.ExtensionOID.BASIC_CONSTRAINTS
     ).value
     if isinstance(basic_constraints, x509.BasicConstraints) and basic_constraints.ca:
-        raise InvalidLeafCertificateError(
-            'Leaf certificate must not have CA flag set to true'
-        )
+        raise InvalidLeafCertificateError('Leaf certificate must not have CA flag set to true')
 
     key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
     if isinstance(key_usage, x509.KeyUsage) and not key_usage.digital_signature:
@@ -307,10 +299,7 @@ def _validate_intermediate_certificate(cert: Certificate) -> None:
     basic_constraints = cert.extensions.get_extension_for_oid(
         x509.ExtensionOID.BASIC_CONSTRAINTS
     ).value
-    if (
-        isinstance(basic_constraints, x509.BasicConstraints)
-        and not basic_constraints.ca
-    ):
+    if isinstance(basic_constraints, x509.BasicConstraints) and not basic_constraints.ca:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have CA flag set to true'
         )
