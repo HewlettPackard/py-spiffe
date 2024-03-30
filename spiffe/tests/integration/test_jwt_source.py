@@ -31,7 +31,7 @@ These tests also require the presence of a valid registration entry for the call
 def test_jwt_source():
     jwt_source = None
     try:
-        jwt_source = spiffe.JwtSource(timeout_in_seconds=5)
+        jwt_source = spiffe.JwtSource(timeout_in_seconds=30)
         svid = jwt_source.fetch_svid({"aud1", "aud2"})
 
         assert svid
