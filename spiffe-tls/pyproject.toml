@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"  # >= 3.9, < 4.0
-spiffe = { path = "../spiffe", develop = true }
+spiffe = "~0.1.0"
 pyOpenSSL = "^24.0"
 
 [tool.poetry.dev-dependencies]

@@ -769,21 +769,19 @@ name = "spiffe"
 version = "0.1.0"
 description = "Python library for SPIFFE support"
 optional = false
-python-versions = "^3.9"
-files = []
-develop = true
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "spiffe-0.1.0-py3-none-any.whl", hash = "sha256:8fcd5e44517264e49258adaaa991bfd3c782220dc0e759b8368e4ff2ea9bdfe1"},
+    {file = "spiffe-0.1.0.tar.gz", hash = "sha256:04c66053f0086cb6fb25045c48ae95c1dafd78ba8679c627b36e23d1868534c4"},
+]
 
 [package.dependencies]
-cryptography = "^42.0"
-grpcio = "^1.62"
-pem = "^23.0"
-pyasn1 = "~0.6.0"
-pyasn1-modules = "~0.4.0"
-pyjwt = {version = "^2.0", extras = ["crypto"]}
-
-[package.source]
-type = "directory"
-url = "../spiffe"
+cryptography = ">=42.0,<43.0"
+grpcio = ">=1.62,<2.0"
+pem = ">=23.0,<24.0"
+pyasn1 = ">=0.6.0,<0.7.0"
+pyasn1-modules = ">=0.4.0,<0.5.0"
+pyjwt = {version = ">=2.0,<3.0", extras = ["crypto"]}
 
 [[package]]
 name = "testutils"
@@ -868,4 +866,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "82ac5793011384f99bbe1d5724cfeddd523a0dd5f5c07d5aafc27cf30e6f2925"
+content-hash = "0eee4c4c0393a2cb2a9457f7eb2d69df8345175a420e393d4336926e7a803c89"
