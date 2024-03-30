@@ -1,6 +1,6 @@
-# `spiffe-tls` module (experimental)
+# `spiffe-tls` package (experimental)
 
-This `py-spiffe` module provides TLS utilities that facilitate creating secure TLS connections leveraging SPIFFE IDs for
+This `py-spiffe` package provides TLS utilities that facilitate creating secure TLS connections leveraging SPIFFE IDs for
 authentication. It wraps [pyOpenSSL](https://pypi.org/project/pyOpenSSL/), offering easy-to-use functions for setting up
 TLS clients and servers with SPIFFE-based authentication using `X509Source` to manage and automatically update X.509
 certificates and CA trusted bundles.
@@ -53,7 +53,7 @@ conn = dial(
 
 ### Authorization Functions
 
-The module supports custom authorization functions for additional certificate validation:
+The package supports custom authorization functions for additional certificate validation:
 
 - `authorize_any()`: Authorizes any valid SPIFFE ID.
 - `authorize_id(expected_spiffe_id)`: Authorizes a specific SPIFFE ID.
