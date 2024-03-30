@@ -28,7 +28,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/spiffe-')
         run: |
           cd spiffe
-          make all
+          make build
           poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
 
       # Conditional step for spiffe-tls module
@@ -36,5 +36,5 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/spiffe-tls-')
         run: |
           cd spiffe-tls
-          make all 
+          make build
           poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_TOKEN }}
