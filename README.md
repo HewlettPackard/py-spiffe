@@ -19,6 +19,19 @@ The `spiffe-tls` module is currently in experimental development and aims to pro
 TLS utilities. Its primary goal is to streamline the integration of SPIFFE identities into TLS contexts, facilitating
 not only mutual TLS configurations but also enhancing certificate validation processes.
 
+## Installation
+
+`spiffe` module:
+
+```sh
+pip install spiffe
+```
+
+`spiffe-tls` module:
+```sh
+pip install spiffe-tls
+```
+
 ## Contributing
 
 Contributions to both `spiffe` and the `spiffe-tls` modules are welcome! Please see

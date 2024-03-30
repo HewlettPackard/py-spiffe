@@ -1,4 +1,4 @@
-# `spiffe-tls` Module
+# `spiffe-tls` module (experimental)
 
 This `py-spiffe` module provides TLS utilities that facilitate creating secure TLS connections leveraging SPIFFE IDs for
 authentication. It wraps [pyOpenSSL](https://pypi.org/project/pyOpenSSL/), offering easy-to-use functions for setting up
@@ -47,7 +47,7 @@ x509_source = X509Source()
 conn = dial(
     "localhost:8443",
     x509_source,
-    authorize_fn=authorize_id(SpiffeId("spiffe://example.org/client-service")),
+    authorize_fn=authorize_id(SpiffeId("spiffe://example.org/server")),
 )
 ```
 
