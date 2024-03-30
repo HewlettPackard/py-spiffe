@@ -18,7 +18,6 @@ from unittest.mock import patch
 
 import pytest
 
-from bundle.jwt_bundle.test_jwt_bundle import JWKS_1_EC_KEY, JWKS_2_EC_1_RSA_KEYS
 from spiffe import JwtBundle, JwtBundleSet
 from spiffe.proto import workload_pb2
 from spiffe.workloadapi.jwt_source import JwtSource
@@ -27,7 +26,12 @@ from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.workloadapi.errors import JwtSourceError, FetchJwtSvidError
 from spiffe.errors import ArgumentError
-from unit.utils.jwt import generate_test_jwt_token, TEST_AUDIENCE
+from testutils.jwt import (
+    generate_test_jwt_token,
+    JWKS_1_EC_KEY,
+    JWKS_2_EC_1_RSA_KEYS,
+    TEST_AUDIENCE,
+)
 
 SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
 
@@ -127,10 +131,10 @@ def test_get_jwt_svid_exception(mocker, client):
     mock_client_fetch_jwt_bundles(mocker, client)
 
     jwt_source = JwtSource(client)
-    with pytest.raises(ArgumentError) as exception:
+    with pytest.raises(ArgumentError) as err:
         _ = jwt_source.fetch_svid("")
 
-    assert str(exception.value) == 'Audience cannot be empty'
+    assert str(err.value) == 'Audience cannot be empty'
 
 
 def test_error_new(mocker, client):
@@ -139,10 +143,10 @@ def test_error_new(mocker, client):
     )
     mock_client_fetch_jwt_bundles(mocker, client)
     jwt_source = JwtSource(client)
-    with pytest.raises(FetchJwtSvidError) as exception:
+    with pytest.raises(FetchJwtSvidError) as err:
         _ = jwt_source.fetch_svid(TEST_AUDIENCE)
 
-    assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error'
+    assert str(err.value) == 'Error fetching JWT SVID: Mocked Error'
 
 
 def test_close(mocker, client):
@@ -197,12 +201,7 @@ def test_get_jwt_bundle_exception(mocker, client):
         side_effect=Exception('Mocked Error'),
     )
 
-    jwt_source = JwtSource(client)
+    with pytest.raises(JwtSourceError) as err:
+        JwtSource(client)
 
-    with pytest.raises(JwtSourceError) as exception:
-        _ = jwt_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
-
-    assert (
-        str(exception.value)
-        == 'JWT Source error: Cannot get JWT Bundle: source is closed'
-    )
+    assert str(err.value) == 'JWT Source error: Failed to create JwtSource: Mocked Error'

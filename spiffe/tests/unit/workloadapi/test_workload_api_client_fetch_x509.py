@@ -31,14 +31,22 @@ from spiffe.workloadapi.errors import (
     WorkloadApiError,
 )
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
-from utils.utils import (
+from testutils.certs import (
+    CHAIN1,
+    KEY1,
+    CHAIN2,
+    KEY2,
+    CORRUPTED,
+    FEDERATED_BUNDLE,
+    BUNDLE,
+)
+from testutils.utils import (
     FakeCall,
     ResponseHolder,
     handle_success,
     handle_error,
     assert_error,
 )
-from utils.certs import CHAIN1, KEY1, CHAIN2, KEY2, CORRUPTED, FEDERATED_BUNDLE, BUNDLE
 
 
 @pytest.fixture
@@ -84,48 +92,39 @@ def test_fetch_x509_svid_empty_response(mocker, client):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
 def test_fetch_x509_svid_invalid_response(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
 def test_fetch_x509_svid_raise_grpc_error_call(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
 
 
-def test_fetch_x509_svid_raise_exception(mocker, client):
+def test_fetch_x509_svid_raise_err(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
+    assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_svid_corrupted_response(mocker, client):
@@ -150,11 +149,11 @@ def test_fetch_x509_svid_corrupted_response(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
     assert (
-        str(exception.value)
+        str(err.value)
         == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
@@ -203,48 +202,39 @@ def test_fetch_x509_svids_empty_response(mocker, client):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
 def test_fetch_x509_svids_invalid_response(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
 def test_fetch_x509_svids_raise_grpc_error_call(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
 
 
-def test_fetch_x509_svids_raise_exception(mocker, client):
+def test_fetch_x509_svids_raise_err(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
+    assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_svids_corrupted_response(mocker, client):
@@ -269,11 +259,11 @@ def test_fetch_x509_svids_corrupted_response(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
     assert (
-        str(exception.value)
+        str(err.value)
         == 'Error fetching X.509 SVID: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
@@ -328,9 +318,7 @@ def test_fetch_x509_context_success(mocker, client):
     assert bundle
     assert len(bundle.x509_authorities) == 1
 
-    federated_bundle = bundle_set.get_bundle_for_trust_domain(
-        TrustDomain('domain.test')
-    )
+    federated_bundle = bundle_set.get_bundle_for_trust_domain(TrustDomain('domain.test'))
     assert federated_bundle
     assert len(federated_bundle.x509_authorities) == 1
 
@@ -340,48 +328,39 @@ def test_fetch_x509_context_empty_response(mocker, client):
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is empty'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
 def test_fetch_x509_context_invalid_response(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
 def test_fetch_x509_context_raise_grpc_error(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 SVID: Error details from Workload API'
-    )
+    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
 
 
-def test_fetch_x509_context_raise_exception(mocker, client):
+def test_fetch_x509_context_raise_err(mocker, client):
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert str(exception.value) == 'Error fetching X.509 SVID: mocked error'
+    assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
 def test_fetch_x509_context_corrupted_svid(mocker, client):
@@ -411,12 +390,10 @@ def test_fetch_x509_context_corrupted_svid(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509SvidError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert 'Error fetching X.509 SVID: Error parsing private key' in str(
-        exception.value
-    )
+    assert 'Error fetching X.509 SVID: Error parsing private key' in str(err.value)
 
 
 def test_fetch_x509_context_corrupted_bundle(mocker, client):
@@ -446,12 +423,12 @@ def test_fetch_x509_context_corrupted_bundle(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
     assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing certificate: Unable to parse DER X.509 certificate'
+        str(err.value)
+        == 'Error fetching X.509 SVID: Error parsing X.509 bundle: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -482,13 +459,12 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
     assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
-        'certificate: Unable to parse DER X.509 certificate'
+        str(err.value)
+        == 'Error fetching X.509 SVID: Error parsing X.509 bundle: Error parsing certificate: Unable to parse DER X.509 certificate'
     )
 
 
@@ -511,9 +487,7 @@ def test_fetch_x509_bundles_success(mocker, client):
     assert bundle
     assert len(bundle.x509_authorities) == 1
 
-    federated_bundle = bundle_set.get_bundle_for_trust_domain(
-        TrustDomain('domain.test')
-    )
+    federated_bundle = bundle_set.get_bundle_for_trust_domain(TrustDomain('domain.test'))
     assert federated_bundle
     assert len(federated_bundle.x509_authorities) == 1
 
@@ -523,52 +497,39 @@ def test_fetch_x509_bundles_empty_response(mocker, client):
         return_value=iter([workload_pb2.X509BundlesResponse(bundles=[])])
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundle: X.509 Bundles response is empty'
-    )
+    assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is empty'
 
 
 def test_fetch_x509_bundles_invalid_response(mocker, client):
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
-        return_value=iter([])
-    )
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=iter([]))
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundle: X.509 Bundles response is invalid'
-    )
+    assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is invalid'
 
 
 def test_fetch_x509_bundles_raise_grpc_error(mocker, client):
-    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
-        side_effect=FakeCall()
-    )
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(side_effect=FakeCall())
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
-    assert (
-        str(exception.value)
-        == 'Error fetching X.509 Bundle: Error details from Workload API'
-    )
+    assert str(err.value) == 'Error fetching X.509 Bundle: Error details from Workload API'
 
 
-def test_fetch_x509_bundles_raise_exception(mocker, client):
+def test_fetch_x509_bundles_raise_err(mocker, client):
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         side_effect=Exception('mocked error')
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
-    assert str(exception.value) == 'Error fetching X.509 Bundle: mocked error'
+    assert str(err.value) == 'Error fetching X.509 Bundle: mocked error'
 
 
 def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
@@ -584,11 +545,11 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
     assert (
-        str(exception.value)
+        str(err.value)
         == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
         'certificate: Unable to parse DER X.509 certificate'
     )
@@ -607,17 +568,17 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker, client):
         )
     )
 
-    with pytest.raises(FetchX509BundleError) as exception:
+    with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
     assert (
-        str(exception.value)
+        str(err.value)
         == 'Error fetching X.509 Bundle: Error parsing X.509 bundle: Error parsing '
         'certificate: Unable to parse DER X.509 certificate'
     )
 
 
-def test_watch_x509_context_success(mocker, client):
+def test_stream_x509_contexts_success(mocker, client):
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -647,13 +608,13 @@ def test_watch_x509_context_success(mocker, client):
     done = threading.Event()
     response_holder = ResponseHolder()
 
-    client.watch_x509_context(
+    client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         retry_connect=True,
     )
 
-    done.wait(5)  # add timeout to prevent test from hanging
+    done.wait(timeout=5)
 
     assert not response_holder.error
     x509_context = response_holder.success
@@ -675,30 +636,26 @@ def test_watch_x509_context_success(mocker, client):
     assert len(bundle.x509_authorities) == 1
 
 
-def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(
-    mocker, client
-):
+def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(mocker, client):
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = (
         yield_grpc_error_and_then_correct_x509_svid_response()
     )
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
-        return_value=mock_error_iter
-    )
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=mock_error_iter)
 
     expected_error = FetchX509SvidError('StatusCode.DEADLINE_EXCEEDED')
     done = threading.Event()
 
     response_holder = ResponseHolder()
 
-    client.watch_x509_context(
+    client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
         lambda e: assert_error(e, expected_error),
         True,
     )
 
-    done.wait(5)  # add timeout to prevent test from hanging
+    done.wait(timeout=90)
 
     x509_context = response_holder.success
     svid1 = x509_context.default_svid
@@ -719,29 +676,27 @@ def test_watch_x509_context_raise_retryable_grpc_error_and_then_ok_response(
     assert len(bundle.x509_authorities) == 1
 
 
-def test_watch_x509_context_raise_unretryable_grpc_error(mocker, client):
+def test_stream_x509_contexts_raise_unretryable_grpc_error(mocker, client):
     grpc_error = grpc.RpcError()
     grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
 
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = grpc_error
 
-    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
-        return_value=mock_error_iter
-    )
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=mock_error_iter)
 
     done = threading.Event()
-    expected_error = WorkloadApiError('StatusCode.INVALID_ARGUMENT')
+    expected_error = WorkloadApiError('gRPC error: StatusCode.INVALID_ARGUMENT')
 
     response_holder = ResponseHolder()
 
-    client.watch_x509_context(
+    client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
         lambda e: handle_error(e, response_holder, done),
         True,
     )
 
-    done.wait(5)  # add timeout to prevent test from hanging
+    done.wait(timeout=5)
 
     assert not response_holder.success
     assert str(response_holder.error) == str(expected_error)

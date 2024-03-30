@@ -30,7 +30,7 @@ from spiffe.bundle.x509_bundle.errors import (
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.errors import ArgumentError
-from utils.certs import TEST_BUNDLE_CERTS_DIR
+from testutils.certs import TEST_BUNDLE_CERTS_DIR
 
 trust_domain = TrustDomain('domain.test')
 
@@ -195,9 +195,7 @@ def test_save_bundle_pem_encoded(tmpdir):
     bundle_path = tmpdir.join('bundle.pem')
     x509_bundle.save(bundle_path, serialization.Encoding.PEM)
 
-    saved_bundle = X509Bundle.load(
-        trust_domain, bundle_path, serialization.Encoding.PEM
-    )
+    saved_bundle = X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.PEM)
 
     assert saved_bundle.trust_domain == trust_domain
     assert len(saved_bundle.x509_authorities) == 2
@@ -220,9 +218,7 @@ def test_save_bundle_der_encoded(tmpdir):
     bundle_path = tmpdir.join('bundle.pem')
     x509_bundle.save(bundle_path, serialization.Encoding.DER)
 
-    saved_bundle = X509Bundle.load(
-        trust_domain, bundle_path, serialization.Encoding.DER
-    )
+    saved_bundle = X509Bundle.load(trust_domain, bundle_path, serialization.Encoding.DER)
 
     assert saved_bundle.trust_domain == trust_domain
     assert len(saved_bundle.x509_authorities) == 2
@@ -248,8 +244,7 @@ def test_save_non_supported_encoding(tmpdir):
         x509_bundle.save(bundle_path, serialization.Encoding.Raw)
 
     assert (
-        str(err.value)
-        == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
+        str(err.value) == 'Encoding not supported: Encoding.Raw. Expected \'PEM\' or \'DER\''
     )
 
 
@@ -274,12 +269,8 @@ def test_save_error_writing_bundle_to_file(mocker):
 def test_add_and_remove_authority():
     bundle = X509Bundle(trust_domain, None)
     pem_certs = pem.parse_file(TEST_BUNDLE_CERTS_DIR / 'certs.pem')
-    x509_cert_1 = x509.load_pem_x509_certificate(
-        pem_certs[0].as_bytes(), default_backend()
-    )
-    x509_cert_2 = x509.load_pem_x509_certificate(
-        pem_certs[1].as_bytes(), default_backend()
-    )
+    x509_cert_1 = x509.load_pem_x509_certificate(pem_certs[0].as_bytes(), default_backend())
+    x509_cert_2 = x509.load_pem_x509_certificate(pem_certs[1].as_bytes(), default_backend())
 
     # adding an object to the returned set, as it is a copy, it doesn't change the bundle
     bundle.x509_authorities.add(x509_cert_1)

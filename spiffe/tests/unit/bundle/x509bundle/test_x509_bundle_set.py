@@ -17,7 +17,7 @@ under the License.
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from utils.certs import TEST_BUNDLE_CERTS_DIR
+from testutils.certs import TEST_BUNDLE_CERTS_DIR
 
 trust_domain_1 = TrustDomain('domain.test')
 trust_domain_2 = TrustDomain('example.org')
@@ -43,9 +43,7 @@ def test_create_new_x509_bundle_set():
     found_bundle = x509_bundle_set.get_bundle_for_trust_domain(trust_domain_2)
     assert found_bundle == bundle_2
 
-    found_bundle = x509_bundle_set.get_bundle_for_trust_domain(
-        TrustDomain('other.test')
-    )
+    found_bundle = x509_bundle_set.get_bundle_for_trust_domain(TrustDomain('other.test'))
     assert found_bundle is None
 
 
@@ -67,9 +65,7 @@ def test_create_x509_bundle_set_from_list_of_bundles():
     found_bundle = x509_bundle_set.get_bundle_for_trust_domain(trust_domain_2)
     assert found_bundle == bundle_2
 
-    found_bundle = x509_bundle_set.get_bundle_for_trust_domain(
-        TrustDomain('other.test')
-    )
+    found_bundle = x509_bundle_set.get_bundle_for_trust_domain(TrustDomain('other.test'))
     assert found_bundle is None
 
 

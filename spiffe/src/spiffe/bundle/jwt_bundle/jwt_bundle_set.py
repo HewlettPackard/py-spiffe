@@ -47,9 +47,7 @@ class JwtBundleSet(object):
         """Returns the set of all JwtBundles."""
         return set(self._bundles.values())
 
-    def get_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[JwtBundle]:
+    def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
         """Returns the JWT bundle of the given trust domain.
 
         Args:

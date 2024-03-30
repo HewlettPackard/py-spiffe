@@ -109,9 +109,7 @@ class X509Bundle(object):
 
         if encoding not in [encoding.PEM, encoding.DER]:
             raise ArgumentError(
-                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(
-                    encoding
-                )
+                'Encoding not supported: {}. Expected \'PEM\' or \'DER\''.format(encoding)
             )
         try:
             write_certificates_to_file(bundle_path, encoding, self._x509_authorities)
@@ -212,7 +210,5 @@ class X509Bundle(object):
 
     def __hash__(self):
         trust_domain_hash = hash(self.trust_domain)
-        authorities_hash = hash(
-            tuple(hash(authority) for authority in self._x509_authorities)
-        )
+        authorities_hash = hash(tuple(hash(authority) for authority in self._x509_authorities))
         return hash((trust_domain_hash, authorities_hash))

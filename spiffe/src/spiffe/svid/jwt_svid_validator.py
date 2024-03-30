@@ -88,9 +88,7 @@ class JwtSvidValidator(object):
         if typ and typ not in self._SUPPORTED_TYPES:
             raise InvalidTypeError(typ)
 
-    def validate_claims(
-        self, payload: Dict[str, Any], expected_audience: Set[str]
-    ) -> None:
+    def validate_claims(self, payload: Dict[str, Any], expected_audience: Set[str]) -> None:
         """Validates payload for required claims (aud, exp, sub).
 
         Args:

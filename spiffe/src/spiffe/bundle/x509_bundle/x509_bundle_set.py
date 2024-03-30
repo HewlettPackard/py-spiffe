@@ -48,9 +48,7 @@ class X509BundleSet(object):
             for trust_domain, bundle in bundles.items():
                 self._bundles[trust_domain.name] = bundle
 
-    def get_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[X509Bundle]:
+    def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[X509Bundle]:
         """Returns the X509Bundle object for the given trust domain.
 
         Args:

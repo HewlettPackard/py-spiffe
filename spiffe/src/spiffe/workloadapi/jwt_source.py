@@ -45,7 +45,7 @@ class JwtSource:
     def __init__(
         self,
         workload_api_client: Optional[WorkloadApiClient] = None,
-        spiffe_socket_path: Optional[str] = None,
+        socket_path: Optional[str] = None,
         timeout_in_seconds: Optional[float] = None,
     ) -> None:
         """Creates a new JwtSource.
@@ -57,7 +57,7 @@ class JwtSource:
         Args:
             workload_api_client: A WorkloadApiClient object that will be used to fetch the JWT materials from the Workload API.
                                  In case it's not provided, a default client will be created.
-            spiffe_socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
+            socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable will be used and thus, must be set.
             timeout_in_seconds: Time to wait for the first update of the Workload API. If not provided, and
                                 the connection with the Workload API fails, it will block indefinitely while
@@ -72,29 +72,34 @@ class JwtSource:
                              for the first update from the Workload API.
         """
 
-        self._initialized = threading.Event()
-        self._lock = threading.Lock()
+        self._initialization_event = threading.Event()
+        self._error: Optional[Exception] = None
         self._closed = False
-        self._workload_api_client = (
-            workload_api_client
-            if workload_api_client
-            else WorkloadApiClient(spiffe_socket_path)
-        )
-
+        self._lock = threading.Lock()
         self._subscribers: List[Callable] = []
         self._subscribers_lock = threading.Lock()
 
-        # set the watcher that will keep the source updated and log the underlying errors
-        self._client_cancel_handler = self._workload_api_client.watch_jwt_bundles(
-            self._set_jwt_bundle_set, self._on_error
+        self._workload_api_client = (
+            workload_api_client if workload_api_client else WorkloadApiClient(socket_path)
         )
-        self._initialized.wait(timeout_in_seconds)
 
-        if not self._initialized.is_set():
-            self._client_cancel_handler.cancel()
-            raise JwtSourceError(
-                'Could not initialize JWT Source: reached timeout waiting for the first update'
-            )
+        # Start the watcher in a separate thread
+        threading.Thread(target=self._start_watcher).start()
+
+        # Wait for the first update or an error
+        initialized = self._initialization_event.wait(timeout=timeout_in_seconds)
+
+        if not initialized or self._error:
+            self._closed = True
+            if self._error:
+                if self._error:
+                    raise JwtSourceError(
+                        f"Failed to create JwtSource: {self._error}"
+                    ) from self._error
+                else:
+                    raise JwtSourceError(
+                        "Failed to initialize JwtSource: Timeout waiting for the first update."
+                    )
 
     @property
     def bundles(self) -> Set[JwtBundle]:
@@ -104,9 +109,7 @@ class JwtSource:
                 raise JwtSourceError('Cannot get Jwt Bundles: source is closed')
             return self._jwt_bundle_set.bundles
 
-    def fetch_svid(
-        self, audience: Set[str], subject: Optional[SpiffeId] = None
-    ) -> JwtSvid:
+    def fetch_svid(self, audience: Set[str], subject: Optional[SpiffeId] = None) -> JwtSvid:
         """Fetches an JWT-SVID from the source.
 
         Args:
@@ -123,9 +126,7 @@ class JwtSource:
         jwt_svid = self._workload_api_client.fetch_jwt_svid(audience, subject)
         return jwt_svid
 
-    def fetch_svids(
-        self, audiences: Set[str], subject: Optional[SpiffeId] = None
-    ) -> JwtSvid:
+    def fetch_svids(self, audiences: Set[str], subject: Optional[SpiffeId] = None) -> JwtSvid:
         """Fetches all JWT-SVIDs from the source.
 
         Args:
@@ -142,9 +143,7 @@ class JwtSource:
         jwt_svid = self._workload_api_client.fetch_jwt_svids(audiences, subject)
         return jwt_svid
 
-    def get_bundle_for_trust_domain(
-        self, trust_domain: TrustDomain
-    ) -> Optional[JwtBundle]:
+    def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:
         """Returns the JWT bundle for the given trust domain.
 
         Raises:
@@ -173,7 +172,6 @@ class JwtSource:
                         str(err)
                     )
                 )
-            self._initialized.set()
             self._closed = True
 
     def is_closed(self) -> bool:
@@ -201,11 +199,18 @@ class JwtSource:
         with self._subscribers_lock:
             self._subscribers.remove(callback)
 
+    def _start_watcher(self) -> None:
+        self._client_cancel_handler = self._workload_api_client.stream_jwt_bundles(
+            self._set_jwt_bundle_set, self._on_error
+        )
+
     def _set_jwt_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
         _logger.debug('JWT Source: setting new bundle update')
         with self._lock:
             self._jwt_bundle_set = jwt_bundle_set
-            self._initialized.set()
+
+        # Signal that the JwtSource has been successfully initialized
+        self._initialization_event.set()
         self._notify_subscribers()
 
     def _notify_subscribers(self) -> None:
@@ -213,16 +218,17 @@ class JwtSource:
             for callback in self._subscribers:
                 try:
                     callback()
-                except Exception:
-                    _logger.exception("An error occurred while notifying a subscriber.")
+                except Exception as err:
+                    _logger.exception(f"An error occurred while notifying a subscriber: {err}")
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
-        self.close()
+        self._error = error
+        self._initialization_event.set()
 
     @staticmethod
     def _log_error(err: Exception) -> None:
-        _logger.error('JWT Source: Workload API client error: {}'.format(str(err)))
+        _logger.error(f"JWT Source Error: {err}")
 
     def __enter__(self) -> 'JwtSource':
         return self

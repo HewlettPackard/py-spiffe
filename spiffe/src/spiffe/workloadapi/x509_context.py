@@ -31,9 +31,7 @@ class X509Context(object):
     Contains a list of X509Svid and a X509BundleSet.
     """
 
-    def __init__(
-        self, x509_svids: List[X509Svid], x509_bundle_set: X509BundleSet
-    ) -> None:
+    def __init__(self, x509_svids: List[X509Svid], x509_bundle_set: X509BundleSet) -> None:
         """Creates a new X509Context with a list of X509Svid object and a X509BundleSet.
 
         Args:

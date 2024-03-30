@@ -21,7 +21,7 @@ JwtBundle module manages JwtBundle objects.
 import threading
 from json import JSONDecodeError
 from jwt.api_jwk import PyJWKSet
-from jwt.exceptions import InvalidKeyError
+from jwt.exceptions import InvalidKeyError, PyJWKSetError
 from typing import Dict, Union, Optional
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
@@ -120,7 +120,7 @@ class JwtBundle(object):
             jwks = PyJWKSet.from_json(bundle_bytes.decode('utf-8'))
         except InvalidKeyError as err:
             raise ParseJWTBundleError(str(err)) from err
-        except (JSONDecodeError, AttributeError) as err:
+        except (PyJWKSetError, JSONDecodeError, AttributeError) as err:
             raise ParseJWTBundleError(
                 '"bundle_bytes" does not represent a valid jwks'
             ) from err
@@ -147,7 +147,5 @@ class JwtBundle(object):
 
     def __hash__(self):
         trust_domain_hash = hash(self.trust_domain)
-        authorities_hash = hash(
-            tuple(hash(authority) for authority in self._jwt_authorities)
-        )
+        authorities_hash = hash(tuple(hash(authority) for authority in self._jwt_authorities))
         return hash((trust_domain_hash, authorities_hash))

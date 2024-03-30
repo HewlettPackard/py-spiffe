@@ -20,7 +20,7 @@ from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.errors import ArgumentError
 from spiffe.svid.x509_svid import X509Svid
 from spiffe.workloadapi.x509_context import X509Context
-from utils.certs import KEY1, CHAIN1, CHAIN2, KEY2
+from testutils.certs import CHAIN1, KEY1, CHAIN2, KEY2
 
 _SVID1 = X509Svid.parse_raw(CHAIN1, KEY1)
 _SVID2 = X509Svid.parse_raw(CHAIN2, KEY2)

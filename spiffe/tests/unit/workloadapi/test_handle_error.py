@@ -19,7 +19,7 @@ import grpc
 from spiffe.workloadapi.handle_error import handle_error
 from spiffe.errors import PySpiffeError, ArgumentError
 from spiffe.workloadapi.errors import WorkloadApiError
-from utils.utils import FakeCall
+from testutils.utils import FakeCall
 
 
 def test_handle_error():
