@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spiffe-tls"
-version = "0.1.0"
+version = "0.1.1"
 description = "TLS Support using SPIFFE"
 authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
