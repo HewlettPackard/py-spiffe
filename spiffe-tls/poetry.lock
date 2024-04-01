@@ -766,13 +766,13 @@ testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jar
 
 [[package]]
 name = "spiffe"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python library for SPIFFE support"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "spiffe-0.1.0-py3-none-any.whl", hash = "sha256:8fcd5e44517264e49258adaaa991bfd3c782220dc0e759b8368e4ff2ea9bdfe1"},
-    {file = "spiffe-0.1.0.tar.gz", hash = "sha256:04c66053f0086cb6fb25045c48ae95c1dafd78ba8679c627b36e23d1868534c4"},
+    {file = "spiffe-0.1.1-py3-none-any.whl", hash = "sha256:155353f0b0d9176858a3fc7608536e4f368da351e550a1a02892cd954c2ecf7d"},
+    {file = "spiffe-0.1.1.tar.gz", hash = "sha256:982016edaf16a7a69203f40cb1c3d82cd8cd546e3aeb814ba581e24bf584c31f"},
 ]
 
 [package.dependencies]
