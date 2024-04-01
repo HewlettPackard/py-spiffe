@@ -6,7 +6,7 @@ The `spiffe-tls` package, part of the `py-spiffe` library, is designed to simpli
 connections by leveraging SPIFFE IDs for authentication. Utilizing the capabilities
 of [pyOpenSSL](https://pypi.org/project/pyOpenSSL/), this package offers
 straightforward utilities for both TLS client and server configurations. Currently in its experimental phase,
-`spiffe-tls`enables integration of [SPIFFE](https://spiffe.io)-based authentication, facilitating automatic management
+`spiffe-tls` enables integration of [SPIFFE](https://spiffe.io)-based authentication, facilitating automatic management
 of X.509 certificates and CA trusted bundles through an `X509Source` from the [spiffe](https://pypi.org/project/spiffe/)
 package.
 
