@@ -5,6 +5,7 @@ description = "TLS Support using SPIFFE"
 authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
 license = "Apache-2.0"
+repository = "https://github.com/HewlettPackard/py-spiffe"
 
 packages = [
     { include = "spiffetls", from = "src" },

@@ -5,6 +5,7 @@ description = "Python library for SPIFFE support"
 authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
 license = "Apache-2.0"
+repository = "https://github.com/HewlettPackard/py-spiffe"
 
 [tool.poetry.dependencies]
 python = "^3.9" # >= 3.9, < 4.0
