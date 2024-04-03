@@ -2,7 +2,8 @@
 
 ## Overview
 
-The `spiffe` package, part of the `py-spiffe` library, provides [SPIFFE](https://spiffe.io) support and essential
+The `spiffe` package, part of the [py-spiffe library](https://github.com/HewlettPackard/py-spiffe),
+provides [SPIFFE](https://spiffe.io) support and essential
 tools for interacting with
 the [SPIFFE Workload API](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md). It simplifies
 the management and validation of SPIFFE identities,
