@@ -63,11 +63,6 @@ def test_create_jwt_bundle_no_authorities():
     assert len(jwt_bundle.jwt_authorities.keys()) == 0
 
 
-"""
-    get_jwt_authority
-"""
-
-
 def test_get_jwt_authority_valid_input():
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
@@ -170,3 +165,19 @@ def test_parse_corrupted_key_missing_key_id():
         str(exception.value)
         == 'Error parsing JWT bundle: Error adding authority from JWKS: "keyID" cannot be empty'
     )
+
+
+def test_parse_jwks_with_empty_keys_array():
+    jwks_empty_keys_bytes = '{"keys": []}'.encode('utf-8')
+    bundle = JwtBundle.parse(trust_domain, jwks_empty_keys_bytes)
+
+    assert bundle
+    assert len(bundle.jwt_authorities) == 0
+
+
+def test_parse_jwks_with_null_keys_field():
+    jwks_null_keys_bytes = '{"keys": null}'.encode('utf-8')
+    bundle = JwtBundle.parse(trust_domain, jwks_null_keys_bytes)
+
+    assert bundle
+    assert len(bundle.jwt_authorities) == 0

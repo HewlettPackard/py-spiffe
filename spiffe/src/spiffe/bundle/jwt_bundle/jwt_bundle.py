@@ -118,23 +118,30 @@ class JwtBundle(object):
 
         try:
             jwks = PyJWKSet.from_json(bundle_bytes.decode('utf-8'))
+
+            jwt_authorities = {}
+            for jwk in jwks.keys:
+                if not jwk.key_id:
+                    raise ParseJWTBundleError(
+                        'Error adding authority from JWKS: "keyID" cannot be empty'
+                    )
+
+                jwt_authorities[jwk.key_id] = jwk.key
+
+            return JwtBundle(trust_domain, jwt_authorities)
         except InvalidKeyError as err:
             raise ParseJWTBundleError(str(err)) from err
-        except (PyJWKSetError, JSONDecodeError, AttributeError) as err:
+        except PyJWKSetError as err:
+            if str(err) == "The JWK Set did not contain any keys":
+                return JwtBundle(trust_domain, {})
+            else:
+                raise ParseJWTBundleError(
+                    '"bundle_bytes" does not represent a valid jwks'
+                ) from err
+        except (JSONDecodeError, AttributeError) as err:
             raise ParseJWTBundleError(
                 '"bundle_bytes" does not represent a valid jwks'
             ) from err
-
-        jwt_authorities = {}
-        for jwk in jwks.keys:
-            if not jwk.key_id:
-                raise ParseJWTBundleError(
-                    'Error adding authority from JWKS: "keyID" cannot be empty'
-                )
-
-            jwt_authorities[jwk.key_id] = jwk.key
-
-        return JwtBundle(trust_domain, jwt_authorities)
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, JwtBundle):
