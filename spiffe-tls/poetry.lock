@@ -766,13 +766,13 @@ testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jar
 
 [[package]]
 name = "spiffe"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python library for SPIFFE support"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "spiffe-0.1.1-py3-none-any.whl", hash = "sha256:155353f0b0d9176858a3fc7608536e4f368da351e550a1a02892cd954c2ecf7d"},
-    {file = "spiffe-0.1.1.tar.gz", hash = "sha256:982016edaf16a7a69203f40cb1c3d82cd8cd546e3aeb814ba581e24bf584c31f"},
+    {file = "spiffe-0.1.2-py3-none-any.whl", hash = "sha256:1199bd8111efa9a3d4c984a4a1af28efb0dbcff3c80abf87af50a2e28fcb5279"},
+    {file = "spiffe-0.1.2.tar.gz", hash = "sha256:d33e0e35add6f321297aa3ae3e6a3b4dbbfcab97d2d66bb7fa1f649efb427415"},
 ]
 
 [package.dependencies]
@@ -866,4 +866,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c5a63c77ffa167dd31472e6e46f55cdf9b52613a93afa242656a502ed8ce2691"
+content-hash = "871b1b088d3e0afd8b08f99ae13f6087273af1fadcb234161d2698cca54a2db8"
