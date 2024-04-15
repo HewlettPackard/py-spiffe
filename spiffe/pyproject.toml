@@ -17,7 +17,7 @@ pyasn1-modules = "~0.4.0"
 pem = "^23.0"
 
 [tool.poetry.dev-dependencies]
-black = "^24.3"
+black = "^24.4"
 mypy = "^1.9"
 mypy-protobuf = "^3.6"
 pytest = "^8.1"
