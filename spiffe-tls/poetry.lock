@@ -834,13 +834,13 @@ files = [
 
 [[package]]
 name = "types-pyopenssl"
-version = "24.0.0.20240417"
+version = "24.1.0.20240425"
 description = "Typing stubs for pyOpenSSL"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-pyOpenSSL-24.0.0.20240417.tar.gz", hash = "sha256:38e75fb828d2717be173770bbae8c22811fdec68e2bc3f5833954113eb84237d"},
-    {file = "types_pyOpenSSL-24.0.0.20240417-py3-none-any.whl", hash = "sha256:4ce41ddaf383815168b6e21d542fd92135f10a5e82adb3e593a6b79638b0b511"},
+    {file = "types-pyOpenSSL-24.1.0.20240425.tar.gz", hash = "sha256:0a7e82626c1983dc8dc59292bf20654a51c3c3881bcbb9b337c1da6e32f0204e"},
+    {file = "types_pyOpenSSL-24.1.0.20240425-py3-none-any.whl", hash = "sha256:f51a156835555dd2a1f025621e8c4fbe7493470331afeef96884d1d29bf3a473"},
 ]
 
 [package.dependencies]
@@ -892,4 +892,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c77bebf92ca39bea946e04d60db645317adee658c1ac53a4acc76f6f6b1a1a3a"
+content-hash = "548da141157285ce51c20461c9fb6f8e766980815db6a181afcd59006f0c8b95"
