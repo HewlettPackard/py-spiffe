@@ -23,7 +23,7 @@ mypy-protobuf = "^3.6"
 pytest = "^8.2"
 pytest-mock = "^3.0"
 pre-commit = "^3.7"
-flake8 = "^7.0"
+flake8 = "^7.1"
 testutils = { path = "../testutils" }
 
 [build-system]
