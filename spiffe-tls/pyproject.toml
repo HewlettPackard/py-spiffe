@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spiffe-tls"
-version = "0.1.2"
+version = "0.1.3"
 description = "TLS Support using SPIFFE"
 authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"  # >= 3.9, < 4.0
-spiffe = "~0.1.2"
+spiffe = "~0.1.3"
 pyOpenSSL = "^24.0"
 
 [tool.poetry.dev-dependencies]

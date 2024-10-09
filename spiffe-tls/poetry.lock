@@ -766,13 +766,13 @@ files = [
 
 [[package]]
 name = "spiffe"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python library for SPIFFE support"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "spiffe-0.1.2-py3-none-any.whl", hash = "sha256:1199bd8111efa9a3d4c984a4a1af28efb0dbcff3c80abf87af50a2e28fcb5279"},
-    {file = "spiffe-0.1.2.tar.gz", hash = "sha256:d33e0e35add6f321297aa3ae3e6a3b4dbbfcab97d2d66bb7fa1f649efb427415"},
+    {file = "spiffe-0.1.3-py3-none-any.whl", hash = "sha256:11acc4773f57327ded7616ac31220758a9e9b9cae3e52d2175b5603fb7530403"},
+    {file = "spiffe-0.1.3.tar.gz", hash = "sha256:69c686522cefb0193eae150153544312f794c8c9c1537a25695b2b54164cb717"},
 ]
 
 [package.dependencies]
@@ -892,4 +892,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "9d6cf7ed579d282662055ecdd263f256c5fe3c1cd3eaf60acd151a99009a1868"
+content-hash = "4d0325e9f1631d2a98e6387cb3ee300ae2a8dc8e4412d79a57cc4e381bc467b0"
