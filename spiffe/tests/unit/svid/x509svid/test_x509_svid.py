@@ -166,7 +166,7 @@ def test_parse_raw_missing_key():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
         in str(exception.value)
     )
 
@@ -179,7 +179,7 @@ def test_parse_missing_key():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
         in str(exception.value)
     )
 
@@ -218,7 +218,7 @@ def test_parse_raw_corrupted_private_key():
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
     assert (
-        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
         in str(exception.value)
     )
 
@@ -231,7 +231,7 @@ def test_parse_corrupted_private_key():
         X509Svid.parse(chain_bytes, key_bytes)
 
     assert (
-        'Could not deserialize key data. The data may be in an incorrect format, it may be encrypted with an unsupported algorithm'
+        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
         in str(exception.value)
     )
 
