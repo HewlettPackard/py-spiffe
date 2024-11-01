@@ -10,7 +10,7 @@ repository = "https://github.com/HewlettPackard/py-spiffe"
 [tool.poetry.dependencies]
 python = "^3.9" # >= 3.9, < 4.0
 grpcio = "^1.62"
-cryptography = "^42.0"
+cryptography = "^43.0"
 pyjwt = { version = "^2.0", extras = ["crypto"] }
 pyasn1 = "~0.6.0"
 pyasn1-modules = "~0.4.0"
