@@ -18,7 +18,7 @@ pem = "^23.0"
 
 [tool.poetry.dev-dependencies]
 black = "^24.8"
-mypy = "^1.13"
+mypy = "^1.14"
 mypy-protobuf = "^3.6"
 pytest = "^8.3"
 pytest-mock = "^3.0"
