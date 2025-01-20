@@ -22,7 +22,7 @@ mypy = "^1.14"
 mypy-protobuf = "^3.6"
 pytest = "^8.3"
 pytest-mock = "^3.0"
-pre-commit = "^4.0"
+pre-commit = "^4.1"
 flake8 = "^7.1"
 testutils = { path = "../testutils" }
 
