@@ -170,7 +170,7 @@ class SpiffeId:
     @property
     def trust_domain(self) -> TrustDomain:
         return self._trust_domain
-    
+
     @property
     def path(self) -> str:
         return self._path
