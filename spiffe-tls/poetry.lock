@@ -587,7 +587,7 @@ version = "5.28.3"
 description = ""
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "protobuf-5.28.3-cp310-abi3-win32.whl", hash = "sha256:0c4eec6f987338617072592b97943fdbe30d019c56126493111cf24344c1cc24"},
     {file = "protobuf-5.28.3-cp310-abi3-win_amd64.whl", hash = "sha256:91fba8f445723fcf400fdbe9ca796b19d3b1242cd873907979b9ed71e4afe868"},
@@ -813,20 +813,21 @@ files = [
 
 [[package]]
 name = "spiffe"
-version = "0.1.4"
+version = "0.1.5"
 description = "Python library for SPIFFE support"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "spiffe-0.1.4-py3-none-any.whl", hash = "sha256:c8bfcb3b544f8d149dff9d1aa905a2f4cceb8bd57b3c53836fadc61341bdecab"},
-    {file = "spiffe-0.1.4.tar.gz", hash = "sha256:c8abbe8323f1fc32e3bd635639648d25875501ef01f3c80ba8c502965c46708d"},
+    {file = "spiffe-0.1.5-py3-none-any.whl", hash = "sha256:e80e0caae780ffb52991301da232e0116edf737ce545cb8cc7cef7ab86a33ace"},
+    {file = "spiffe-0.1.5.tar.gz", hash = "sha256:7f3c34907d4c5bce75700e3f5f60cab80c0a28a6ea8b2df7e7ed2f4c16a3579f"},
 ]
 
 [package.dependencies]
 cryptography = ">=43.0,<44.0"
 grpcio = ">=1.62,<2.0"
 pem = ">=23.0,<24.0"
+protobuf = ">=5.0,<6.0"
 pyasn1 = ">=0.6.0,<0.7.0"
 pyasn1-modules = ">=0.4.0,<0.5.0"
 pyjwt = {version = ">=2.0,<3.0", extras = ["crypto"]}
@@ -950,4 +951,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "e0a50c23d672f50e548d4fa21ed6fe8e2c20672447184b18a84e3c6605c72e71"
+content-hash = "2eecf5189a1d3813667b0ced81f75955a77c5e1c8d23b8187f3ce9fee188895e"
