@@ -87,7 +87,7 @@ def test_spiffe_id_invalid(id_str, expected_error):
 def test_spiffe_id_components(id_str, trust_domain, path):
     spiffe_id = SpiffeId(id_str)
     assert spiffe_id.trust_domain._name == trust_domain
-    assert spiffe_id._path == path
+    assert spiffe_id.path == path
 
 
 def test_spiffe_id_equality():
