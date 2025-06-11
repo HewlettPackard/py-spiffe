@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2025-06-11
+
+### Changed
+- Bumped `spiffe` dependency to `0.2.1`
+
 ## [0.2.0] - 2025-06-09
 
 ### Changed
