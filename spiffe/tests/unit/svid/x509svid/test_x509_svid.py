@@ -165,10 +165,9 @@ def test_parse_raw_missing_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert (
-        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
-        in str(exception.value)
-    )
+    assert exception is not None
+    assert "Could not deserialize key data" in str(exception.value)
+    assert "ASN.1 parsing error" in str(exception.value)
 
 
 def test_parse_missing_key():
@@ -178,10 +177,8 @@ def test_parse_missing_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert (
-        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
-        in str(exception.value)
-    )
+    assert exception is not None
+    assert "Error parsing private key" in str(exception.value)
 
 
 def test_parse_raw_corrupted_certificate():
@@ -217,10 +214,9 @@ def test_parse_raw_corrupted_private_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse_raw(chain_bytes, key_bytes)
 
-    assert (
-        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
-        in str(exception.value)
-    )
+    assert exception is not None
+    assert "Could not deserialize key data" in str(exception.value)
+    assert "ASN.1 parsing error" in str(exception.value)
 
 
 def test_parse_corrupted_private_key():
@@ -230,10 +226,8 @@ def test_parse_corrupted_private_key():
     with pytest.raises(ParsePrivateKeyError) as exception:
         X509Svid.parse(chain_bytes, key_bytes)
 
-    assert (
-        'Could not deserialize key data. The data may be in an incorrect format, the provided password may be incorrect, it may be encrypted with an unsupported algorithm'
-        in str(exception.value)
-    )
+    assert exception is not None
+    assert "Unable to load PEM file" in str(exception.value)
 
 
 def test_parse_invalid_spiffe_id():
