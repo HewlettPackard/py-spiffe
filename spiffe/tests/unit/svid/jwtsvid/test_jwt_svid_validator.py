@@ -218,6 +218,29 @@ def test_validate_claims_token_expired(test_input_claim, test_input_audience):
 
 
 @pytest.mark.parametrize(
+    'test_input_claim, test_input_audience',
+    [
+        (
+            {
+                'exp': timegm(
+                    (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(hours=24)
+                    ).utctimetuple()
+                ),
+                'aud': 'something',
+                'sub': 'spiffe://someone',
+            },
+            {'something'},
+        ),
+    ],
+)
+def test_validate_claims_single_string_aud(test_input_claim, test_input_audience):
+    JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
+    assert True
+
+
+@pytest.mark.parametrize(
     'test_input_claim, test_input_audience, expected',
     [
         (
