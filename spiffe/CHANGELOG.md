@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2] - 2025-07-15
+
+## Changed
+- Fix #324: issue with single string audience (#325)
+- Bump grpcio to 1.73.1 (#322)
+- Bump cryptography to 45.0.5 (#323)
+
 ## [0.2.1] - 2025-06-11
 
 ### Changed
