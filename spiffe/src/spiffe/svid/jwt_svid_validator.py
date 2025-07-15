@@ -109,7 +109,16 @@ class JwtSvidValidator(object):
                 raise MissingClaimError(claim)
 
         self._validate_exp(str(payload.get('exp')))
-        self._validate_aud(set(payload.get('aud', [])), expected_audience)
+        aud_claim = payload.get('aud')
+        if aud_claim is None:
+            aud_set = set()
+        elif isinstance(aud_claim, str):
+            aud_set = {aud_claim}
+        elif isinstance(aud_claim, (list, set, tuple)):
+            aud_set = set(aud_claim)
+        else:
+            raise InvalidClaimError("aud claim must be a string or list/set/tuple of strings")
+        self._validate_aud(aud_set, expected_audience)
 
     @staticmethod
     def _validate_exp(expiration_date: str) -> None:
