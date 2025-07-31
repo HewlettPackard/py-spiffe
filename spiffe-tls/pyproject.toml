@@ -18,7 +18,7 @@ pyOpenSSL = ">=24,<26"
 
 [tool.poetry.dev-dependencies]
 black = "^25.1"
-mypy = "^1.16"
+mypy = "^1.17"
 mypy-protobuf = "^3.6"
 types-pyOpenSSL = "^24.1"
 pytest = "^8.4"
