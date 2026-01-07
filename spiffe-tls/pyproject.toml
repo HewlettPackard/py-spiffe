@@ -15,6 +15,7 @@ packages = [
 python = "^3.10"  # >= 3.10, < 4.0
 spiffe = "~0.2.1"
 pyOpenSSL = ">=24,<26"
+idna = "^3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^25.1"
