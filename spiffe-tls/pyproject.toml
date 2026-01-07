@@ -19,7 +19,7 @@ pyOpenSSL = ">=24,<26"
 [tool.poetry.dev-dependencies]
 black = "^25.1"
 mypy = "^1.16"
-mypy-protobuf = "^3.6"
+mypy-protobuf = "^4.0"
 types-pyOpenSSL = "^24.1"
 pytest = "^8.4"
 pytest-mock = "^3.15"
