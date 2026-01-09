@@ -20,7 +20,7 @@ protobuf = ">=5,<7"
 [tool.poetry.dev-dependencies]
 black = "^25.12"
 mypy = "^1.19"
-mypy-protobuf = "^3.6"
+mypy-protobuf = "^4.0"
 pytest = "^9.0"
 pytest-mock = "^3.15"
 pre-commit = "^4.5"
