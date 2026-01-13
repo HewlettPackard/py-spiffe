@@ -565,14 +565,14 @@ files = [
 
 [[package]]
 name = "mypy-protobuf"
-version = "4.0.0"
+version = "5.0.0"
 description = "Generate mypy stub files from protobuf specs"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "mypy_protobuf-4.0.0-py3-none-any.whl", hash = "sha256:b859286891c51e420aef711b3e6616444e81c64723c12110d1dda809fad105f6"},
-    {file = "mypy_protobuf-4.0.0.tar.gz", hash = "sha256:e200c833645dcfdfe8aa47f4a33d3a4b01b6be5b9a58ddbfc441329d5b679274"},
+    {file = "mypy_protobuf-5.0.0-py3-none-any.whl", hash = "sha256:3a7dd753ef3e3b8783a824eb51f07983f62812f9ec066e4fbb1b22d6c5dc36d0"},
+    {file = "mypy_protobuf-5.0.0.tar.gz", hash = "sha256:6fdd1cfdbb4419c713291d800a332d4bba6510dbd1341ed95e0bcc82fcadb6b5"},
 ]
 
 [package.dependencies]
@@ -1114,4 +1114,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "4daebca1aa490b6807896367c1e67fa3360add6593b1b8fef46760b80ac54429"
+content-hash = "5fdd83c8804160f9d3ee997b81f80eb96379be1d947459f8a9872d4b513a61d4"
