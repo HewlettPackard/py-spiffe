@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.3] – 2026-01-17
+
+### Fixed
+- Fixed initialization timeout handling in `JwtSource` and `X509Source`, ensuring timeouts raise the correct error and watcher threads do not block process shutdown (#369)
+
+### Changed
+- Updated dependencies:
+  - grpcio to 1.76.0
+  - cryptography to 46.0.3
+  - protobuf to 6.33.x
+  - pyasn1 to 0.6.2
+
+### Development
+- Updated tooling:
+  - pytest to 9.0.2
+  - mypy to 1.19.1
+  - mypy-protobuf to 5.0.0
+  - black to 25.12.0
+  - pre-commit to 4.3.0
+
 ## [0.2.2] - 2025-07-15
 
 ## Changed
