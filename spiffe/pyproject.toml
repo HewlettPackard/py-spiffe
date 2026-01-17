@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spiffe"
-version = "0.2.2"
+version = "0.2.3"
 description = "Python library for SPIFFE support"
 authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
