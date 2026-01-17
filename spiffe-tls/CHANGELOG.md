@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2] – 2026-01-17
+
+### Changed
+- Updated dependency on `spiffe` to v0.2.3.
+
+### Dependencies
+- Bumped pyOpenSSL to 25.3.0.
+
+
 ## [0.2.1] - 2025-06-11
 
 ### Changed
