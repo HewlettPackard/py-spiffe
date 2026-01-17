@@ -84,22 +84,20 @@ class JwtSource:
         )
 
         # Start the watcher in a separate thread
-        threading.Thread(target=self._start_watcher).start()
+        threading.Thread(target=self._start_watcher, daemon=True).start()
 
         # Wait for the first update or an error
         initialized = self._initialization_event.wait(timeout=timeout_in_seconds)
 
-        if not initialized or self._error:
+        if not initialized:
             self._closed = True
-            if self._error:
-                if self._error:
-                    raise JwtSourceError(
-                        f"Failed to create JwtSource: {self._error}"
-                    ) from self._error
-                else:
-                    raise JwtSourceError(
-                        "Failed to initialize JwtSource: Timeout waiting for the first update."
-                    )
+            raise JwtSourceError(
+                "Failed to initialize JwtSource: Timeout waiting for the first update."
+            )
+
+        if self._error is not None:
+            self._closed = True
+            raise JwtSourceError(f"Failed to create JwtSource: {self._error}") from self._error
 
     @property
     def bundles(self) -> Set[JwtBundle]:
@@ -223,7 +221,8 @@ class JwtSource:
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
-        self._error = error
+        with self._lock:
+            self._error = error
         self._initialization_event.set()
 
     @staticmethod

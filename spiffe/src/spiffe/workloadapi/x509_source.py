@@ -85,21 +85,22 @@ class X509Source:
         self._picker = svid_picker
 
         # Start the watcher in a separate thread
-        threading.Thread(target=self._start_watcher).start()
+        threading.Thread(target=self._start_watcher, daemon=True).start()
 
         # Wait for the first update or an error
         initialized = self._initialization_event.wait(timeout=timeout_in_seconds)
 
-        if not initialized or self._error:
+        if not initialized:
             self._closed = True
-            if self._error:
-                raise X509SourceError(
-                    f"Failed to create X509Source: {self._error}"
-                ) from self._error
-            else:
-                raise X509SourceError(
-                    "Failed to initialize X509Source: Timeout waiting for the first update."
-                )
+            raise X509SourceError(
+                "Failed to initialize X509Source: Timeout waiting for the first update."
+            )
+
+        if self._error is not None:
+            self._closed = True
+            raise X509SourceError(
+                f"Failed to create X509Source: {self._error}"
+            ) from self._error
 
     @property
     def svid(self) -> X509Svid:
@@ -206,7 +207,8 @@ class X509Source:
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
-        self._error = error
+        with self._lock:
+            self._error = error
         self._initialization_event.set()
 
     @staticmethod
