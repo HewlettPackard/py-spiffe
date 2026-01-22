@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from spiffe.spiffe_id import spiffe_id
+
 """
 This module manages X.509 SVID objects.
 """
@@ -268,7 +270,7 @@ def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
         )
 
     uri_sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
-    spiffe_uris = [uri for uri in uri_sans if uri.startswith('spiffe://')]
+    spiffe_uris = [uri for uri in uri_sans if uri.startswith(spiffe_id.SCHEME_PREFIX)]
 
     if len(spiffe_uris) == 0:
         raise InvalidLeafCertificateError(
