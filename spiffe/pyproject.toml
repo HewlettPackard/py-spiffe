@@ -7,6 +7,12 @@ readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/HewlettPackard/py-spiffe"
 
+packages = [{ include = "spiffe", from = "src" }]
+include = [
+  { path = "src/spiffe/py.typed", format = "wheel" },
+  { path = "src/spiffe/py.typed", format = "sdist" },
+]
+
 [tool.poetry.dependencies]
 python = "^3.10" # >= 3.10, < 4.0
 grpcio = "^1.62"

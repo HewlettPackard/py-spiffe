@@ -10,6 +10,10 @@ repository = "https://github.com/HewlettPackard/py-spiffe"
 packages = [
     { include = "spiffetls", from = "src" },
 ]
+include = [
+  { path = "src/spiffetls/py.typed", format = "wheel" },
+  { path = "src/spiffetls/py.typed", format = "sdist" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"  # >= 3.10, < 4.0
