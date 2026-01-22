@@ -336,6 +336,117 @@ def test_load_from_pem_files():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
+def test_extract_spiffe_id_missing_san_extension(mocker):
+    """Regression test: Missing SubjectAlternativeName extension should raise InvalidLeafCertificateError."""
+    from cryptography import x509
+
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "SubjectAlternativeName extension not found",
+        x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
+    )
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _extract_spiffe_id(mock_cert)
+
+    assert 'SubjectAlternativeName extension' in str(exception.value)
+
+
+def test_validate_leaf_missing_basic_constraints_extension(mocker):
+    """Regression test: Missing BasicConstraints extension in leaf should raise InvalidLeafCertificateError."""
+    from cryptography import x509
+
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+    )
+    mock_cert.extensions = mock_extensions
+
+    from spiffe.svid.x509_svid import _validate_leaf_certificate
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _validate_leaf_certificate(mock_cert)
+
+    assert 'BasicConstraints extension' in str(exception.value)
+
+
+def test_validate_leaf_missing_key_usage_extension(mocker):
+    """Regression test: Missing KeyUsage extension in leaf should raise InvalidLeafCertificateError."""
+    from cryptography import x509
+    from spiffe.svid.x509_svid import _validate_leaf_certificate
+
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+
+    # First call (BasicConstraints) succeeds, second call (KeyUsage) fails
+    basic_constraints = mocker.Mock()
+    basic_constraints.value = mocker.Mock()
+    basic_constraints.value.ca = False
+
+    def get_extension_side_effect(oid):
+        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+            return basic_constraints
+        elif oid == x509.ExtensionOID.KEY_USAGE:
+            raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
+
+    mock_extensions.get_extension_for_oid.side_effect = get_extension_side_effect
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _validate_leaf_certificate(mock_cert)
+
+    assert 'KeyUsage extension' in str(exception.value)
+
+
+def test_validate_intermediate_missing_basic_constraints_extension(mocker):
+    """Regression test: Missing BasicConstraints extension in intermediate should raise InvalidIntermediateCertificateError."""
+    from cryptography import x509
+    from spiffe.svid.x509_svid import _validate_intermediate_certificate
+
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+    )
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidIntermediateCertificateError) as exception:
+        _validate_intermediate_certificate(mock_cert)
+
+    assert 'BasicConstraints extension' in str(exception.value)
+
+
+def test_validate_intermediate_missing_key_usage_extension(mocker):
+    """Regression test: Missing KeyUsage extension in intermediate should raise InvalidIntermediateCertificateError."""
+    from cryptography import x509
+    from spiffe.svid.x509_svid import _validate_intermediate_certificate
+
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+
+    # First call (BasicConstraints) succeeds, second call (KeyUsage) fails
+    basic_constraints = mocker.Mock()
+    basic_constraints.value = mocker.Mock()
+    basic_constraints.value.ca = True
+
+    def get_extension_side_effect(oid):
+        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+            return basic_constraints
+        elif oid == x509.ExtensionOID.KEY_USAGE:
+            raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
+
+    mock_extensions.get_extension_for_oid.side_effect = get_extension_side_effect
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidIntermediateCertificateError) as exception:
+        _validate_intermediate_certificate(mock_cert)
+
+    assert 'KeyUsage extension' in str(exception.value)
+
+
 def test_load_from_der_files():
     chain_path = TEST_CERTS_DIR / '1-chain.der'
     key_path = TEST_CERTS_DIR / '1-key.der'

@@ -109,10 +109,13 @@ class JwtSvid(object):
             validator.validate_header(header_params)
             claims = jwt.decode(token, options={'verify_signature': False})
             validator.validate_claims(claims, audience)
-            spiffe_id = SpiffeId(claims['sub'])
+            sub_claim = claims.get('sub')
+            if not sub_claim:
+                raise InvalidTokenError('JWT token must contain a non-empty \'sub\' claim')
+            spiffe_id = SpiffeId(sub_claim)
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
-            raise InvalidTokenError(str(err))
+            raise InvalidTokenError(str(err)) from err
 
     @classmethod
     def parse_and_validate(
@@ -151,6 +154,9 @@ class JwtSvid(object):
             header_params = jwt.get_unverified_header(token)
             validator = JwtSvidValidator()
             validator.validate_header(header_params)
+            alg = header_params.get('alg')
+            if not alg:
+                raise ArgumentError('header alg cannot be empty')
             key_id = header_params.get('kid')
             signing_key = jwt_bundle.get_jwt_authority(key_id)
             if not signing_key:
@@ -163,7 +169,7 @@ class JwtSvid(object):
 
             claims = jwt.decode(
                 token,
-                algorithms=header_params.get('alg'),
+                algorithms=[alg],
                 key=public_key_pem,
                 audience=audience,
                 options={
@@ -173,7 +179,10 @@ class JwtSvid(object):
                 },
             )
 
-            spiffe_id = SpiffeId(claims.get('sub', None))
+            sub_claim = claims.get('sub')
+            if not sub_claim:
+                raise InvalidTokenError('JWT token must contain a non-empty \'sub\' claim')
+            spiffe_id = SpiffeId(sub_claim)
 
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:

@@ -255,14 +255,32 @@ class X509Svid(object):
 
 
 def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
-    ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-    if isinstance(ext.value, x509.SubjectAlternativeName):
-        sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
-    if len(sans) == 0:
+    try:
+        ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+    except x509.ExtensionNotFound:
+        raise InvalidLeafCertificateError(
+            'Certificate does not contain a SubjectAlternativeName extension'
+        )
+
+    if not isinstance(ext.value, x509.SubjectAlternativeName):
         raise InvalidLeafCertificateError(
             'Certificate does not contain a SPIFFE ID in the URI SAN'
         )
-    return SpiffeId(sans[0])
+
+    uri_sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
+    spiffe_uris = [uri for uri in uri_sans if uri.startswith('spiffe://')]
+
+    if len(spiffe_uris) == 0:
+        raise InvalidLeafCertificateError(
+            'Certificate does not contain a SPIFFE ID in the URI SAN'
+        )
+
+    if len(spiffe_uris) > 1:
+        raise InvalidLeafCertificateError(
+            'Certificate contains multiple SPIFFE IDs in the URI SAN'
+        )
+
+    return SpiffeId(spiffe_uris[0])
 
 
 def _validate_chain(cert_chain: List[Certificate]) -> None:
@@ -274,13 +292,23 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 
 
 def _validate_leaf_certificate(leaf: Certificate) -> None:
-    basic_constraints = leaf.extensions.get_extension_for_oid(
-        x509.ExtensionOID.BASIC_CONSTRAINTS
-    ).value
+    try:
+        basic_constraints = leaf.extensions.get_extension_for_oid(
+            x509.ExtensionOID.BASIC_CONSTRAINTS
+        ).value
+    except x509.ExtensionNotFound:
+        raise InvalidLeafCertificateError(
+            'Leaf certificate must have BasicConstraints extension'
+        )
+
     if isinstance(basic_constraints, x509.BasicConstraints) and basic_constraints.ca:
         raise InvalidLeafCertificateError('Leaf certificate must not have CA flag set to true')
 
-    key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    try:
+        key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    except x509.ExtensionNotFound:
+        raise InvalidLeafCertificateError('Leaf certificate must have KeyUsage extension')
+
     if isinstance(key_usage, x509.KeyUsage) and not key_usage.digital_signature:
         raise InvalidLeafCertificateError(
             'Leaf certificate must have \'digitalSignature\' as key usage'
@@ -296,14 +324,27 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
 
 
 def _validate_intermediate_certificate(cert: Certificate) -> None:
-    basic_constraints = cert.extensions.get_extension_for_oid(
-        x509.ExtensionOID.BASIC_CONSTRAINTS
-    ).value
+    try:
+        basic_constraints = cert.extensions.get_extension_for_oid(
+            x509.ExtensionOID.BASIC_CONSTRAINTS
+        ).value
+    except x509.ExtensionNotFound:
+        raise InvalidIntermediateCertificateError(
+            'Intermediate certificate must have BasicConstraints extension'
+        )
+
     if isinstance(basic_constraints, x509.BasicConstraints) and not basic_constraints.ca:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have CA flag set to true'
         )
-    key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+
+    try:
+        key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    except x509.ExtensionNotFound:
+        raise InvalidIntermediateCertificateError(
+            'Intermediate certificate must have KeyUsage extension'
+        )
+
     if isinstance(key_usage, x509.KeyUsage) and not key_usage.key_cert_sign:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have \'keyCertSign\' as key usage'
