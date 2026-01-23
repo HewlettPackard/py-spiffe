@@ -263,7 +263,11 @@ def test_fetch_jwt_bundles_raise_grpc_call(mocker, client):
     with pytest.raises(FetchJwtBundleError) as exc_info:
         client.fetch_jwt_bundles()
 
-    assert str(exc_info.value) == 'Error fetching JWT Bundle: Error details from Workload API'
+    msg = str(exc_info.value)
+    assert 'Error fetching JWT Bundle' in msg
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_fetch_jwt_bundles_raise_grpc_error(mocker, client):
