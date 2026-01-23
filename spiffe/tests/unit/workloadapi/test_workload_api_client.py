@@ -68,3 +68,26 @@ def test_instantiate_default_with_bad_var():
         == 'Invalid WorkloadApiClient configuration: SPIFFE endpoint socket: scheme must be set'
     )
     del os.environ[SPIFFE_SOCKET_ENV]
+
+
+def test_grpc_target_with_unix_prefix():
+    """Test that socket path with 'unix:' prefix is normalized (unix:/// -> unix:/)."""
+    assert WorkloadApiClient._grpc_target('unix:///tmp/agent.sock') == 'unix:/tmp/agent.sock'
+    assert WorkloadApiClient._grpc_target('unix:/tmp/agent.sock') == 'unix:/tmp/agent.sock'
+
+
+def test_grpc_target_without_unix_prefix():
+    """Test that raw socket path is converted to 'unix:/path' for gRPC target."""
+    assert WorkloadApiClient._grpc_target('/tmp/agent.sock') == 'unix:/tmp/agent.sock'
+
+
+def test_strip_unix_scheme():
+    """Test that unix scheme is stripped correctly for filesystem checks."""
+    assert WorkloadApiClient._strip_unix_scheme('unix:///tmp/agent.sock') == '/tmp/agent.sock'
+    assert WorkloadApiClient._strip_unix_scheme('/tmp/agent.sock') == '/tmp/agent.sock'
+
+
+def test_grpc_target_rejects_non_unix():
+    """Test that non-unix, non-path values are rejected."""
+    with pytest.raises(ArgumentError):
+        WorkloadApiClient._grpc_target('localhost:8081')
