@@ -36,10 +36,17 @@ def handle_error(error_cls: Type[PySpiffeError]):
             except ArgumentError as ae:
                 raise ae
             except PySpiffeError as pe:
+                # Avoid double-wrapping if it's already the expected error type
+                if isinstance(pe, error_cls):
+                    raise pe
                 raise error_cls(str(pe)) from pe
             except grpc.RpcError as rpc_error:
                 if isinstance(rpc_error, grpc.Call):
-                    raise error_cls(str(rpc_error.details())) from rpc_error
+                    details = rpc_error.details()
+                    code = rpc_error.code()
+                    raise error_cls(
+                        f'{DEFAULT_WL_API_ERROR_MESSAGE}: {details} ({code})'
+                    ) from rpc_error
                 raise error_cls(DEFAULT_WL_API_ERROR_MESSAGE) from rpc_error
             except Exception as e:
                 raise error_cls(str(e)) from e

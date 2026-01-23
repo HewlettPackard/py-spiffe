@@ -113,7 +113,11 @@ def test_fetch_x509_svid_raise_grpc_error_call(mocker, client):
     with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svid()
 
-    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
+    msg = str(err.value)
+    assert 'Error fetching X.509 SVID' in msg
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_fetch_x509_svid_raise_err(mocker, client):
@@ -223,7 +227,11 @@ def test_fetch_x509_svids_raise_grpc_error_call(mocker, client):
     with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_svids()
 
-    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
+    msg = str(err.value)
+    assert 'Error fetching X.509 SVID' in msg
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_fetch_x509_svids_raise_err(mocker, client):
@@ -349,7 +357,11 @@ def test_fetch_x509_context_raise_grpc_error(mocker, client):
     with pytest.raises(FetchX509SvidError) as err:
         client.fetch_x509_context()
 
-    assert str(err.value) == 'Error fetching X.509 SVID: Error details from Workload API'
+    msg = str(err.value)
+    assert 'Error fetching X.509 SVID' in msg
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_fetch_x509_context_raise_err(mocker, client):
@@ -518,7 +530,11 @@ def test_fetch_x509_bundles_raise_grpc_error(mocker, client):
     with pytest.raises(FetchX509BundleError) as err:
         client.fetch_x509_bundles()
 
-    assert str(err.value) == 'Error fetching X.509 Bundle: Error details from Workload API'
+    msg = str(err.value)
+    assert 'Error fetching X.509 Bundle' in msg
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_fetch_x509_bundles_raise_err(mocker, client):

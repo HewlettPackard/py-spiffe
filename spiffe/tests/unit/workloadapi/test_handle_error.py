@@ -84,7 +84,10 @@ def test_handle_error_on_grpc_call_error():
     with pytest.raises(PySpiffeError) as exc_info:
         func_that_raises_grpc_call_error()
 
-    assert str(exc_info.value) == 'Error details from Workload API'
+    msg = str(exc_info.value)
+    assert 'Could not process response from the Workload API' in msg
+    assert 'Error details from Workload API' in msg
+    assert 'StatusCode.UNKNOWN' in msg
 
 
 def test_handle_error_on_exception():
