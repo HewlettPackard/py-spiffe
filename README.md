@@ -31,6 +31,15 @@ pip install spiffe
 pip install spiffe-tls
 ```
 
+## Examples
+
+Manual smoke test examples are available in the `examples/` directory:
+
+- **[mtls-smoke](examples/mtls-smoke/)**: mTLS smoke test using `spiffetls.dial()` and `spiffetls.listen()`
+- **[httpx-stdlib-mtls](examples/httpx-stdlib-mtls/)**: `SpiffeSSLContext` integration with `httpx` and stdlib TLS
+
+These examples are intended for manual testing only and not for production use.
+
 ## Contributing
 
 Contributions to both `spiffe` and the `spiffe-tls` packages are welcome! Please see
