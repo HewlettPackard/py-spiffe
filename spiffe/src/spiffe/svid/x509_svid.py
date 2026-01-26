@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from cryptography.x509.oid import ExtensionOID
+
 from spiffe.spiffe_id import spiffe_id
 
 """
@@ -256,33 +258,44 @@ class X509Svid(object):
         )
 
 
-def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
+def _extract_spiffe_id(cert: x509.Certificate) -> SpiffeId:
     try:
-        ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-    except x509.ExtensionNotFound:
+        ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+    except x509.ExtensionNotFound as e:
         raise InvalidLeafCertificateError(
-            'Certificate does not contain a SubjectAlternativeName extension'
+            "Certificate does not contain a SubjectAlternativeName extension"
+        ) from e
+
+    san_value = ext.value
+    if not isinstance(san_value, x509.SubjectAlternativeName):
+        raise InvalidLeafCertificateError(
+            "Certificate does not contain a valid SubjectAlternativeName extension"
         )
 
-    if not isinstance(ext.value, x509.SubjectAlternativeName):
+    san = san_value
+    uri_sans = san.get_values_for_type(x509.UniformResourceIdentifier)
+
+    # SPIFFE X.509-SVID: MUST contain exactly one URI SAN, and it MUST be a SPIFFE ID.
+    if len(uri_sans) == 0:
         raise InvalidLeafCertificateError(
-            'Certificate does not contain a SPIFFE ID in the URI SAN'
+            "Certificate does not contain a URI SAN (expected exactly one SPIFFE ID)"
         )
 
-    uri_sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
-    spiffe_uris = [uri for uri in uri_sans if uri.startswith(spiffe_id.SCHEME_PREFIX)]
-
-    if len(spiffe_uris) == 0:
+    if len(uri_sans) != 1:
         raise InvalidLeafCertificateError(
-            'Certificate does not contain a SPIFFE ID in the URI SAN'
+            "Certificate contains multiple URI SAN entries (expected exactly one SPIFFE ID)"
         )
 
-    if len(spiffe_uris) > 1:
-        raise InvalidLeafCertificateError(
-            'Certificate contains multiple SPIFFE IDs in the URI SAN'
-        )
+    uri = uri_sans[0]
+    if not uri.startswith(spiffe_id.SCHEME_PREFIX):
+        raise InvalidLeafCertificateError("Certificate URI SAN is not a SPIFFE ID")
 
-    return SpiffeId(spiffe_uris[0])
+    try:
+        return SpiffeId(uri)
+    except ArgumentError as e:
+        raise InvalidLeafCertificateError(
+            f"Certificate contains a malformed SPIFFE ID in the URI SAN: {uri!r}"
+        ) from e
 
 
 def _validate_chain(cert_chain: List[Certificate]) -> None:
