@@ -269,7 +269,8 @@ def test_parse_and_validate_invalid_missing_sub():
 
     with pytest.raises(InvalidTokenError) as exception:
         JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
-    assert str(exception.value) == 'Invalid SPIFFE ID: cannot be empty'
+
+    assert "non-empty 'sub' claim" in str(exception.value)
 
 
 def test_parse_and_validate_invalid_missing_kid():
