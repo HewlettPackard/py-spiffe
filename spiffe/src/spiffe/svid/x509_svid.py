@@ -14,6 +14,10 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from cryptography.x509.oid import ExtensionOID
+
+from spiffe.spiffe_id import spiffe_id
+
 """
 This module manages X.509 SVID objects.
 """
@@ -254,15 +258,44 @@ class X509Svid(object):
         )
 
 
-def _extract_spiffe_id(cert: Certificate) -> SpiffeId:
-    ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-    if isinstance(ext.value, x509.SubjectAlternativeName):
-        sans = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
-    if len(sans) == 0:
+def _extract_spiffe_id(cert: x509.Certificate) -> SpiffeId:
+    try:
+        ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+    except x509.ExtensionNotFound as e:
         raise InvalidLeafCertificateError(
-            'Certificate does not contain a SPIFFE ID in the URI SAN'
+            "Certificate does not contain a SubjectAlternativeName extension"
+        ) from e
+
+    san_value = ext.value
+    if not isinstance(san_value, x509.SubjectAlternativeName):
+        raise InvalidLeafCertificateError(
+            "Certificate does not contain a valid SubjectAlternativeName extension"
         )
-    return SpiffeId(sans[0])
+
+    san = san_value
+    uri_sans = san.get_values_for_type(x509.UniformResourceIdentifier)
+
+    # SPIFFE X.509-SVID: MUST contain exactly one URI SAN, and it MUST be a SPIFFE ID.
+    if len(uri_sans) == 0:
+        raise InvalidLeafCertificateError(
+            "Certificate does not contain a URI SAN (expected exactly one SPIFFE ID)"
+        )
+
+    if len(uri_sans) != 1:
+        raise InvalidLeafCertificateError(
+            "Certificate contains multiple URI SAN entries (expected exactly one SPIFFE ID)"
+        )
+
+    uri = uri_sans[0]
+    if not uri.startswith(spiffe_id.SCHEME_PREFIX):
+        raise InvalidLeafCertificateError("Certificate URI SAN is not a SPIFFE ID")
+
+    try:
+        return SpiffeId(uri)
+    except ArgumentError as e:
+        raise InvalidLeafCertificateError(
+            f"Certificate contains a malformed SPIFFE ID in the URI SAN: {uri!r}"
+        ) from e
 
 
 def _validate_chain(cert_chain: List[Certificate]) -> None:
@@ -274,13 +307,23 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 
 
 def _validate_leaf_certificate(leaf: Certificate) -> None:
-    basic_constraints = leaf.extensions.get_extension_for_oid(
-        x509.ExtensionOID.BASIC_CONSTRAINTS
-    ).value
+    try:
+        basic_constraints = leaf.extensions.get_extension_for_oid(
+            x509.ExtensionOID.BASIC_CONSTRAINTS
+        ).value
+    except x509.ExtensionNotFound:
+        raise InvalidLeafCertificateError(
+            'Leaf certificate must have BasicConstraints extension'
+        )
+
     if isinstance(basic_constraints, x509.BasicConstraints) and basic_constraints.ca:
         raise InvalidLeafCertificateError('Leaf certificate must not have CA flag set to true')
 
-    key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    try:
+        key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    except x509.ExtensionNotFound:
+        raise InvalidLeafCertificateError('Leaf certificate must have KeyUsage extension')
+
     if isinstance(key_usage, x509.KeyUsage) and not key_usage.digital_signature:
         raise InvalidLeafCertificateError(
             'Leaf certificate must have \'digitalSignature\' as key usage'
@@ -296,14 +339,27 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
 
 
 def _validate_intermediate_certificate(cert: Certificate) -> None:
-    basic_constraints = cert.extensions.get_extension_for_oid(
-        x509.ExtensionOID.BASIC_CONSTRAINTS
-    ).value
+    try:
+        basic_constraints = cert.extensions.get_extension_for_oid(
+            x509.ExtensionOID.BASIC_CONSTRAINTS
+        ).value
+    except x509.ExtensionNotFound:
+        raise InvalidIntermediateCertificateError(
+            'Intermediate certificate must have BasicConstraints extension'
+        )
+
     if isinstance(basic_constraints, x509.BasicConstraints) and not basic_constraints.ca:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have CA flag set to true'
         )
-    key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+
+    try:
+        key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+    except x509.ExtensionNotFound:
+        raise InvalidIntermediateCertificateError(
+            'Intermediate certificate must have KeyUsage extension'
+        )
+
     if isinstance(key_usage, x509.KeyUsage) and not key_usage.key_cert_sign:
         raise InvalidIntermediateCertificateError(
             'Signing certificate must have \'keyCertSign\' as key usage'

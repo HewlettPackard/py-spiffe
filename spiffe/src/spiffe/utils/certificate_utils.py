@@ -159,7 +159,7 @@ def write_certificates_to_file(
                 cert_bytes = serialize_certificate(cert, encoding)
                 certs_file.write(cert_bytes)
     except Exception as err:
-        raise StoreCertificateError(format(str(err))) from err
+        raise StoreCertificateError(str(err)) from err
 
 
 def serialize_certificate(certificate: Certificate, encoding: serialization.Encoding) -> bytes:

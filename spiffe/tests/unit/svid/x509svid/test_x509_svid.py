@@ -14,10 +14,12 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import datetime
 import os
 
 import pytest
-from cryptography.hazmat.primitives import serialization
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.x509 import Certificate
 
 from spiffe.spiffe_id.spiffe_id import SpiffeId
@@ -34,7 +36,12 @@ from spiffe.utils.errors import (
     ParseCertificateError,
     ParsePrivateKeyError,
 )
-from spiffe.svid.x509_svid import X509Svid, _extract_spiffe_id
+from spiffe.svid.x509_svid import (
+    X509Svid,
+    _extract_spiffe_id,
+    _validate_leaf_certificate,
+    _validate_intermediate_certificate,
+)
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 from testutils.certs import TEST_CERTS_DIR
@@ -72,14 +79,14 @@ def test_create_x509_svid_no_spiffe_id(mocker):
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=None, cert_chain=[mocker.Mock()], private_key=mocker.Mock())
 
-    assert str(exc_info.value) == 'spiffe_id cannot be None'
+    assert str(exc_info.value) == "spiffe_id cannot be None"
 
 
 def test_create_x509_svid_no_cert_chain(mocker):
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[], private_key=mocker.Mock())
 
-    assert str(exc_info.value) == 'cert_chain cannot be empty'
+    assert str(exc_info.value) == "cert_chain cannot be empty"
 
 
 def test_create_x509_svid_no_private_key(mocker):
@@ -190,7 +197,7 @@ def test_parse_raw_corrupted_certificate():
 
     assert (
         str(exception.value)
-        == 'Error parsing certificate: Unable to parse DER X.509 certificate'
+        == "Error parsing certificate: Unable to parse DER X.509 certificate"
     )
 
 
@@ -239,7 +246,7 @@ def test_parse_invalid_spiffe_id():
 
     assert (
         str(exception.value)
-        == 'Invalid leaf certificate: Certificate does not contain a SPIFFE ID in the URI SAN'
+        == 'Invalid leaf certificate: Certificate does not contain a URI SAN (expected exactly one SPIFFE ID)'
     )
 
 
@@ -334,6 +341,104 @@ def test_load_from_pem_files():
     assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
+
+
+def test_extract_spiffe_id_missing_san_extension(mocker):
+    """Regression test: Missing SubjectAlternativeName extension should raise InvalidLeafCertificateError."""
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "SubjectAlternativeName extension not found",
+        x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
+    )
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _extract_spiffe_id(mock_cert)
+
+    assert 'SubjectAlternativeName extension' in str(exception.value)
+
+
+def test_validate_leaf_missing_basic_constraints_extension(mocker):
+    """Regression test: Missing BasicConstraints extension in leaf should raise InvalidLeafCertificateError."""
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+    )
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _validate_leaf_certificate(mock_cert)
+
+    assert 'BasicConstraints extension' in str(exception.value)
+
+
+def test_validate_leaf_missing_key_usage_extension(mocker):
+    """Regression test: Missing KeyUsage extension in leaf should raise InvalidLeafCertificateError."""
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+
+    # First call (BasicConstraints) succeeds, second call (KeyUsage) fails
+    basic_constraints = mocker.Mock()
+    basic_constraints.value = mocker.Mock()
+    basic_constraints.value.ca = False
+
+    def get_extension_side_effect(oid):
+        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+            return basic_constraints
+        if oid == x509.ExtensionOID.KEY_USAGE:
+            raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
+        raise AssertionError(f"Unexpected oid: {oid}")
+
+    mock_extensions.get_extension_for_oid.side_effect = get_extension_side_effect
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidLeafCertificateError) as exception:
+        _validate_leaf_certificate(mock_cert)
+
+    assert 'KeyUsage extension' in str(exception.value)
+
+
+def test_validate_intermediate_missing_basic_constraints_extension(mocker):
+    """Regression test: Missing BasicConstraints extension in intermediate should raise InvalidIntermediateCertificateError."""
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+    mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
+        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+    )
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidIntermediateCertificateError) as exception:
+        _validate_intermediate_certificate(mock_cert)
+
+    assert 'BasicConstraints extension' in str(exception.value)
+
+
+def test_validate_intermediate_missing_key_usage_extension(mocker):
+    """Regression test: Missing KeyUsage extension in intermediate should raise InvalidIntermediateCertificateError."""
+    mock_cert = mocker.Mock()
+    mock_extensions = mocker.Mock()
+
+    # First call (BasicConstraints) succeeds, second call (KeyUsage) fails
+    basic_constraints = mocker.Mock()
+    basic_constraints.value = mocker.Mock()
+    basic_constraints.value.ca = True
+
+    def get_extension_side_effect(oid):
+        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+            return basic_constraints
+        if oid == x509.ExtensionOID.KEY_USAGE:
+            raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
+        raise AssertionError(f"Unexpected oid: {oid}")
+
+    mock_extensions.get_extension_for_oid.side_effect = get_extension_side_effect
+    mock_cert.extensions = mock_extensions
+
+    with pytest.raises(InvalidIntermediateCertificateError) as exception:
+        _validate_intermediate_certificate(mock_cert)
+
+    assert 'KeyUsage extension' in str(exception.value)
 
 
 def test_load_from_der_files():
@@ -534,7 +639,129 @@ def test_get_chain_returns_a_copy():
     assert x509_svid.cert_chain is not x509_svid._cert_chain
 
 
-def read_bytes(filename):
+def test_extract_spiffe_id_rejects_multiple_uri_sans():
+    """
+    SPIFFE X.509-SVID profile: MUST contain exactly one URI SAN total.
+    Reject when there are multiple URI SANs even if exactly one is SPIFFE.
+    """
+    cert, _key = _make_cert(
+        uri_sans=["spiffe://example.org/service", "https://example.org/"],
+        dns_sans=[],
+    )
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        _extract_spiffe_id(cert)
+
+    assert (
+        'Invalid leaf certificate: Certificate contains multiple URI SAN entries (expected exactly one SPIFFE ID)'
+        in str(exc.value)
+    )
+
+
+def test_extract_spiffe_id_rejects_single_uri_san_non_spiffe():
+    """
+    Exactly one URI SAN is present, but it's not a SPIFFE ID.
+    """
+    cert, _key = _make_cert(
+        uri_sans=["https://example.org/"],
+        dns_sans=[],
+    )
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        _extract_spiffe_id(cert)
+
+    assert "SPIFFE ID" in str(exc.value)
+
+
+def test_extract_spiffe_id_allows_dns_sans_with_single_spiffe_uri_san():
+    """
+    DNS SANs are not URI SANs; allow them in addition to the single SPIFFE URI SAN.
+    """
+    cert, _key = _make_cert(
+        uri_sans=["spiffe://example.org/service"],
+        dns_sans=["example.org", "workload.example.org"],
+    )
+
+    assert _extract_spiffe_id(cert) == SpiffeId("spiffe://example.org/service")
+
+
+def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe():
+    """
+    End-to-end parse path should enforce the same URI SAN cardinality rule.
+    """
+    cert, key = _make_cert(
+        uri_sans=["spiffe://example.org/service", "https://example.org/"],
+        dns_sans=[],
+    )
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        X509Svid.parse(cert_pem, key_pem)
+
+    assert "URI SAN" in str(exc.value)
+
+
+# ---------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------
+
+
+def _make_cert(*, uri_sans: list[str], dns_sans: list[str]):
+    """
+    Generates a self-signed leaf certificate with SAN entries. This is only for tests.
+    """
+    key = ec.generate_private_key(ec.SECP256R1())
+
+    subject = issuer = x509.Name(
+        [
+            x509.NameAttribute(x509.oid.NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(x509.oid.NameOID.ORGANIZATION_NAME, "test"),
+            x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, "leaf"),
+        ]
+    )
+
+    san_entries: list[x509.GeneralName] = []
+    for u in uri_sans:
+        san_entries.append(x509.UniformResourceIdentifier(u))
+    for d in dns_sans:
+        san_entries.append(x509.DNSName(d))
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    builder = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(minutes=1))
+        .not_valid_after(now + datetime.timedelta(hours=1))
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,  # common for ECDSA leafs
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(x509.SubjectAlternativeName(san_entries), critical=False)
+    )
+
+    cert = builder.sign(private_key=key, algorithm=hashes.SHA256())
+    return cert, key
+
+
+def read_bytes(filename: str) -> bytes:
     path = TEST_CERTS_DIR / filename
-    with open(path, 'rb') as file:
+    with open(path, "rb") as file:
         return file.read()
