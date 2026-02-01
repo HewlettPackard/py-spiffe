@@ -16,13 +16,13 @@ under the License.
 
 import logging
 import threading
-from typing import Optional, Callable, List, Set
+from typing import Optional, Callable, List, FrozenSet
 
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.x509_svid import X509Svid
 from spiffe.workloadapi.errors import X509SourceError
-from spiffe.workloadapi.workload_api_client import WorkloadApiClient
+from spiffe.workloadapi.workload_api_client import WorkloadApiClient, StreamCancelHandler
 from spiffe.workloadapi.x509_context import X509Context
 
 _logger = logging.getLogger(__name__)
@@ -52,7 +52,10 @@ class X509Source:
 
         Args:
             workload_api_client: A WorkloadApiClient that will be used to fetch the X.509 materials from the Workload API.
-                                 In case it's not provided, a default client will be created.
+                                 If not provided, a default client will be created and owned by this source; the source
+                                 will close it when the source is closed. If a client is provided, the caller retains
+                                 ownership and is responsible for closing it; the source will not close a client it
+                                 does not own.
 
             socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable must be set.
@@ -81,8 +84,11 @@ class X509Source:
         self._subscribers: List[Callable] = []
         self._subscribers_lock = threading.Lock()
 
+        # Track ownership: if we create the client, we own it
+        self._owns_client = workload_api_client is None
         self._workload_api_client = workload_api_client or WorkloadApiClient(socket_path)
         self._picker = svid_picker
+        self._client_cancel_handler: Optional[StreamCancelHandler] = None
 
         # Start the watcher in a separate thread
         threading.Thread(target=self._start_watcher, daemon=True).start()
@@ -106,21 +112,33 @@ class X509Source:
     def svid(self) -> X509Svid:
         """Returns an X509-SVID from the source."""
         with self._lock:
+            if self._error is not None:
+                raise X509SourceError(
+                    f'Cannot get X.509 SVID: source has error: {self._error}'
+                )
             if self._closed:
                 raise X509SourceError('Cannot get X.509 SVID: source is closed')
             return self._x509_svid
 
     @property
-    def bundles(self) -> Set[X509Bundle]:
+    def bundles(self) -> FrozenSet[X509Bundle]:
         """Returns the set of all X509Bundles."""
         with self._lock:
+            if self._error is not None:
+                raise X509SourceError(
+                    f'Cannot get X.509 Bundles: source has error: {self._error}'
+                )
             if self._closed:
                 raise X509SourceError('Cannot get X.509 Bundles: source is closed')
-            return self._x509_bundle_set.bundles
+            return frozenset(self._x509_bundle_set.bundles)
 
     def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[X509Bundle]:
         """Returns the X.509 bundle for the given trust domain."""
         with self._lock:
+            if self._error is not None:
+                raise X509SourceError(
+                    f'Cannot get X.509 Bundle: source has error: {self._error}'
+                )
             if self._closed:
                 raise X509SourceError('Cannot get X.509 Bundle: source is closed')
             return self._x509_bundle_set.get_bundle_for_trust_domain(trust_domain)
@@ -134,8 +152,11 @@ class X509Source:
         """
         _logger.info("Closing X.509 Source")
         with self._lock:
+            if self._closed:
+                return
             try:
-                self._client_cancel_handler.cancel()
+                if self._client_cancel_handler:
+                    self._client_cancel_handler.cancel()
             except Exception as err:
                 _logger.exception(
                     'Exception canceling the Workload API client connection: {}'.format(
@@ -143,6 +164,14 @@ class X509Source:
                     )
                 )
             self._closed = True
+
+        if self._owns_client:
+            try:
+                self._workload_api_client.close()
+            except Exception as err:
+                _logger.exception(
+                    'Exception closing owned Workload API client: {}'.format(str(err))
+                )
 
     def is_closed(self) -> bool:
         """Checks if the source has been closed, disallowing further operations."""
@@ -167,7 +196,10 @@ class X509Source:
             callback (Callable[[], None]): The callback function to unregister.
         """
         with self._subscribers_lock:
-            self._subscribers.remove(callback)
+            try:
+                self._subscribers.remove(callback)
+            except ValueError:
+                pass
 
     def _start_watcher(self) -> None:
         self._client_cancel_handler = self._workload_api_client.stream_x509_contexts(
@@ -199,16 +231,23 @@ class X509Source:
 
     def _notify_subscribers(self) -> None:
         with self._subscribers_lock:
-            for callback in self._subscribers:
-                try:
-                    callback()
-                except Exception as err:
-                    _logger.exception(f"An error occurred while notifying a subscriber: {err}")
+            subscribers = list(self._subscribers)
+        for callback in subscribers:
+            try:
+                callback()
+            except Exception as err:
+                _logger.exception(f"An error occurred while notifying a subscriber: {err}")
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
         with self._lock:
             self._error = error
+            self._closed = True
+            try:
+                if self._client_cancel_handler:
+                    self._client_cancel_handler.cancel()
+            except Exception as err:
+                _logger.exception(f"Exception canceling stream on error: {err}")
         self._initialization_event.set()
 
     @staticmethod

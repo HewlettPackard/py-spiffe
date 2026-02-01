@@ -16,14 +16,14 @@ under the License.
 
 import logging
 import threading
-from typing import Optional, Set, Callable, List
+from typing import Optional, Set, Callable, List, FrozenSet
 
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.jwt_svid import JwtSvid
-from spiffe.workloadapi.workload_api_client import WorkloadApiClient
+from spiffe.workloadapi.workload_api_client import WorkloadApiClient, StreamCancelHandler
 from spiffe.workloadapi.errors import JwtSourceError
 from spiffe.errors import ArgumentError
 
@@ -56,7 +56,10 @@ class JwtSource:
 
         Args:
             workload_api_client: A WorkloadApiClient object that will be used to fetch the JWT materials from the Workload API.
-                                 In case it's not provided, a default client will be created.
+                                 If not provided, a default client will be created and owned by this source; the source
+                                 will close it when the source is closed. If a client is provided, the caller retains
+                                 ownership and is responsible for closing it; the source will not close a client it
+                                 does not own.
             socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable will be used and thus, must be set.
             timeout_in_seconds: Time to wait for the first update of the Workload API. If not provided, and
@@ -79,9 +82,12 @@ class JwtSource:
         self._subscribers: List[Callable] = []
         self._subscribers_lock = threading.Lock()
 
+        # Track ownership: if we create the client, we own it
+        self._owns_client = workload_api_client is None
         self._workload_api_client = (
             workload_api_client if workload_api_client else WorkloadApiClient(socket_path)
         )
+        self._client_cancel_handler: Optional[StreamCancelHandler] = None
 
         # Start the watcher in a separate thread
         threading.Thread(target=self._start_watcher, daemon=True).start()
@@ -100,12 +106,16 @@ class JwtSource:
             raise JwtSourceError(f"Failed to create JwtSource: {self._error}") from self._error
 
     @property
-    def bundles(self) -> Set[JwtBundle]:
+    def bundles(self) -> FrozenSet[JwtBundle]:
         """Returns the set of all JwtBundles."""
         with self._lock:
+            if self._error is not None:
+                raise JwtSourceError(
+                    f'Cannot get Jwt Bundles: source has error: {self._error}'
+                )
             if self._closed:
                 raise JwtSourceError('Cannot get Jwt Bundles: source is closed')
-            return self._jwt_bundle_set.bundles
+            return frozenset(self._jwt_bundle_set.bundles)
 
     def fetch_svid(self, audience: Set[str], subject: Optional[SpiffeId] = None) -> JwtSvid:
         """Fetches an JWT-SVID from the source.
@@ -124,7 +134,9 @@ class JwtSource:
         jwt_svid = self._workload_api_client.fetch_jwt_svid(audience, subject)
         return jwt_svid
 
-    def fetch_svids(self, audiences: Set[str], subject: Optional[SpiffeId] = None) -> JwtSvid:
+    def fetch_svids(
+        self, audiences: Set[str], subject: Optional[SpiffeId] = None
+    ) -> List[JwtSvid]:
         """Fetches all JWT-SVIDs from the source.
 
         Args:
@@ -148,6 +160,8 @@ class JwtSource:
             JwtSourceError: In case this JWT Source is closed.
         """
         with self._lock:
+            if self._error is not None:
+                raise JwtSourceError(f'Cannot get JWT Bundle: source has error: {self._error}')
             if self._closed:
                 raise JwtSourceError('Cannot get JWT Bundle: source is closed')
             return self._jwt_bundle_set.get_bundle_for_trust_domain(trust_domain)
@@ -161,9 +175,11 @@ class JwtSource:
         """
         _logger.info("Closing JWT Source")
         with self._lock:
-            # the cancel method throws a grpc exception, that can be discarded
+            if self._closed:
+                return
             try:
-                self._client_cancel_handler.cancel()
+                if self._client_cancel_handler:
+                    self._client_cancel_handler.cancel()
             except Exception as err:
                 _logger.exception(
                     'JWT Source: Exception canceling the Workload API client connection: {}'.format(
@@ -171,6 +187,14 @@ class JwtSource:
                     )
                 )
             self._closed = True
+
+        if self._owns_client:
+            try:
+                self._workload_api_client.close()
+            except Exception as err:
+                _logger.exception(
+                    'Exception closing owned Workload API client: {}'.format(str(err))
+                )
 
     def is_closed(self) -> bool:
         """Checks if the source has been closed, disallowing further operations."""
@@ -195,7 +219,10 @@ class JwtSource:
             callback (Callable[[], None]): The callback function to unregister.
         """
         with self._subscribers_lock:
-            self._subscribers.remove(callback)
+            try:
+                self._subscribers.remove(callback)
+            except ValueError:
+                pass
 
     def _start_watcher(self) -> None:
         self._client_cancel_handler = self._workload_api_client.stream_jwt_bundles(
@@ -213,16 +240,23 @@ class JwtSource:
 
     def _notify_subscribers(self) -> None:
         with self._subscribers_lock:
-            for callback in self._subscribers:
-                try:
-                    callback()
-                except Exception as err:
-                    _logger.exception(f"An error occurred while notifying a subscriber: {err}")
+            subscribers = list(self._subscribers)
+        for callback in subscribers:
+            try:
+                callback()
+            except Exception as err:
+                _logger.exception(f"An error occurred while notifying a subscriber: {err}")
 
     def _on_error(self, error: Exception) -> None:
         self._log_error(error)
         with self._lock:
             self._error = error
+            self._closed = True
+            try:
+                if self._client_cancel_handler:
+                    self._client_cancel_handler.cancel()
+            except Exception as err:
+                _logger.exception(f"Exception canceling stream on error: {err}")
         self._initialization_event.set()
 
     @staticmethod

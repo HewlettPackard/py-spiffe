@@ -22,7 +22,7 @@ from spiffe import X509Svid, X509Bundle, X509BundleSet
 from spiffe.proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
-from spiffe.workloadapi.errors import X509SourceError
+from spiffe.workloadapi.errors import X509SourceError, WorkloadApiError
 from spiffe.workloadapi.x509_context import X509Context
 from spiffe.workloadapi.x509_source import X509Source
 
@@ -173,3 +173,48 @@ def test_x509_source_is_closed_get_bundle(mocker, client):
         x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
 
     assert str(err.value) == 'X.509 Source error: Cannot get X.509 Bundle: source is closed'
+
+
+def test_x509_source_closes_on_error_after_init(mocker, client):
+    """Test that source closes on error after first update."""
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+
+    # Simulate an error after initialization
+    x509_source._on_error(WorkloadApiError("Test error"))
+
+    # Source should be closed and accessing svid/bundles should raise error
+    with pytest.raises(X509SourceError) as err:
+        _ = x509_source.svid
+    assert 'source has error' in str(err.value)
+
+    with pytest.raises(X509SourceError) as err:
+        _ = x509_source.bundles
+    assert 'source has error' in str(err.value)
+
+
+def test_x509_source_bundles_returns_frozenset(mocker, client):
+    """Test that bundles property returns frozenset."""
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+    bundles = x509_source.bundles
+
+    # Should return frozenset
+    assert isinstance(bundles, frozenset)
+
+    # Should not be able to mutate
+    with pytest.raises(AttributeError):
+        bundles.add(X509Bundle.parse_raw(TrustDomain("test"), BUNDLE))
+
+
+def test_x509_source_unsubscribe_missing_callback(mocker, client):
+    """Test that unsubscribe handles missing callback gracefully."""
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+
+    # Unsubscribe a callback that was never subscribed - should not raise
+    callback = mocker.MagicMock()
+    x509_source.unsubscribe_for_updates(callback)  # Should not raise ValueError
