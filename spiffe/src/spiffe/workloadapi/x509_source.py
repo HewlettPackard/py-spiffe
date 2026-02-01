@@ -52,7 +52,10 @@ class X509Source:
 
         Args:
             workload_api_client: A WorkloadApiClient that will be used to fetch the X.509 materials from the Workload API.
-                                 In case it's not provided, a default client will be created.
+                                 If not provided, a default client will be created and owned by this source; the source
+                                 will close it when the source is closed. If a client is provided, the caller retains
+                                 ownership and is responsible for closing it; the source will not close a client it
+                                 does not own.
 
             socket_path: Path to Workload API UDS. This will be used in case a the workload_api_client is not provided.
                            If not specified, the SPIFFE_ENDPOINT_SOCKET environment variable must be set.
