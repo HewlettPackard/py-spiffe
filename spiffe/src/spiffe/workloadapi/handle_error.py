@@ -14,7 +14,7 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
-from typing import Type
+from typing import Callable, Type, TypeVar, ParamSpec
 import grpc
 import functools
 
@@ -23,11 +23,16 @@ from spiffe.workloadapi.errors import WorkloadApiError
 
 DEFAULT_WL_API_ERROR_MESSAGE = 'Could not process response from the Workload API'
 
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
-def handle_error(error_cls: Type[PySpiffeError]):
-    def handler(func):
+
+def handle_error(
+    error_cls: Type[PySpiffeError],
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
+    def handler(func: Callable[_P, _R]) -> Callable[_P, _R]:
         @functools.wraps(func)
-        def wrapper(*args, **kw):
+        def wrapper(*args: _P.args, **kw: _P.kwargs) -> _R:
             try:
                 return func(*args, **kw)
             except WorkloadApiError as we:

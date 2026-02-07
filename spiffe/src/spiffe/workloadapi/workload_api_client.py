@@ -17,9 +17,10 @@ under the License.
 import logging
 import os
 import threading
-from typing import Optional, List, Mapping, Callable, Dict, Set
+from typing import Optional, List, Mapping, Callable, Dict, Set, Iterator, Protocol, TypeVar
 
 import grpc
+from grpc import StatusCode
 
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
 from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
@@ -63,6 +64,33 @@ _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUM
 
 __all__ = ['WorkloadApiClient', 'RetryPolicy']
 
+_T_co = TypeVar("_T_co", covariant=True)
+
+
+class _CancelableIterator(Protocol[_T_co]):
+    def __iter__(self) -> Iterator[_T_co]: ...
+
+    def __next__(self) -> _T_co: ...
+
+    def cancel(self) -> None: ...
+
+
+class _WorkloadApiStub(Protocol):
+    FetchX509SVID: Callable[
+        [workload_pb2.X509SVIDRequest], _CancelableIterator[workload_pb2.X509SVIDResponse]
+    ]
+    FetchX509Bundles: Callable[
+        [workload_pb2.X509BundlesRequest],
+        _CancelableIterator[workload_pb2.X509BundlesResponse],
+    ]
+    FetchJWTSVID: Callable[[workload_pb2.JWTSVIDRequest], workload_pb2.JWTSVIDResponse]
+    FetchJWTBundles: Callable[
+        [workload_pb2.JWTBundlesRequest], _CancelableIterator[workload_pb2.JWTBundlesResponse]
+    ]
+    ValidateJWTSVID: Callable[
+        [workload_pb2.ValidateJWTSVIDRequest], workload_pb2.ValidateJWTSVIDResponse
+    ]
+
 
 class RetryPolicy:
     """Defines the retry policy using an exponential backoff strategy."""
@@ -75,7 +103,7 @@ class RetryPolicy:
         base_backoff_in_seconds: float = 0.1,
         backoff_factor: int = 2,
         max_backoff: float = 5,
-    ):
+    ) -> None:
         self.max_retries = max_retries
         self.base_backoff = base_backoff_in_seconds
         self.backoff_factor = backoff_factor
@@ -83,11 +111,11 @@ class RetryPolicy:
 
 
 class RetryHandler:
-    def __init__(self, retry_policy: Optional[RetryPolicy] = None):
+    def __init__(self, retry_policy: Optional[RetryPolicy] = None) -> None:
         self.retry_policy = retry_policy if retry_policy is not None else RetryPolicy()
         self.attempt = 0
 
-    def should_retry(self, error_code) -> bool:
+    def should_retry(self, error_code: StatusCode) -> bool:
         """Determines whether the operation should be retried based on the error code and attempt count."""
         if error_code in _NON_RETRYABLE_CODES:
             return False
@@ -101,35 +129,39 @@ class RetryHandler:
 
     def get_backoff(self) -> float:
         """Calculates the backoff time for the current attempt, then increments the attempt counter."""
+        # int.__pow__ is annotated as returning Any to avoid false positives
+        # (positive int -> int, negative int -> float) so coerce to int since we
+        # know it's a positive integer.
+        growth: int = self.retry_policy.backoff_factor**self.attempt
         backoff_time = min(
-            self.retry_policy.base_backoff * (self.retry_policy.backoff_factor**self.attempt),
+            self.retry_policy.base_backoff * growth,
             self.retry_policy.max_backoff,
         )
         self.attempt += 1
         return backoff_time
 
-    def reset(self):
+    def reset(self) -> None:
         """Resets the attempt counter to zero."""
         self.attempt = 0
 
 
 class StreamCancelHandler:
-    def __init__(self):
-        self.response_iterator = None
+    def __init__(self) -> None:
+        self.response_iterator: Optional[_CancelableIterator[object]] = None
         self._cancel_event = threading.Event()
         self._lock = threading.Lock()
 
-    def set_iterator(self, iterator):
+    def set_iterator(self, iterator: _CancelableIterator[object]) -> None:
         with self._lock:
             self.response_iterator = iterator
             # If already cancelled, cancel the iterator immediately to avoid race
-            if self._cancel_event.is_set() and hasattr(iterator, "cancel"):
+            if self._cancel_event.is_set():
                 try:
                     iterator.cancel()
                 except Exception:
                     pass
 
-    def cancel(self):
+    def cancel(self) -> None:
         self._cancel_event.set()
         with self._lock:
             if self.response_iterator:
@@ -168,7 +200,10 @@ class WorkloadApiClient:
             raise ArgumentError('Invalid WorkloadApiClient configuration: {}'.format(str(e)))
 
         self._channel = self._get_spiffe_grpc_channel()
-        self._spiffe_workload_api_stub = workload_pb2_grpc.SpiffeWorkloadAPIStub(self._channel)
+        self._spiffe_workload_api_stub: _WorkloadApiStub = (
+            # grpc doesn't generate types, see https://github.com/grpc/grpc/pull/37877.
+            workload_pb2_grpc.SpiffeWorkloadAPIStub(self._channel)  # type: ignore[no-untyped-call]
+        )
 
     @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_svid(self) -> X509Svid:
@@ -258,7 +293,7 @@ class WorkloadApiClient:
 
         subject_str = str(subject) if subject is not None else ''
         response = self._spiffe_workload_api_stub.FetchJWTSVID(
-            request=workload_pb2.JWTSVIDRequest(
+            workload_pb2.JWTSVIDRequest(
                 audience=audience,
                 spiffe_id=subject_str,
             )
@@ -289,7 +324,7 @@ class WorkloadApiClient:
 
         subject_str = str(subject) if subject is not None else ''
         response = self._spiffe_workload_api_stub.FetchJWTSVID(
-            request=workload_pb2.JWTSVIDRequest(
+            workload_pb2.JWTSVIDRequest(
                 audience=audience,
                 spiffe_id=subject_str,
             )
@@ -341,7 +376,7 @@ class WorkloadApiClient:
             raise ArgumentError('Audience cannot be empty')
 
         self._spiffe_workload_api_stub.ValidateJWTSVID(
-            request=workload_pb2.ValidateJWTSVIDRequest(
+            workload_pb2.ValidateJWTSVIDRequest(
                 audience=audience,
                 svid=token,
             )
@@ -379,7 +414,7 @@ class WorkloadApiClient:
         cancel_handler = StreamCancelHandler()
         retry_handler = RetryHandler(retry_policy) if retry_connect else None
 
-        def watch_target():
+        def watch_target() -> None:
             self._watch_x509_context_updates(
                 cancel_handler, retry_handler, on_success, on_error
             )
@@ -420,7 +455,7 @@ class WorkloadApiClient:
         cancel_handler = StreamCancelHandler()
         retry_handler = RetryHandler(retry_policy) if retry_connect else None
 
-        def watch_target():
+        def watch_target() -> None:
             self._watch_jwt_bundles_updates(
                 cancel_handler, retry_handler, on_success, on_error
             )
@@ -450,7 +485,7 @@ class WorkloadApiClient:
         retry_handler: Optional[RetryHandler],
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
-    ):
+    ) -> None:
         while True:
             if cancel_handler.is_cancelled():
                 break
@@ -489,7 +524,7 @@ class WorkloadApiClient:
         retry_handler: Optional[RetryHandler],
         on_success: Callable[[JwtBundleSet], None],
         on_error: Callable[[Exception], None],
-    ):
+    ) -> None:
         while True:
             if cancel_handler.is_cancelled():
                 break
@@ -618,7 +653,7 @@ class WorkloadApiClient:
     def __enter__(self) -> 'WorkloadApiClient':
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.close()
 
     @staticmethod

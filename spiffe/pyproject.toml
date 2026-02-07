@@ -29,6 +29,10 @@ dev = [
   "pre-commit>=4.5,<5",
   "coverage>=7,<8",
   "testutils",
+  # TODO: Drop this once grpc ships usable first-party type information:
+  # https://github.com/grpc/grpc/pull/41579
+  "types-grpcio>=1.0,<2",
+  "types-pyasn1>=0.6.0.20250914,<0.7.0",
 ]
 
 [tool.uv.sources]
@@ -50,8 +54,11 @@ spiffe = ["py.typed"]
 
 # Tool configurations
 [tool.mypy]
-ignore_missing_imports = true
-files = ["src", "tests"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["spiffe.proto.workload_pb2_grpc"]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 addopts = [

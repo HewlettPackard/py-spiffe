@@ -60,7 +60,7 @@ class JwtBundleSet(object):
         with self.lock:
             return self._bundles.get(trust_domain.name)
 
-    def put(self, jwt_bundle: JwtBundle):
+    def put(self, jwt_bundle: JwtBundle) -> None:
         """Adds a new bundle into the set.
 
         If a bundle already exists for the trust domain, the existing bundle is

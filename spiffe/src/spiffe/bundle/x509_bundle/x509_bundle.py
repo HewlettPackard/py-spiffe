@@ -208,7 +208,7 @@ class X509Bundle(object):
                 and self._x509_authorities == o._x509_authorities
             )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         trust_domain_hash = hash(self.trust_domain)
         authorities_hash = hash(tuple(hash(authority) for authority in self._x509_authorities))
         return hash((trust_domain_hash, authorities_hash))

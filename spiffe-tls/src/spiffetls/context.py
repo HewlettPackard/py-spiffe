@@ -15,12 +15,12 @@ under the License.
 """
 
 import logging
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 from OpenSSL import SSL, crypto
 from cryptography.hazmat.primitives import serialization
 
-from spiffe import X509Source
+from spiffe.workloadapi.x509_source import X509Source
 from spiffetls.errors import SslContextError
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def create_ssl_context(
     x509_source: X509Source,
     authorize_fn: Optional[Callable[[crypto.X509], bool]] = None,
     verify_mode: int = SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-    use_system_trusted_cas=False,
+    use_system_trusted_cas: bool = False,
 ) -> SSL.Context:
     """Configures and returns an SSL context for secure connections.
 
@@ -60,14 +60,20 @@ def create_ssl_context(
         _load_certificate_chain(ssl_context, x509_source)
         _load_ca_bundles(ssl_context, x509_source)
 
-        def verify_callback(connection, x509, errno, depth, preverify_ok):
+        def verify_callback(
+            connection: SSL.Connection,
+            x509: crypto.X509,
+            errno: int,
+            depth: int,
+            preverify_ok: int,
+        ) -> bool:
             if not preverify_ok:
                 return False
             if depth == 0 and authorize_fn:
                 # Perform custom verification at the leaf certificate
                 return authorize_fn(x509)
 
-            return preverify_ok
+            return bool(preverify_ok)
 
         ssl_context.set_verify(verify_mode, verify_callback)
         x509_source.subscribe_for_updates(lambda: _on_source_update(ssl_context, x509_source))
@@ -83,7 +89,7 @@ def create_ssl_context(
     return ssl_context
 
 
-def _load_certificate_chain(ssl_context: SSL.Context, x509_source: X509Source):
+def _load_certificate_chain(ssl_context: SSL.Context, x509_source: X509Source) -> None:
     """
     Loads the certificate chain and private key into the SSL context.
     """
@@ -119,7 +125,7 @@ def _load_certificate_chain(ssl_context: SSL.Context, x509_source: X509Source):
         raise Exception(f'Error loading certificates into SSL Context: {e}') from e
 
 
-def _load_ca_bundles(ssl_context: SSL.Context, x509_source: X509Source):
+def _load_ca_bundles(ssl_context: SSL.Context, x509_source: X509Source) -> None:
     """
     Loads the trusted CA certificate bundles into the SSL context.
     """
@@ -129,12 +135,15 @@ def _load_ca_bundles(ssl_context: SSL.Context, x509_source: X509Source):
             for ca_cert in bundle.x509_authorities:
                 ca_cert_pem = ca_cert.public_bytes(serialization.Encoding.PEM)
                 ca_cert_obj = crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert_pem)
-                ssl_context.get_cert_store().add_cert(ca_cert_obj)
+                cert_store = ssl_context.get_cert_store()
+                if cert_store is None:
+                    raise RuntimeError("SSL context certificate store is unavailable")
+                cert_store.add_cert(ca_cert_obj)
     except Exception as e:
         raise Exception(f'Error loading trusted CA certificates into SSL Context: {e}') from e
 
 
-def _on_source_update(ssl_context: SSL.Context, x509_source: X509Source):
+def _on_source_update(ssl_context: SSL.Context, x509_source: X509Source) -> None:
     """
     Callback function to reload certificates.
     """
