@@ -19,7 +19,7 @@ from typing import Callable, Set
 
 from OpenSSL import crypto
 
-from spiffe import SpiffeId, TrustDomain
+from spiffe.spiffe_id.spiffe_id import SpiffeId, TrustDomain
 from spiffe.spiffe_id.spiffe_id import SCHEME_PREFIX
 from spiffe.utils.errors import X509CertificateError
 

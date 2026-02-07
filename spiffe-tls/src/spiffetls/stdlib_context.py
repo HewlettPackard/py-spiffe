@@ -47,14 +47,14 @@ import logging
 import ssl
 from socket import socket as socket_cls
 from socket import timeout
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Literal, MutableSequence, TypeAlias, overload
 
 import OpenSSL.SSL
 from cryptography import x509
 from OpenSSL import SSL
 
-from spiffe import X509Source
-from spiffetls import create_ssl_context
+from spiffe.workloadapi.x509_source import X509Source
+from spiffetls.context import create_ssl_context
 from spiffetls import util
 
 if TYPE_CHECKING:
@@ -109,6 +109,11 @@ _openssl_to_ssl_maximum_version: dict[int, int] = {
     ssl.TLSVersion.TLSv1_3: _OP_NO_SSLv2_OR_SSLv3,
     ssl.TLSVersion.MAXIMUM_SUPPORTED: _OP_NO_SSLv2_OR_SSLv3,
 }
+
+_PeerCertTuple: TypeAlias = tuple[tuple[str, str], ...]
+_PeerCertTupleTuple: TypeAlias = tuple[_PeerCertTuple, ...]
+_PeerCertRetDictType: TypeAlias = dict[str, str | _PeerCertTupleTuple | _PeerCertTuple]
+_PeerCertRetType: TypeAlias = _PeerCertRetDictType | bytes | None
 
 # OpenSSL will only write 16K at a time
 SSL_WRITE_BLOCKSIZE = 16384
@@ -245,12 +250,12 @@ class WrappedSocket:
         if self._closed:
             self.close()
 
-    def recv(self, *args: Any, **kwargs: Any) -> bytes:
+    def recv(self, bufsiz: int = 1024, flags: int | None = None) -> bytes:
         """Receive data from the socket.
 
         Args:
-            *args: Positional arguments passed to the underlying recv.
-            **kwargs: Keyword arguments passed to the underlying recv.
+            bufsiz: Maximum amount of data to be received at once.
+            flags: Optional socket flags.
 
         Returns:
             The received data.
@@ -261,7 +266,7 @@ class WrappedSocket:
             timeout: If a timeout occurs.
         """
         try:
-            data = self.connection.recv(*args, **kwargs)
+            data = self.connection.recv(bufsiz, flags)
         except OpenSSL.SSL.SysCallError as e:
             if self.suppress_ragged_eofs and e.args == (-1, "Unexpected EOF"):
                 return b""
@@ -276,19 +281,25 @@ class WrappedSocket:
             if not util.wait_for_read(self.socket, self.socket.gettimeout()):
                 raise timeout("The read operation timed out") from e
             else:
-                return self.recv(*args, **kwargs)
+                return self.recv(bufsiz, flags)
         # TLS 1.3 post-handshake authentication
         except OpenSSL.SSL.Error as e:
             raise ssl.SSLError(f"read error: {e!r}") from e
         else:
-            return data  # type: ignore[no-any-return]
+            return data
 
-    def recv_into(self, *args: Any, **kwargs: Any) -> int:
+    def recv_into(
+        self,
+        buffer: MutableSequence[int],
+        nbytes: int | None = None,
+        flags: int | None = None,
+    ) -> int:
         """Receive data from the socket into a buffer.
 
         Args:
-            *args: Positional arguments passed to the underlying recv_into.
-            **kwargs: Keyword arguments passed to the underlying recv_into.
+            buffer: Writable buffer where bytes will be copied.
+            nbytes: Optional maximum number of bytes to receive.
+            flags: Optional socket flags.
 
         Returns:
             The number of bytes received.
@@ -299,7 +310,7 @@ class WrappedSocket:
             timeout: If a timeout occurs.
         """
         try:
-            return self.connection.recv_into(*args, **kwargs)  # type: ignore[no-any-return]
+            return self.connection.recv_into(buffer, nbytes, flags)
         except OpenSSL.SSL.SysCallError as e:
             if self.suppress_ragged_eofs and e.args == (-1, "Unexpected EOF"):
                 return 0
@@ -314,7 +325,7 @@ class WrappedSocket:
             if not util.wait_for_read(self.socket, self.socket.gettimeout()):
                 raise timeout("The read operation timed out") from e
             else:
-                return self.recv_into(*args, **kwargs)
+                return self.recv_into(buffer, nbytes, flags)
         # TLS 1.3 post-handshake authentication
         except OpenSSL.SSL.Error as e:
             raise ssl.SSLError(f"read error: {e!r}") from e
@@ -342,7 +353,7 @@ class WrappedSocket:
         """
         while True:
             try:
-                return self.connection.send(data)  # type: ignore[no-any-return]
+                return self.connection.send(data)
             except OpenSSL.SSL.WantWriteError as e:
                 if not util.wait_for_write(self.socket, self.socket.gettimeout()):
                     raise timeout() from e
@@ -400,7 +411,18 @@ class WrappedSocket:
         except OpenSSL.SSL.Error:
             return
 
-    def getpeercert(self, binary_form: bool = False) -> dict[str, list[Any]] | bytes | None:
+    @overload
+    def getpeercert(
+        self, binary_form: Literal[False] = False
+    ) -> _PeerCertRetDictType | None: ...
+
+    @overload
+    def getpeercert(self, binary_form: Literal[True]) -> bytes | None: ...
+
+    @overload
+    def getpeercert(self, binary_form: bool) -> _PeerCertRetType: ...
+
+    def getpeercert(self, binary_form: bool = False) -> _PeerCertRetType:
         """Get the peer's certificate.
 
         Args:
@@ -412,14 +434,14 @@ class WrappedSocket:
         x509 = self.connection.get_peer_certificate()
 
         if not x509:
-            return None  # type: ignore[return-value]
+            return None
 
         if binary_form:
-            return OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_ASN1, x509)  # type: ignore[no-any-return]
+            return OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_ASN1, x509)
 
         return {
-            "subject": ((("commonName", x509.get_subject().CN),),),  # type: ignore[dict-item]
-            "subjectAltName": get_subj_alt_name(x509),
+            "subject": ((("commonName", x509.get_subject().CN),),),
+            "subjectAltName": tuple(get_subj_alt_name(x509)),
         }
 
     def version(self) -> str:
@@ -428,7 +450,7 @@ class WrappedSocket:
         Returns:
             The TLS version string.
         """
-        return self.connection.get_protocol_version_name()  # type: ignore[no-any-return]
+        return self.connection.get_protocol_version_name()
 
     def selected_alpn_protocol(self) -> str | None:
         """Get the selected ALPN protocol.
@@ -500,9 +522,9 @@ class SpiffeSSLContext:
         self._verify_flags: int = ssl.VERIFY_X509_TRUSTED_FIRST
 
     @property  # type: ignore[misc]
-    def __class__(self) -> type:  # type: ignore[override]
+    def __class__(self) -> type:
         """Return ssl.SSLContext as the class for compatibility with type checks."""
-        return ssl.SSLContext  # type: ignore[return-value]
+        return ssl.SSLContext
 
     @property
     def options(self) -> int:
@@ -532,7 +554,10 @@ class SpiffeSSLContext:
             value: The verification flags.
         """
         self._verify_flags = value
-        self._ctx.get_cert_store().set_flags(self._verify_flags)
+        cert_store = self._ctx.get_cert_store()
+        if cert_store is None:
+            raise RuntimeError("OpenSSL certificate store is unavailable")
+        cert_store.set_flags(self._verify_flags)
 
     @property
     def verify_mode(self) -> int:
@@ -599,7 +624,7 @@ class SpiffeSSLContext:
             protocols: List of ALPN protocol identifiers.
         """
         protocols_bytes = [util.to_bytes(p, "ascii") for p in protocols]
-        return self._ctx.set_alpn_protos(protocols_bytes)  # type: ignore[no-any-return,arg-type]
+        return self._ctx.set_alpn_protos(protocols_bytes)
 
     def wrap_socket(
         self,

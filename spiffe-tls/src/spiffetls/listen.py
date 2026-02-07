@@ -16,11 +16,11 @@ under the License.
 
 import socket
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 from OpenSSL import SSL, crypto
 
-from spiffe import X509Source
+from spiffe.workloadapi.x509_source import X509Source
 from spiffetls.context import create_ssl_context
 from spiffetls.errors import ListenError
 from spiffetls.mode import ServerTlsMode
@@ -51,7 +51,7 @@ class ListenOptions:
         backlog: int = 5,
         socket_family: int = socket.AF_INET,
         socket_type: int = socket.SOCK_STREAM,
-    ):
+    ) -> None:
         self.tls_mode = tls_mode
         self.authorize_fn = authorize_fn
         self.backlog = backlog
@@ -114,7 +114,7 @@ def listen(
     return ssl_connection
 
 
-def _parse_address(address):
+def _parse_address(address: str) -> Tuple[str, int]:
     try:
         host, port_str = address.split(':')
         port = int(port_str)

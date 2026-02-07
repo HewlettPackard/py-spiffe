@@ -38,7 +38,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import Certificate
 from pyasn1.codec.der.decoder import decode
 from pyasn1.codec.der.encoder import encode
-from pyasn1_modules.rfc5280 import Certificate as Pyasn1Certificate
+from pyasn1_modules.rfc5280 import Certificate as Pyasn1Certificate  # type: ignore[import-untyped]
 from spiffe.utils.errors import (
     X509CertificateError,
     ParseCertificateError,

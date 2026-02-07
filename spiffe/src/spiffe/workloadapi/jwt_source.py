@@ -79,7 +79,7 @@ class JwtSource:
         self._error: Optional[Exception] = None
         self._closed = False
         self._lock = threading.Lock()
-        self._subscribers: List[Callable] = []
+        self._subscribers: List[Callable[[], None]] = []
         self._subscribers_lock = threading.Lock()
 
         # Track ownership: if we create the client, we own it
@@ -266,5 +266,5 @@ class JwtSource:
     def __enter__(self) -> 'JwtSource':
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.close()

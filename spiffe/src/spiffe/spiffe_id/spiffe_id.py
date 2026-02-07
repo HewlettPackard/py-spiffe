@@ -78,7 +78,7 @@ class TrustDomain:
         example.org
     """
 
-    def __init__(self, id_or_name: str):
+    def __init__(self, id_or_name: str) -> None:
         self._name = extract_and_validate_trust_domain(id_or_name)
 
     @property
@@ -91,7 +91,7 @@ class TrustDomain:
     def __str__(self) -> str:
         return self._name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, TrustDomain):
             return self._name == other._name
         elif isinstance(other, str):
@@ -154,7 +154,7 @@ class SpiffeId:
     def __str__(self) -> str:
         return f"{SCHEME_PREFIX}{self._trust_domain}{self._path}"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, SpiffeId):
             return (self._trust_domain, self._path) == (
                 other._trust_domain,
@@ -176,7 +176,7 @@ class SpiffeId:
         return self._path
 
     @staticmethod
-    def _validate_path(path: str):
+    def _validate_path(path: str) -> None:
         if not path.startswith("/"):
             raise ValueError("path must start with '/'")
 

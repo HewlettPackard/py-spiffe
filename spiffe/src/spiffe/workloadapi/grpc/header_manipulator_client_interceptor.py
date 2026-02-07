@@ -17,10 +17,13 @@ under the License.
 """Interceptor that adds headers to outgoing requests."""
 
 import collections
+from typing import Iterator, TypeVar
 
 import grpc
 
 from spiffe.workloadapi.grpc import generic_client_interceptor
+
+_TRequest = TypeVar("_TRequest")
 
 
 class _ClientCallDetails(
@@ -32,10 +35,13 @@ class _ClientCallDetails(
     pass
 
 
-def header_adder_interceptor(header, value):
+def header_adder_interceptor(header: str, value: str) -> grpc.StreamStreamClientInterceptor:
     def intercept_call(
-        client_call_details, request_iterator, request_streaming, response_streaming
-    ):
+        client_call_details: grpc.ClientCallDetails,
+        request_iterator: Iterator[_TRequest],
+        request_streaming: bool,
+        response_streaming: bool,
+    ) -> tuple[grpc.ClientCallDetails, Iterator[_TRequest], None]:
         metadata = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)

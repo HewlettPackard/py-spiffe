@@ -20,7 +20,7 @@ under the License.
 import os
 import ipaddress
 from urllib.parse import ParseResult, urlparse
-from typing import List, Optional, Tuple, Dict, cast
+from typing import Dict, List, Optional, Tuple
 from spiffe.errors import ArgumentError
 
 _SPIFFE_ENDPOINT_SOCKET = 'SPIFFE_ENDPOINT_SOCKET'
@@ -75,9 +75,10 @@ class ConfigSetter:
             self._raw_config[_SPIFFE_ENDPOINT_SOCKET] = spiffe_endpoint_socket
 
         self._validate()
-        self._config = Config(
-            spiffe_endpoint_socket=cast(str, self._raw_config[_SPIFFE_ENDPOINT_SOCKET])
-        )
+        endpoint_socket = self._raw_config[_SPIFFE_ENDPOINT_SOCKET]
+        if endpoint_socket is None:
+            raise ArgumentError('SPIFFE endpoint socket: socket must be set')
+        self._config = Config(spiffe_endpoint_socket=endpoint_socket)
 
     def get_config(self) -> Config:
         return self._config

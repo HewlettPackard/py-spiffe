@@ -20,7 +20,7 @@ from typing import Optional, Callable
 
 from OpenSSL import SSL, crypto
 
-from spiffe import X509Source
+from spiffe.workloadapi.x509_source import X509Source
 from spiffetls.context import create_ssl_context
 from spiffetls.errors import TLSConnectionError
 from spiffetls.mode import ClientTlsMode

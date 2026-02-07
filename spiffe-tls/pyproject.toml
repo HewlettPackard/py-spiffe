@@ -46,8 +46,7 @@ include = ["spiffetls*"]
 spiffetls = ["py.typed"]
 
 [tool.mypy]
-ignore_missing_imports = true
-files = ["src", "tests"]
+strict = true
 
 [tool.pytest.ini_options]
 addopts = [

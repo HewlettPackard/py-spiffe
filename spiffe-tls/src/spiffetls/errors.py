@@ -39,7 +39,7 @@ class SslContextError(PySpiffeError):
 class TLSConnectionError(PySpiffeError):
     """Exception raised for errors during TLS connection setup."""
 
-    def __init__(self, message, **context):
+    def __init__(self, message: str, **context: object) -> None:
         super().__init__(message)
         self.context = context
 
@@ -47,7 +47,7 @@ class TLSConnectionError(PySpiffeError):
 class ListenError(Exception):
     """Exception raised when a listening socket cannot be created."""
 
-    def __init__(self, host, port, original_error):
+    def __init__(self, host: str, port: int, original_error: Exception) -> None:
         self.host = host
         self.port = port
         self.original_error = original_error

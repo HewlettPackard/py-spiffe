@@ -309,7 +309,7 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 def _validate_leaf_certificate(leaf: Certificate) -> None:
     try:
         basic_constraints = leaf.extensions.get_extension_for_oid(
-            x509.ExtensionOID.BASIC_CONSTRAINTS
+            ExtensionOID.BASIC_CONSTRAINTS
         ).value
     except x509.ExtensionNotFound:
         raise InvalidLeafCertificateError(
@@ -320,7 +320,7 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
         raise InvalidLeafCertificateError('Leaf certificate must not have CA flag set to true')
 
     try:
-        key_usage = leaf.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+        key_usage = leaf.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE).value
     except x509.ExtensionNotFound:
         raise InvalidLeafCertificateError('Leaf certificate must have KeyUsage extension')
 
@@ -341,7 +341,7 @@ def _validate_leaf_certificate(leaf: Certificate) -> None:
 def _validate_intermediate_certificate(cert: Certificate) -> None:
     try:
         basic_constraints = cert.extensions.get_extension_for_oid(
-            x509.ExtensionOID.BASIC_CONSTRAINTS
+            ExtensionOID.BASIC_CONSTRAINTS
         ).value
     except x509.ExtensionNotFound:
         raise InvalidIntermediateCertificateError(
@@ -354,7 +354,7 @@ def _validate_intermediate_certificate(cert: Certificate) -> None:
         )
 
     try:
-        key_usage = cert.extensions.get_extension_for_oid(x509.ExtensionOID.KEY_USAGE).value
+        key_usage = cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE).value
     except x509.ExtensionNotFound:
         raise InvalidIntermediateCertificateError(
             'Intermediate certificate must have KeyUsage extension'
