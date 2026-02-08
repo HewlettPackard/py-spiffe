@@ -70,9 +70,7 @@ def create_ssl_context(
             return preverify_ok
 
         ssl_context.set_verify(verify_mode, verify_callback)
-        x509_source.subscribe_for_updates(
-            lambda: _on_source_update(ssl_context, x509_source)
-        )
+        x509_source.subscribe_for_updates(lambda: _on_source_update(ssl_context, x509_source))
 
         if use_system_trusted_cas:
             ssl_context.set_default_verify_paths()
@@ -133,9 +131,7 @@ def _load_ca_bundles(ssl_context: SSL.Context, x509_source: X509Source):
                 ca_cert_obj = crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert_pem)
                 ssl_context.get_cert_store().add_cert(ca_cert_obj)
     except Exception as e:
-        raise Exception(
-            f'Error loading trusted CA certificates into SSL Context: {e}'
-        ) from e
+        raise Exception(f'Error loading trusted CA certificates into SSL Context: {e}') from e
 
 
 def _on_source_update(ssl_context: SSL.Context, x509_source: X509Source):

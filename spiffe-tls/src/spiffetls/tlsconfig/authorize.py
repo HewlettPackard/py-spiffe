@@ -34,9 +34,7 @@ def authorize_any() -> Callable[[crypto.X509], bool]:
             _spiffe_id_from_cert(cert)
             return True
         except X509CertificateError as e:
-            logger.error(
-                f'Failed to authorize certificate due to invalid SPIFFE ID: {e}'
-            )
+            logger.error(f'Failed to authorize certificate due to invalid SPIFFE ID: {e}')
 
         return False
 
@@ -100,9 +98,7 @@ def _spiffe_id_from_cert(cert: crypto.X509) -> SpiffeId:
         if "subjectAltName" in str(ext.get_short_name()):
             sans = str(ext)
             uris = [
-                uri.replace('URI:', '').strip()
-                for uri in sans.split(',')
-                if 'URI:' in uri
+                uri.replace('URI:', '').strip() for uri in sans.split(',') if 'URI:' in uri
             ]
             spiffe_ids = [uri for uri in uris if uri.startswith(SCHEME_PREFIX)]
 

@@ -124,9 +124,7 @@ def test_mtls_connection_fails_with_unauthorized_client(setup_server):
 
     # Attempt to communicate with the server, expecting failure
     with pytest.raises(Exception) as exc_info:
-        client_connection = dial(
-            f"{server_address[0]}:{server_address[1]}", x509_source
-        )
+        client_connection = dial(f"{server_address[0]}:{server_address[1]}", x509_source)
         try:
             test_message = b"Hello, SPIFFE!"
             client_connection.sendall(test_message)

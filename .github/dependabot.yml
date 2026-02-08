@@ -25,8 +25,7 @@ updates:
       dev-tools:
         dependency-type: "development"
         patterns:
-          - "black"
-          - "flake8"
+          - "ruff"
           - "mypy"
           - "mypy-protobuf"
           - "pre-commit"
@@ -50,8 +49,7 @@ updates:
       dev-tools:
         dependency-type: "development"
         patterns:
-          - "black"
-          - "flake8"
+          - "ruff"
           - "mypy"
           - "mypy-protobuf"
           - "pre-commit"

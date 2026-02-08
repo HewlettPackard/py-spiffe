@@ -21,13 +21,12 @@ Repository = "https://github.com/HewlettPackard/py-spiffe"
 
 [dependency-groups]
 dev = [
-  "black>=26.1,<27",
+  "ruff>=0.13,<0.14",
   "mypy>=1.19,<2",
   "mypy-protobuf>=5,<6",
   "pytest>=9,<10",
   "pytest-mock>=3.15,<4",
   "pre-commit>=4.5,<5",
-  "flake8>=7.3,<8",
   "coverage>=7,<8",
   "testutils",
 ]
@@ -50,16 +49,6 @@ include = ["spiffe*"]
 spiffe = ["py.typed"]
 
 # Tool configurations
-[tool.black]
-line-length = 95
-skip-string-normalization = true
-target-version = ['py310']
-exclude = '''
-/(
-    src/spiffe/proto
-)/
-'''
-
 [tool.mypy]
 ignore_missing_imports = true
 files = ["src", "tests"]
