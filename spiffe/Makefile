@@ -38,7 +38,7 @@ test-coverage: ## Run tests with coverage reporting
 	@echo "HTML coverage report generated in htmlcov/index.html"
 
 .PHONY: lint
-lint: format-check check mypy ## Lint source files.
+lint: format-check check mypy pyright ## Lint source files.
 
 .PHONY: format
 format: ## Reformat source files with ruff.
@@ -59,6 +59,11 @@ check:
 mypy:
 	@echo "Running mypy."
 	$(UV_CMD) run mypy src tests
+
+.PHONY: pyright
+pyright:
+	@echo "Running pyright."
+	$(UV_CMD) run pyright src tests
 
 # Helper target for displaying help
 .PHONY: help

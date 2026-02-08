@@ -23,6 +23,7 @@ Repository = "https://github.com/HewlettPackard/py-spiffe"
 dev = [
   "ruff>=0.13,<0.14",
   "mypy>=1.19,<2",
+  "pyright>=1.1.406,<2",
   "mypy-protobuf>=5,<6",
   "pytest>=9,<10",
   "pytest-mock>=3.15,<4",
@@ -59,6 +60,10 @@ strict = true
 [[tool.mypy.overrides]]
 module = ["spiffe.proto.workload_pb2_grpc"]
 ignore_errors = true
+
+[tool.pyright]
+exclude = ["src/spiffe/proto"]
+typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 addopts = [

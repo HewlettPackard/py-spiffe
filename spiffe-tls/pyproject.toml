@@ -48,6 +48,9 @@ spiffetls = ["py.typed"]
 [tool.mypy]
 strict = true
 
+[tool.pyright]
+typeCheckingMode = "standard"
+
 [tool.pytest.ini_options]
 addopts = [
     "--doctest-modules",
