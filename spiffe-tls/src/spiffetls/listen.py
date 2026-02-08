@@ -88,9 +88,7 @@ def listen(
         if options.tls_mode in (ServerTlsMode.MTLS, ServerTlsMode.MTLS_WEB)
         else SSL.VERIFY_PEER
     )
-    use_system_trusted_cas = (
-        True if options.tls_mode == ServerTlsMode.MTLS_WEB else False
-    )
+    use_system_trusted_cas = True if options.tls_mode == ServerTlsMode.MTLS_WEB else False
 
     ssl_context = create_ssl_context(
         SSL.TLS_SERVER_METHOD,

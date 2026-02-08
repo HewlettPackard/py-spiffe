@@ -38,22 +38,22 @@ test-coverage: ## Run tests with coverage reporting
 	@echo "HTML coverage report generated in htmlcov/index.html"
 
 .PHONY: lint
-lint: black flake8 mypy ## Lint source files.
+lint: format-check check mypy ## Lint source files.
 
 .PHONY: format
-format: ## Reformat source files with black.
-	@echo "Running black to format source files."
-	$(UV_CMD) run black src tests
+format: ## Reformat source files with ruff.
+	@echo "Running ruff to format source files."
+	$(UV_CMD) run ruff format src tests
 
-.PHONY: black
-black:
-	@echo "Running black (check only)."
-	$(UV_CMD) run black --check --diff --color src tests
+.PHONY: format-check
+format-check:
+	@echo "Running ruff (check only)."
+	$(UV_CMD) run ruff format --check --diff src tests
 
-.PHONY: flake8
-flake8:
-	@echo "Running flake8."
-	$(UV_CMD) run flake8 src tests
+.PHONY: check
+check:
+	@echo "Running ruff."
+	$(UV_CMD) run ruff check src tests
 
 .PHONY: mypy
 mypy:

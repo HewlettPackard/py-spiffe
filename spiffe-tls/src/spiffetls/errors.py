@@ -51,7 +51,5 @@ class ListenError(Exception):
         self.host = host
         self.port = port
         self.original_error = original_error
-        message = (
-            f"Failed to create listening socket on {host}:{port}: {original_error}"
-        )
+        message = f"Failed to create listening socket on {host}:{port}: {original_error}"
         super().__init__(message)

@@ -1,2 +1,15 @@
 [tool.uv.workspace]
 members = ["spiffe", "spiffe-tls", "testutils"]
+
+[tool.ruff]
+line-length = 95
+target-version = "py310"
+exclude = ["spiffe/src/spiffe/proto"]
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+# module-import-not-at-top-of-file
+ignore = ["E402"]

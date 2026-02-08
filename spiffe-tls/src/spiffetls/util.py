@@ -46,6 +46,7 @@ import re
 import select
 import socket
 from functools import partial
+from typing import Callable
 
 __all__ = ["wait_for_read", "wait_for_write", "to_bytes", "is_ipaddress"]
 
@@ -142,6 +143,9 @@ def poll_wait_for_socket(
     return bool(do_poll(timeout))
 
 
+_wait_for_socket: Callable[[socket.socket, bool, bool, float | None], bool] | None = None
+
+
 def wait_for_socket(
     sock: socket.socket,
     read: bool = False,
@@ -165,12 +169,15 @@ def wait_for_socket(
     # called. We could do it at import time, but then we might make the wrong
     # decision if someone goes wild with monkeypatching select.poll after
     # we're imported.
-    global wait_for_socket
-    if _have_working_poll():
-        wait_for_socket = poll_wait_for_socket
-    elif hasattr(select, "select"):
-        wait_for_socket = select_wait_for_socket
-    return wait_for_socket(sock, read, write, timeout)
+    global _wait_for_socket
+    if _wait_for_socket is None:
+        if _have_working_poll():
+            _wait_for_socket = poll_wait_for_socket
+        elif hasattr(select, "select"):
+            _wait_for_socket = select_wait_for_socket
+        else:
+            raise RuntimeError("no supported socket wait implementation available")
+    return _wait_for_socket(sock, read, write, timeout)
 
 
 def wait_for_read(sock: socket.socket, timeout: float | None = None) -> bool:
@@ -199,9 +206,7 @@ def wait_for_write(sock: socket.socket, timeout: float | None = None) -> bool:
     return wait_for_socket(sock, write=True, timeout=timeout)
 
 
-def to_bytes(
-    x: str | bytes, encoding: str | None = None, errors: str | None = None
-) -> bytes:
+def to_bytes(x: str | bytes, encoding: str | None = None, errors: str | None = None) -> bytes:
     """Convert a string to bytes.
 
     Args:

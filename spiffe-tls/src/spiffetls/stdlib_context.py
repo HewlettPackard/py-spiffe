@@ -71,8 +71,7 @@ except ImportError:
 _stdlib_to_openssl_verify = {
     ssl.CERT_NONE: OpenSSL.SSL.VERIFY_NONE,
     ssl.CERT_OPTIONAL: OpenSSL.SSL.VERIFY_PEER,
-    ssl.CERT_REQUIRED: OpenSSL.SSL.VERIFY_PEER
-    + OpenSSL.SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
+    ssl.CERT_REQUIRED: OpenSSL.SSL.VERIFY_PEER + OpenSSL.SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
 }
 _openssl_to_stdlib_verify = {v: k for k, v in _stdlib_to_openssl_verify.items()}
 
@@ -100,11 +99,7 @@ _openssl_to_ssl_minimum_version: dict[int, int] = {
 }
 _openssl_to_ssl_maximum_version: dict[int, int] = {
     ssl.TLSVersion.MINIMUM_SUPPORTED: (
-        _OP_NO_SSLv2_OR_SSLv3
-        | _OP_NO_TLSv1
-        | _OP_NO_TLSv1_1
-        | _OP_NO_TLSv1_2
-        | _OP_NO_TLSv1_3
+        _OP_NO_SSLv2_OR_SSLv3 | _OP_NO_TLSv1 | _OP_NO_TLSv1_1 | _OP_NO_TLSv1_2 | _OP_NO_TLSv1_3
     ),
     ssl.TLSVersion.TLSv1: (
         _OP_NO_SSLv2_OR_SSLv3 | _OP_NO_TLSv1_1 | _OP_NO_TLSv1_2 | _OP_NO_TLSv1_3
@@ -208,9 +203,7 @@ def get_subj_alt_name(peer_cert: X509) -> list[tuple[str, str]]:
         for name in map(_dnsname_to_stdlib, ext.get_values_for_type(x509.DNSName))
         if name is not None
     ]
-    names.extend(
-        ("IP Address", str(name)) for name in ext.get_values_for_type(x509.IPAddress)
-    )
+    names.extend(("IP Address", str(name)) for name in ext.get_values_for_type(x509.IPAddress))
 
     return names
 
@@ -365,9 +358,7 @@ class WrappedSocket:
         """
         total_sent = 0
         while total_sent < len(data):
-            sent = self._send_until_done(
-                data[total_sent : total_sent + SSL_WRITE_BLOCKSIZE]
-            )
+            sent = self._send_until_done(data[total_sent : total_sent + SSL_WRITE_BLOCKSIZE])
             total_sent += sent
 
     def send(self, data: bytes, flags: int = 0) -> int:
@@ -409,9 +400,7 @@ class WrappedSocket:
         except OpenSSL.SSL.Error:
             return
 
-    def getpeercert(
-        self, binary_form: bool = False
-    ) -> dict[str, list[Any]] | bytes | None:
+    def getpeercert(self, binary_form: bool = False) -> dict[str, list[Any]] | bytes | None:
         """Get the peer's certificate.
 
         Args:

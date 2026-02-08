@@ -106,9 +106,7 @@ def test_stdlib_context_successful_mtls_connection(setup_http_server):
     ssl_context = SpiffeSSLContext(x509_source)
     url = f"https://{server_address[0]}:{server_address[1]}/"
 
-    opener = urllib.request.build_opener(
-        urllib.request.HTTPSHandler(context=ssl_context)
-    )
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
 
     response = opener.open(url, timeout=5)
     content = response.read()
@@ -140,9 +138,7 @@ def test_stdlib_context_mtls_connection_fails_with_unauthorized_client(
     ssl_context = SpiffeSSLContext(x509_source)
     url = f"https://{server_address[0]}:{server_address[1]}/"
 
-    opener = urllib.request.build_opener(
-        urllib.request.HTTPSHandler(context=ssl_context)
-    )
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
 
     # Attempt to connect, expecting failure due to authorization
     with pytest.raises((urllib.error.URLError, ssl.SSLError)) as exc_info:
