@@ -27,26 +27,26 @@ _SVID2 = X509Svid.parse_raw(CHAIN2, KEY2)
 _BUNDLE_SET = X509BundleSet(None)
 
 
-def test_default_svid():
+def test_default_svid() -> None:
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
     assert x509_context.default_svid == _SVID1
 
 
-def test_x509_bundle_set():
+def test_x509_bundle_set() -> None:
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
     assert x509_context.x509_bundle_set == _BUNDLE_SET
 
 
-def test_default_svid_emtpy_list():
+def test_default_svid_emtpy_list() -> None:
     with pytest.raises(ArgumentError) as err:
         X509Context([], _BUNDLE_SET)
 
     assert str(err.value) == 'X.509 SVID list cannot be empty'
 
 
-def test_x509_svids():
+def test_x509_svids() -> None:
     svids = [_SVID1, _SVID2]
     x509_context = X509Context(svids, _BUNDLE_SET)
     assert x509_context.x509_svids == svids

@@ -27,7 +27,7 @@ These tests also require the presence of a valid registration entry for the call
 """
 
 
-def test_x509_source():
+def test_x509_source() -> None:
     x509_source = None
     try:
         x509_source = X509Source(timeout_in_seconds=30)

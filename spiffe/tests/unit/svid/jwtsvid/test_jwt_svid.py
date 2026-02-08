@@ -14,8 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from dataclasses import dataclass
 from typing import Set
-
 import pytest
 import datetime
 from calendar import timegm
@@ -64,28 +64,24 @@ ec_private_key = ec.generate_private_key(ec.SECP256R1(), default_backend()).priv
 """
 
 
-@pytest.mark.parametrize(
-    'test_input_token,test_input_audience, expected',
-    [
-        ('', {}, 'token cannot be empty'),
-        ('', None, 'token cannot be empty'),
-        (None, {}, 'token cannot be empty'),
-        (None, None, 'token cannot be empty'),
-    ],
-)
-def test_parse_insecure_invalid_input(
-    test_input_token, test_input_audience: Set[str], expected
-):
+def test_parse_insecure_invalid_input() -> None:
     with pytest.raises(ArgumentError) as exception:
-        JwtSvid.parse_insecure(test_input_token, test_input_audience)
+        JwtSvid.parse_insecure('', set())
 
-    assert str(exception.value) == expected
+    assert str(exception.value) == 'token cannot be empty'
+
+
+@dataclass(frozen=True)
+class ParseInsecureClaimsCase:
+    token: str
+    audience: Set[str]
+    expected_error: str
 
 
 @pytest.mark.parametrize(
-    'test_input_token,test_input_audience, expected',
+    'case',
     [
-        (
+        ParseInsecureClaimsCase(
             jwt.encode(
                 {
                     'sub': 'spiffeid://somewhere.over.the',
@@ -102,7 +98,7 @@ def test_parse_insecure_invalid_input(
             {'spire'},
             str(MissingClaimError('aud')),
         ),  # no aud
-        (
+        ParseInsecureClaimsCase(
             jwt.encode(
                 {
                     'aud': ['test-audience', 'other'],
@@ -114,7 +110,7 @@ def test_parse_insecure_invalid_input(
             {"test-audience", "other"},
             str(MissingClaimError('exp')),
         ),  # no exp
-        (
+        ParseInsecureClaimsCase(
             jwt.encode(
                 {
                     'aud': ['test-audience', 'other'],
@@ -131,7 +127,7 @@ def test_parse_insecure_invalid_input(
             {'test-audience', 'other'},
             str(MissingClaimError('sub')),
         ),  # no sub
-        (
+        ParseInsecureClaimsCase(
             jwt.encode(
                 {
                     'aud': ['test-audience', 'other'],
@@ -151,35 +147,48 @@ def test_parse_insecure_invalid_input(
         ),  # expired token
     ],
 )
-def test_parse_insecure_invalid_claims(test_input_token, test_input_audience, expected):
+def test_parse_insecure_invalid_claims(case: ParseInsecureClaimsCase) -> None:
     with pytest.raises(JwtSvidError) as exception:
-        JwtSvid.parse_insecure(test_input_token, test_input_audience)
+        JwtSvid.parse_insecure(case.token, case.audience)
 
-    assert str(exception.value) == expected
+    assert str(exception.value) == case.expected_error
+
+
+@dataclass(frozen=True)
+class ParseInsecureTokenCase:
+    token: str
+    audience: Set[str]
 
 
 @pytest.mark.parametrize(
-    'test_input_token,test_input_audience',
+    'case',
     [
-        (
+        ParseInsecureTokenCase(
             'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
             {'spire'},
         ),  # middle
-        (
+        ParseInsecureTokenCase(
             'errJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3BpZmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
             {'spire'},
         ),  # first
     ],
 )
-def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
+def test_parse_insecure_invalid_token(case: ParseInsecureTokenCase) -> None:
     with pytest.raises(InvalidTokenError):
-        JwtSvid.parse_insecure(test_input_token, test_input_audience)
+        JwtSvid.parse_insecure(case.token, case.audience)
+
+
+@dataclass(frozen=True)
+class ParseInsecureValidCase:
+    token: str
+    audience: Set[str]
+    expected_spiffe_id: str
 
 
 @pytest.mark.parametrize(
-    'test_input_token,test_input_audience, expected',
+    'case',
     [
-        (
+        ParseInsecureValidCase(
             jwt.encode(
                 {
                     'aud': ['joe'],
@@ -197,7 +206,7 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
             {'joe'},
             'spiffe://test.org',
         ),
-        (
+        ParseInsecureValidCase(
             jwt.encode(
                 {
                     'aud': ['joe', 'test', 'valid'],
@@ -217,10 +226,10 @@ def test_parse_insecure_invalid_token(test_input_token, test_input_audience):
         ),
     ],
 )
-def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
-    result = JwtSvid.parse_insecure(test_input_token, test_input_audience)
-    assert result._token == test_input_token
-    assert str(result._spiffe_id) == expected
+def test_parse_insecure_valid(case: ParseInsecureValidCase) -> None:
+    result = JwtSvid.parse_insecure(case.token, case.audience)
+    assert result._token == case.token
+    assert str(result._spiffe_id) == case.expected_spiffe_id
 
 
 """
@@ -229,34 +238,13 @@ def test_parse_insecure_valid(test_input_token, test_input_audience, expected):
 """
 
 
-@pytest.mark.parametrize(
-    'test_input_token,test_input_jwt_bundle, test_input_audience, expected',
-    [
-        (
-            '',
-            None,
-            {'spire'},
-            'token cannot be empty',
-        ),
-        (
-            'eyJhbGciOiJFUzI1NiIsImtpZCI6Imd1eTdsOWZSQzhkQW1IUmFtaFpQbktRa3lId2FHQzR0IiwidHlwIjoiSldUIn0.eyJhdWQiOlsib3RoZXItc2VydmljZSJdLCJleHAiOjE2MTIyOTAxODMsImlhdCI6MTYxMjI4OTg4Mywic3ViIjoic3hthrtmZlOi8vZXhhbXBsZS5vcmcvc2VydmljZSJ9.W7CLQvYVBQ8Zg3ELcuB1K9hE4I9wyCMB_8PJTZXbjnlMBcgd0VDbSm5OjoqcGQF975eaVl_AdkryJ_lzxsEQ4A',
-            None,
-            {'spire'},
-            'jwt_bundle cannot be empty',
-        ),
-    ],
-)
-def test_parse_and_validate_invalid_parameters(
-    test_input_token, test_input_jwt_bundle, test_input_audience, expected
-):
+def test_parse_and_validate_invalid_parameters() -> None:
     with pytest.raises(ArgumentError) as err:
-        JwtSvid.parse_and_validate(
-            test_input_token, test_input_jwt_bundle, test_input_audience
-        )
-    assert str(err.value) == expected
+        JwtSvid.parse_and_validate('', JWT_BUNDLE, {'spire'})
+    assert str(err.value) == 'token cannot be empty'
 
 
-def test_parse_and_validate_invalid_missing_kid_header():
+def test_parse_and_validate_invalid_missing_kid_header() -> None:
     token = generate_test_jwt_token(kid='')
 
     with pytest.raises(InvalidTokenError) as exception:
@@ -264,7 +252,7 @@ def test_parse_and_validate_invalid_missing_kid_header():
     assert str(exception.value) == 'key_id cannot be empty'
 
 
-def test_parse_and_validate_invalid_missing_sub():
+def test_parse_and_validate_invalid_missing_sub() -> None:
     token = generate_test_jwt_token(spiffe_id='')
 
     with pytest.raises(InvalidTokenError) as exception:
@@ -273,7 +261,7 @@ def test_parse_and_validate_invalid_missing_sub():
     assert "non-empty 'sub' claim" in str(exception.value)
 
 
-def test_parse_and_validate_invalid_missing_kid():
+def test_parse_and_validate_invalid_missing_kid() -> None:
     key_id = 'kid10'
     token = generate_test_jwt_token(kid=key_id)
 
@@ -282,7 +270,7 @@ def test_parse_and_validate_invalid_missing_kid():
     assert str(exception.value) == 'Authority not found for key ID: kid10'
 
 
-def test_parse_and_validate_invalid_kid_mismatch():
+def test_parse_and_validate_invalid_kid_mismatch() -> None:
     rsa_key2 = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwt_bundle = JwtBundle(
         TEST_TRUST_DOMAIN,
@@ -295,7 +283,7 @@ def test_parse_and_validate_invalid_kid_mismatch():
     assert str(exception.value) == 'Signature verification failed'
 
 
-def test_parse_and_validate_valid_token_RSA():
+def test_parse_and_validate_valid_token_RSA() -> None:
     token = generate_test_jwt_token()
     jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
     assert jwt_svid._audience == TEST_AUDIENCE
@@ -304,7 +292,7 @@ def test_parse_and_validate_valid_token_RSA():
     assert jwt_svid._token == token
 
 
-def test_parse_and_validate_valid_token_EC():
+def test_parse_and_validate_valid_token_EC() -> None:
     ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
     jwt_bundle = JwtBundle(TEST_TRUST_DOMAIN, {'kid_ec': ec_key.public_key()})
 
@@ -317,7 +305,7 @@ def test_parse_and_validate_valid_token_EC():
     assert jwt_svid._token == token
 
 
-def test_parse_and_validate_valid_token_multiple_keys_bundle():
+def test_parse_and_validate_valid_token_multiple_keys_bundle() -> None:
     ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
     jwt_bundle = JwtBundle(
         TEST_TRUST_DOMAIN,

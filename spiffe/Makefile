@@ -58,7 +58,7 @@ check:
 .PHONY: mypy
 mypy:
 	@echo "Running mypy."
-	$(UV_CMD) run mypy src
+	$(UV_CMD) run mypy src tests
 
 # Helper target for displaying help
 .PHONY: help

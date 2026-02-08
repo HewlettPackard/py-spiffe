@@ -28,7 +28,7 @@ from spiffe.spiffe_id.spiffe_id import SpiffeId, SpiffeIdError
         "spiffe://domain.test/a/b/c/d/e/f/g",
     ],
 )
-def test_spiffe_id_valid(id_str):
+def test_spiffe_id_valid(id_str: str) -> None:
     spiffe_id = SpiffeId(id_str)
     assert str(spiffe_id) == id_str
 
@@ -71,7 +71,7 @@ def test_spiffe_id_valid(id_str):
         ),
     ],
 )
-def test_spiffe_id_invalid(id_str, expected_error):
+def test_spiffe_id_invalid(id_str: str, expected_error: str) -> None:
     with pytest.raises(SpiffeIdError) as exc:
         SpiffeId(id_str)
     assert str(exc.value) == expected_error
@@ -84,32 +84,32 @@ def test_spiffe_id_invalid(id_str, expected_error):
         ("spiffe://example.org/path/to/service", "example.org", "/path/to/service"),
     ],
 )
-def test_spiffe_id_components(id_str, trust_domain, path):
+def test_spiffe_id_components(id_str: str, trust_domain: str, path: str) -> None:
     spiffe_id = SpiffeId(id_str)
     assert spiffe_id.trust_domain._name == trust_domain
     assert spiffe_id.path == path
 
 
-def test_spiffe_id_equality():
+def test_spiffe_id_equality() -> None:
     id1 = SpiffeId("spiffe://example.org/path")
     id2 = SpiffeId("spiffe://example.org/path")
     assert id1 == id2
     # assert id1 == "spiffe://example.org/path"
 
 
-def test_spiffe_id_inequality():
+def test_spiffe_id_inequality() -> None:
     id1 = SpiffeId("spiffe://example.org/path")
     id2 = SpiffeId("spiffe://example.org/different/path")
     assert id1 != id2
     assert id1 != "spiffe://example.org/different/path"
 
 
-def test_spiffe_id_hash_equality():
+def test_spiffe_id_hash_equality() -> None:
     id1 = SpiffeId("spiffe://example.org/path")
     id2 = SpiffeId("spiffe://example.org/path")
     assert hash(id1) == hash(id2)
 
 
-def test_spiffe_id_string_representation():
+def test_spiffe_id_string_representation() -> None:
     id = SpiffeId("spiffe://example.org/path")
     assert str(id) == "spiffe://example.org/path"

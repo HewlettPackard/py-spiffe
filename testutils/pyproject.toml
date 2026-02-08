@@ -9,5 +9,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["testutils*"]
+
+[tool.setuptools.package-data]
+testutils = ["py.typed"]

@@ -14,11 +14,13 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from collections.abc import Iterator
 import threading
 from unittest.mock import patch
 
 import grpc
 import pytest
+from pytest_mock import MockerFixture
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
 
@@ -31,6 +33,7 @@ from spiffe.workloadapi.errors import (
     WorkloadApiError,
 )
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
+from spiffe.workloadapi.x509_context import X509Context
 from testutils.certs import (
     CHAIN1,
     KEY1,
@@ -50,14 +53,14 @@ from testutils.utils import (
 
 
 @pytest.fixture
-def client():
+def client() -> WorkloadApiClient:
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
         client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
-def test_fetch_x509_svid_success(mocker, client):
+def test_fetch_x509_svid_success(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
@@ -87,7 +90,9 @@ def test_fetch_x509_svid_success(mocker, client):
     assert isinstance(svid.private_key, ec.EllipticCurvePrivateKey)
 
 
-def test_fetch_x509_svid_empty_response(mocker, client):
+def test_fetch_x509_svid_empty_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
@@ -98,7 +103,9 @@ def test_fetch_x509_svid_empty_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
-def test_fetch_x509_svid_invalid_response(mocker, client):
+def test_fetch_x509_svid_invalid_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -107,7 +114,9 @@ def test_fetch_x509_svid_invalid_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
-def test_fetch_x509_svid_raise_grpc_error_call(mocker, client):
+def test_fetch_x509_svid_raise_grpc_error_call(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -120,7 +129,7 @@ def test_fetch_x509_svid_raise_grpc_error_call(mocker, client):
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_fetch_x509_svid_raise_err(mocker, client):
+def test_fetch_x509_svid_raise_err(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
@@ -131,7 +140,9 @@ def test_fetch_x509_svid_raise_err(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
-def test_fetch_x509_svid_corrupted_response(mocker, client):
+def test_fetch_x509_svid_corrupted_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
@@ -162,7 +173,7 @@ def test_fetch_x509_svid_corrupted_response(mocker, client):
     )
 
 
-def test_fetch_x509_svids_success(mocker, client):
+def test_fetch_x509_svids_success(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
@@ -201,7 +212,9 @@ def test_fetch_x509_svids_success(mocker, client):
     assert isinstance(svid2.private_key, ec.EllipticCurvePrivateKey)
 
 
-def test_fetch_x509_svids_empty_response(mocker, client):
+def test_fetch_x509_svids_empty_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
@@ -212,7 +225,9 @@ def test_fetch_x509_svids_empty_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
-def test_fetch_x509_svids_invalid_response(mocker, client):
+def test_fetch_x509_svids_invalid_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -221,7 +236,9 @@ def test_fetch_x509_svids_invalid_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
-def test_fetch_x509_svids_raise_grpc_error_call(mocker, client):
+def test_fetch_x509_svids_raise_grpc_error_call(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -234,7 +251,7 @@ def test_fetch_x509_svids_raise_grpc_error_call(mocker, client):
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_fetch_x509_svids_raise_err(mocker, client):
+def test_fetch_x509_svids_raise_err(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
@@ -245,7 +262,9 @@ def test_fetch_x509_svids_raise_err(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
-def test_fetch_x509_svids_corrupted_response(mocker, client):
+def test_fetch_x509_svids_corrupted_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter(
             [
@@ -276,7 +295,7 @@ def test_fetch_x509_svids_corrupted_response(mocker, client):
     )
 
 
-def test_fetch_x509_context_success(mocker, client):
+def test_fetch_x509_context_success(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -331,7 +350,9 @@ def test_fetch_x509_context_success(mocker, client):
     assert len(federated_bundle.x509_authorities) == 1
 
 
-def test_fetch_x509_context_empty_response(mocker, client):
+def test_fetch_x509_context_empty_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         return_value=iter([workload_pb2.X509SVIDResponse(svids=[])])
     )
@@ -342,7 +363,9 @@ def test_fetch_x509_context_empty_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
 
 
-def test_fetch_x509_context_invalid_response(mocker, client):
+def test_fetch_x509_context_invalid_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=iter([]))
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -351,7 +374,9 @@ def test_fetch_x509_context_invalid_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
 
 
-def test_fetch_x509_context_raise_grpc_error(mocker, client):
+def test_fetch_x509_context_raise_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(side_effect=FakeCall())
 
     with pytest.raises(FetchX509SvidError) as err:
@@ -364,7 +389,9 @@ def test_fetch_x509_context_raise_grpc_error(mocker, client):
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_fetch_x509_context_raise_err(mocker, client):
+def test_fetch_x509_context_raise_err(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
         side_effect=Exception('mocked error')
     )
@@ -375,7 +402,9 @@ def test_fetch_x509_context_raise_err(mocker, client):
     assert str(err.value) == 'Error fetching X.509 SVID: mocked error'
 
 
-def test_fetch_x509_context_corrupted_svid(mocker, client):
+def test_fetch_x509_context_corrupted_svid(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -408,7 +437,9 @@ def test_fetch_x509_context_corrupted_svid(mocker, client):
     assert 'Error fetching X.509 SVID: Error parsing private key' in str(err.value)
 
 
-def test_fetch_x509_context_corrupted_bundle(mocker, client):
+def test_fetch_x509_context_corrupted_bundle(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -444,7 +475,9 @@ def test_fetch_x509_context_corrupted_bundle(mocker, client):
     )
 
 
-def test_fetch_x509_context_corrupted_federated_bundle(mocker, client):
+def test_fetch_x509_context_corrupted_federated_bundle(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     federated_bundles = {'domain.test': CORRUPTED}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -480,7 +513,7 @@ def test_fetch_x509_context_corrupted_federated_bundle(mocker, client):
     )
 
 
-def test_fetch_x509_bundles_success(mocker, client):
+def test_fetch_x509_bundles_success(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     bundles = {'example.org': BUNDLE, 'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
@@ -504,9 +537,11 @@ def test_fetch_x509_bundles_success(mocker, client):
     assert len(federated_bundle.x509_authorities) == 1
 
 
-def test_fetch_x509_bundles_empty_response(mocker, client):
+def test_fetch_x509_bundles_empty_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
-        return_value=iter([workload_pb2.X509BundlesResponse(bundles=[])])
+        return_value=iter([workload_pb2.X509BundlesResponse(bundles={})])
     )
 
     with pytest.raises(FetchX509BundleError) as err:
@@ -515,7 +550,9 @@ def test_fetch_x509_bundles_empty_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is empty'
 
 
-def test_fetch_x509_bundles_invalid_response(mocker, client):
+def test_fetch_x509_bundles_invalid_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=iter([]))
 
     with pytest.raises(FetchX509BundleError) as err:
@@ -524,7 +561,9 @@ def test_fetch_x509_bundles_invalid_response(mocker, client):
     assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is invalid'
 
 
-def test_fetch_x509_bundles_raise_grpc_error(mocker, client):
+def test_fetch_x509_bundles_raise_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(side_effect=FakeCall())
 
     with pytest.raises(FetchX509BundleError) as err:
@@ -537,7 +576,9 @@ def test_fetch_x509_bundles_raise_grpc_error(mocker, client):
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_fetch_x509_bundles_raise_err(mocker, client):
+def test_fetch_x509_bundles_raise_err(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
         side_effect=Exception('mocked error')
     )
@@ -548,7 +589,9 @@ def test_fetch_x509_bundles_raise_err(mocker, client):
     assert str(err.value) == 'Error fetching X.509 Bundle: mocked error'
 
 
-def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
+def test_fetch_x509_bundles_corrupted_bundle(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     bundles = {'example.org': CORRUPTED, 'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
@@ -571,7 +614,9 @@ def test_fetch_x509_bundles_corrupted_bundle(mocker, client):
     )
 
 
-def test_fetch_x509_bundles_corrupted_federated_bundle(mocker, client):
+def test_fetch_x509_bundles_corrupted_federated_bundle(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     bundles = {'example.org': BUNDLE, 'domain.test': CORRUPTED}
 
     client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(
@@ -594,7 +639,9 @@ def test_fetch_x509_bundles_corrupted_federated_bundle(mocker, client):
     )
 
 
-def test_stream_x509_contexts_success(mocker, client):
+def test_stream_x509_contexts_success(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -622,7 +669,7 @@ def test_stream_x509_contexts_success(mocker, client):
     )
 
     done = threading.Event()
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[X509Context]()
 
     client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
@@ -632,7 +679,8 @@ def test_stream_x509_contexts_success(mocker, client):
 
     done.wait(timeout=5)
 
-    assert not response_holder.error
+    assert response_holder.error is None
+    assert response_holder.success is not None
     x509_context = response_holder.success
     svid1 = x509_context.default_svid
     assert svid1._spiffe_id == SpiffeId('spiffe://example.org/service')
@@ -652,7 +700,9 @@ def test_stream_x509_contexts_success(mocker, client):
     assert len(bundle.x509_authorities) == 1
 
 
-def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(mocker, client):
+def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = (
         yield_grpc_error_and_then_correct_x509_svid_response()
@@ -663,7 +713,7 @@ def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(mo
     expected_error = FetchX509SvidError('StatusCode.DEADLINE_EXCEEDED')
     done = threading.Event()
 
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[X509Context]()
 
     client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
@@ -673,6 +723,8 @@ def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(mo
 
     done.wait(timeout=90)
 
+    assert response_holder.error is None
+    assert response_holder.success is not None
     x509_context = response_holder.success
     svid1 = x509_context.default_svid
     assert svid1._spiffe_id == SpiffeId('spiffe://example.org/service')
@@ -692,9 +744,11 @@ def test_stream_x509_contexts_raise_retryable_grpc_error_and_then_ok_response(mo
     assert len(bundle.x509_authorities) == 1
 
 
-def test_stream_x509_contexts_raise_unretryable_grpc_error(mocker, client):
-    grpc_error = grpc.RpcError()
-    grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
+def test_stream_x509_contexts_raise_unretryable_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    grpc_error = FakeCall()
+    grpc_error._code = grpc.StatusCode.INVALID_ARGUMENT
 
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = grpc_error
@@ -704,7 +758,7 @@ def test_stream_x509_contexts_raise_unretryable_grpc_error(mocker, client):
     done = threading.Event()
     expected_error = WorkloadApiError('gRPC error: StatusCode.INVALID_ARGUMENT')
 
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[X509Context]()
 
     client.stream_x509_contexts(
         lambda r: handle_success(r, response_holder, done),
@@ -718,9 +772,9 @@ def test_stream_x509_contexts_raise_unretryable_grpc_error(mocker, client):
     assert str(response_holder.error) == str(expected_error)
 
 
-def yield_grpc_error_and_then_correct_x509_svid_response():
-    grpc_error = grpc.RpcError()
-    grpc_error.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
+def yield_grpc_error_and_then_correct_x509_svid_response() -> Iterator[object]:
+    grpc_error = FakeCall()
+    grpc_error._code = grpc.StatusCode.DEADLINE_EXCEEDED
     yield grpc_error
 
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}

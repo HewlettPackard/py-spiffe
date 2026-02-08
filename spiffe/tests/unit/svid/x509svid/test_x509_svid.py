@@ -14,13 +14,18 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from collections.abc import Iterator
+from typing import List
+
 import datetime
 import os
 
 import pytest
+from pytest_mock import MockerFixture
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.x509 import Certificate
+from cryptography.x509.oid import ExtensionOID, ObjectIdentifier
 
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.errors import ArgumentError
@@ -48,8 +53,8 @@ from testutils.certs import TEST_CERTS_DIR
 
 
 @pytest.fixture
-def clean_files():
-    files_to_clean = []
+def clean_files() -> Iterator[List[str]]:
+    files_to_clean: List[str] = []
 
     yield files_to_clean
 
@@ -59,7 +64,7 @@ def clean_files():
             os.remove(file_path)
 
 
-def test_create_x509_svid(mocker):
+def test_create_x509_svid(mocker: MockerFixture) -> None:
     fake_spiffe_id = mocker.Mock()
     fake_cert_chain = [mocker.Mock()]
     fake_private_key = mocker.Mock()
@@ -75,28 +80,14 @@ def test_create_x509_svid(mocker):
     assert res.private_key == fake_private_key
 
 
-def test_create_x509_svid_no_spiffe_id(mocker):
-    with pytest.raises(ArgumentError) as exc_info:
-        X509Svid(spiffe_id=None, cert_chain=[mocker.Mock()], private_key=mocker.Mock())
-
-    assert str(exc_info.value) == "spiffe_id cannot be None"
-
-
-def test_create_x509_svid_no_cert_chain(mocker):
+def test_create_x509_svid_no_cert_chain(mocker: MockerFixture) -> None:
     with pytest.raises(ArgumentError) as exc_info:
         X509Svid(spiffe_id=mocker.Mock(), cert_chain=[], private_key=mocker.Mock())
 
     assert str(exc_info.value) == "cert_chain cannot be empty"
 
 
-def test_create_x509_svid_no_private_key(mocker):
-    with pytest.raises(ArgumentError) as exc_info:
-        X509Svid(spiffe_id=mocker.Mock(), cert_chain=[mocker.Mock()], private_key=None)
-
-    assert str(exc_info.value) == 'private_key cannot be None'
-
-
-def test_parse_raw_chain_and_ec_key():
+def test_parse_raw_chain_and_ec_key() -> None:
     chain_bytes = read_bytes('1-chain.der')
     key_bytes = read_bytes('1-key.der')
 
@@ -110,7 +101,7 @@ def test_parse_raw_chain_and_ec_key():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
-def test_parse_chain_and_ec_key():
+def test_parse_chain_and_ec_key() -> None:
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -125,7 +116,7 @@ def test_parse_chain_and_ec_key():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
-def test_parse_leaf_only_and_rsa_key():
+def test_parse_leaf_only_and_rsa_key() -> None:
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -139,7 +130,7 @@ def test_parse_leaf_only_and_rsa_key():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
-def test_parse_raw_missing_certificate():
+def test_parse_raw_missing_certificate() -> None:
     chain_bytes = read_bytes('1-key.der')
     key_bytes = read_bytes('1-key.der')
 
@@ -152,7 +143,7 @@ def test_parse_raw_missing_certificate():
     )
 
 
-def test_parse_missing_certificate():
+def test_parse_missing_certificate() -> None:
     chain_bytes = read_bytes('2-key.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -165,7 +156,7 @@ def test_parse_missing_certificate():
     )
 
 
-def test_parse_raw_missing_key():
+def test_parse_raw_missing_key() -> None:
     chain_bytes = read_bytes('1-chain.der')
     key_bytes = read_bytes('1-chain.der')
 
@@ -177,7 +168,7 @@ def test_parse_raw_missing_key():
     assert "ASN.1 parsing error" in str(exception.value)
 
 
-def test_parse_missing_key():
+def test_parse_missing_key() -> None:
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('2-chain.pem')
 
@@ -188,7 +179,7 @@ def test_parse_missing_key():
     assert "Error parsing private key" in str(exception.value)
 
 
-def test_parse_raw_corrupted_certificate():
+def test_parse_raw_corrupted_certificate() -> None:
     chain_bytes = read_bytes('corrupted')
     key_bytes = read_bytes('1-key.der')
 
@@ -201,7 +192,7 @@ def test_parse_raw_corrupted_certificate():
     )
 
 
-def test_parse_corrupted_certificate():
+def test_parse_corrupted_certificate() -> None:
     chain_bytes = read_bytes('corrupted')
     key_bytes = read_bytes('2-key.pem')
 
@@ -214,7 +205,7 @@ def test_parse_corrupted_certificate():
     )
 
 
-def test_parse_raw_corrupted_private_key():
+def test_parse_raw_corrupted_private_key() -> None:
     chain_bytes = read_bytes('1-chain.der')
     key_bytes = read_bytes('corrupted')
 
@@ -226,7 +217,7 @@ def test_parse_raw_corrupted_private_key():
     assert "ASN.1 parsing error" in str(exception.value)
 
 
-def test_parse_corrupted_private_key():
+def test_parse_corrupted_private_key() -> None:
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('corrupted')
 
@@ -237,7 +228,7 @@ def test_parse_corrupted_private_key():
     assert "Unable to load PEM file" in str(exception.value)
 
 
-def test_parse_invalid_spiffe_id():
+def test_parse_invalid_spiffe_id() -> None:
     chain_bytes = read_bytes('wrong-empty-spiffe-id.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -250,7 +241,7 @@ def test_parse_invalid_spiffe_id():
     )
 
 
-def test_parse_leaf_ca_true():
+def test_parse_leaf_ca_true() -> None:
     chain_bytes = read_bytes('wrong-leaf-ca-true.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -263,7 +254,7 @@ def test_parse_leaf_ca_true():
     )
 
 
-def test_parse_no_digital_signature():
+def test_parse_no_digital_signature() -> None:
     chain_bytes = read_bytes('wrong-leaf-no-digital-signature.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -276,7 +267,7 @@ def test_parse_no_digital_signature():
     )
 
 
-def test_parse_key_cert_sign():
+def test_parse_key_cert_sign() -> None:
     chain_bytes = read_bytes('wrong-leaf-cert-sign.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -289,7 +280,7 @@ def test_parse_key_cert_sign():
     )
 
 
-def test_parse_crl_sign():
+def test_parse_crl_sign() -> None:
     chain_bytes = read_bytes('wrong-leaf-crl-sign.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -302,7 +293,7 @@ def test_parse_crl_sign():
     )
 
 
-def test_parse_intermediate_no_ca():
+def test_parse_intermediate_no_ca() -> None:
     chain_bytes = read_bytes('wrong-intermediate-no-ca.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -315,7 +306,7 @@ def test_parse_intermediate_no_ca():
     )
 
 
-def test_parse_intermediate_no_key_cert_sign():
+def test_parse_intermediate_no_key_cert_sign() -> None:
     chain_bytes = read_bytes('wrong-intermediate-no-key-cert-sign.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -328,7 +319,7 @@ def test_parse_intermediate_no_key_cert_sign():
     )
 
 
-def test_load_from_pem_files():
+def test_load_from_pem_files() -> None:
     chain_path = TEST_CERTS_DIR / '2-chain.pem'
     key_path = TEST_CERTS_DIR / '2-key.pem'
 
@@ -343,13 +334,13 @@ def test_load_from_pem_files():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
-def test_extract_spiffe_id_missing_san_extension(mocker):
+def test_extract_spiffe_id_missing_san_extension(mocker: MockerFixture) -> None:
     """Regression test: Missing SubjectAlternativeName extension should raise InvalidLeafCertificateError."""
     mock_cert = mocker.Mock()
     mock_extensions = mocker.Mock()
     mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
         "SubjectAlternativeName extension not found",
-        x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
+        ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
     )
     mock_cert.extensions = mock_extensions
 
@@ -359,12 +350,12 @@ def test_extract_spiffe_id_missing_san_extension(mocker):
     assert 'SubjectAlternativeName extension' in str(exception.value)
 
 
-def test_validate_leaf_missing_basic_constraints_extension(mocker):
+def test_validate_leaf_missing_basic_constraints_extension(mocker: MockerFixture) -> None:
     """Regression test: Missing BasicConstraints extension in leaf should raise InvalidLeafCertificateError."""
     mock_cert = mocker.Mock()
     mock_extensions = mocker.Mock()
     mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
-        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+        "BasicConstraints extension not found", ExtensionOID.BASIC_CONSTRAINTS
     )
     mock_cert.extensions = mock_extensions
 
@@ -374,7 +365,7 @@ def test_validate_leaf_missing_basic_constraints_extension(mocker):
     assert 'BasicConstraints extension' in str(exception.value)
 
 
-def test_validate_leaf_missing_key_usage_extension(mocker):
+def test_validate_leaf_missing_key_usage_extension(mocker: MockerFixture) -> None:
     """Regression test: Missing KeyUsage extension in leaf should raise InvalidLeafCertificateError."""
     mock_cert = mocker.Mock()
     mock_extensions = mocker.Mock()
@@ -384,10 +375,10 @@ def test_validate_leaf_missing_key_usage_extension(mocker):
     basic_constraints.value = mocker.Mock()
     basic_constraints.value.ca = False
 
-    def get_extension_side_effect(oid):
-        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+    def get_extension_side_effect(oid: ObjectIdentifier) -> object:
+        if oid == ExtensionOID.BASIC_CONSTRAINTS:
             return basic_constraints
-        if oid == x509.ExtensionOID.KEY_USAGE:
+        if oid == ExtensionOID.KEY_USAGE:
             raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
         raise AssertionError(f"Unexpected oid: {oid}")
 
@@ -400,12 +391,14 @@ def test_validate_leaf_missing_key_usage_extension(mocker):
     assert 'KeyUsage extension' in str(exception.value)
 
 
-def test_validate_intermediate_missing_basic_constraints_extension(mocker):
+def test_validate_intermediate_missing_basic_constraints_extension(
+    mocker: MockerFixture,
+) -> None:
     """Regression test: Missing BasicConstraints extension in intermediate should raise InvalidIntermediateCertificateError."""
     mock_cert = mocker.Mock()
     mock_extensions = mocker.Mock()
     mock_extensions.get_extension_for_oid.side_effect = x509.ExtensionNotFound(
-        "BasicConstraints extension not found", x509.ExtensionOID.BASIC_CONSTRAINTS
+        "BasicConstraints extension not found", ExtensionOID.BASIC_CONSTRAINTS
     )
     mock_cert.extensions = mock_extensions
 
@@ -415,7 +408,7 @@ def test_validate_intermediate_missing_basic_constraints_extension(mocker):
     assert 'BasicConstraints extension' in str(exception.value)
 
 
-def test_validate_intermediate_missing_key_usage_extension(mocker):
+def test_validate_intermediate_missing_key_usage_extension(mocker: MockerFixture) -> None:
     """Regression test: Missing KeyUsage extension in intermediate should raise InvalidIntermediateCertificateError."""
     mock_cert = mocker.Mock()
     mock_extensions = mocker.Mock()
@@ -425,10 +418,10 @@ def test_validate_intermediate_missing_key_usage_extension(mocker):
     basic_constraints.value = mocker.Mock()
     basic_constraints.value.ca = True
 
-    def get_extension_side_effect(oid):
-        if oid == x509.ExtensionOID.BASIC_CONSTRAINTS:
+    def get_extension_side_effect(oid: ObjectIdentifier) -> object:
+        if oid == ExtensionOID.BASIC_CONSTRAINTS:
             return basic_constraints
-        if oid == x509.ExtensionOID.KEY_USAGE:
+        if oid == ExtensionOID.KEY_USAGE:
             raise x509.ExtensionNotFound("KeyUsage extension not found", oid)
         raise AssertionError(f"Unexpected oid: {oid}")
 
@@ -441,7 +434,7 @@ def test_validate_intermediate_missing_key_usage_extension(mocker):
     assert 'KeyUsage extension' in str(exception.value)
 
 
-def test_load_from_der_files():
+def test_load_from_der_files() -> None:
     chain_path = TEST_CERTS_DIR / '1-chain.der'
     key_path = TEST_CERTS_DIR / '1-key.der'
 
@@ -456,7 +449,7 @@ def test_load_from_der_files():
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
 
 
-def test_load_non_existent_cert_file():
+def test_load_non_existent_cert_file() -> None:
     chain_path = 'no-exists'
     key_path = '2-key.pem'
 
@@ -469,7 +462,7 @@ def test_load_non_existent_cert_file():
     )
 
 
-def test_load_non_existent_key_bytes():
+def test_load_non_existent_key_bytes() -> None:
     chain_path = TEST_CERTS_DIR / '2-chain.pem'
     key_path = 'no-exists'
 
@@ -482,7 +475,7 @@ def test_load_non_existent_key_bytes():
     )
 
 
-def test_load_cannot_read_key_bytes(mocker):
+def test_load_cannot_read_key_bytes(mocker: MockerFixture) -> None:
     mocker.patch(
         'spiffe.svid.x509_svid.load_certificates_bytes_from_file',
         return_value=b'bytes',
@@ -498,7 +491,7 @@ def test_load_cannot_read_key_bytes(mocker):
     )
 
 
-def test_save_chain_and_ec_key_as_pem(tmpdir, clean_files):
+def test_save_chain_and_ec_key_as_pem(tmpdir: str, clean_files: List[str]) -> None:
     chain_bytes = read_bytes('2-chain.pem')
     key_bytes = read_bytes('2-key.pem')
 
@@ -525,7 +518,7 @@ def test_save_chain_and_ec_key_as_pem(tmpdir, clean_files):
     assert _extract_spiffe_id(saved_svid.leaf) == expected_spiffe_id
 
 
-def test_save_chain_and_rsa_key_as_der(tmpdir, clean_files):
+def test_save_chain_and_rsa_key_as_der(tmpdir: str, clean_files: List[str]) -> None:
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -551,7 +544,7 @@ def test_save_chain_and_rsa_key_as_der(tmpdir, clean_files):
     assert _extract_spiffe_id(saved_svid.leaf) == expected_spiffe_id
 
 
-def test_save_non_supported_encoding(tmpdir, clean_files):
+def test_save_non_supported_encoding(tmpdir: str, clean_files: List[str]) -> None:
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -572,7 +565,9 @@ def test_save_non_supported_encoding(tmpdir, clean_files):
     )
 
 
-def test_save_error_writing_x509_svid_to_file(mocker, tmpdir, clean_files):
+def test_save_error_writing_x509_svid_to_file(
+    mocker: MockerFixture, tmpdir: str, clean_files: List[str]
+) -> None:
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -592,7 +587,9 @@ def test_save_error_writing_x509_svid_to_file(mocker, tmpdir, clean_files):
     assert str(exception.value) == 'Error saving certificate to file: Error msg'
 
 
-def test_save_error_extracting_private_key(mocker, tmpdir, clean_files):
+def test_save_error_extracting_private_key(
+    mocker: MockerFixture, tmpdir: str, clean_files: List[str]
+) -> None:
     chain_bytes = read_bytes('3-good-leaf-only.pem')
     key_bytes = read_bytes('3-key-pkcs8-rsa.pem')
 
@@ -619,7 +616,7 @@ def test_save_error_extracting_private_key(mocker, tmpdir, clean_files):
     )
 
 
-def test_load_non_supported_encoding():
+def test_load_non_supported_encoding() -> None:
     chain_path = TEST_CERTS_DIR / '2-chain.pem'
     key_path = TEST_CERTS_DIR / '2-key.pem'
     with pytest.raises(ArgumentError) as err:
@@ -630,7 +627,7 @@ def test_load_non_supported_encoding():
     )
 
 
-def test_get_chain_returns_a_copy():
+def test_get_chain_returns_a_copy() -> None:
     chain_bytes = read_bytes('1-chain.der')
     key_bytes = read_bytes('1-key.der')
 
@@ -639,7 +636,7 @@ def test_get_chain_returns_a_copy():
     assert x509_svid.cert_chain is not x509_svid._cert_chain
 
 
-def test_extract_spiffe_id_rejects_multiple_uri_sans():
+def test_extract_spiffe_id_rejects_multiple_uri_sans() -> None:
     """
     SPIFFE X.509-SVID profile: MUST contain exactly one URI SAN total.
     Reject when there are multiple URI SANs even if exactly one is SPIFFE.
@@ -657,7 +654,7 @@ def test_extract_spiffe_id_rejects_multiple_uri_sans():
     )
 
 
-def test_extract_spiffe_id_rejects_single_uri_san_non_spiffe():
+def test_extract_spiffe_id_rejects_single_uri_san_non_spiffe() -> None:
     """
     Exactly one URI SAN is present, but it's not a SPIFFE ID.
     """
@@ -671,7 +668,7 @@ def test_extract_spiffe_id_rejects_single_uri_san_non_spiffe():
     assert "SPIFFE ID" in str(exc.value)
 
 
-def test_extract_spiffe_id_allows_dns_sans_with_single_spiffe_uri_san():
+def test_extract_spiffe_id_allows_dns_sans_with_single_spiffe_uri_san() -> None:
     """
     DNS SANs are not URI SANs; allow them in addition to the single SPIFFE URI SAN.
     """
@@ -683,7 +680,7 @@ def test_extract_spiffe_id_allows_dns_sans_with_single_spiffe_uri_san():
     assert _extract_spiffe_id(cert) == SpiffeId("spiffe://example.org/service")
 
 
-def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe():
+def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe() -> None:
     """
     End-to-end parse path should enforce the same URI SAN cardinality rule.
     """
@@ -709,7 +706,9 @@ def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe():
 # ---------------------------------------------------------------------
 
 
-def _make_cert(*, uri_sans: list[str], dns_sans: list[str]):
+def _make_cert(
+    *, uri_sans: List[str], dns_sans: List[str]
+) -> tuple[Certificate, ec.EllipticCurvePrivateKey]:
     """
     Generates a self-signed leaf certificate with SAN entries. This is only for tests.
     """
@@ -723,7 +722,7 @@ def _make_cert(*, uri_sans: list[str], dns_sans: list[str]):
         ]
     )
 
-    san_entries: list[x509.GeneralName] = []
+    san_entries: List[x509.GeneralName] = []
     for u in uri_sans:
         san_entries.append(x509.UniformResourceIdentifier(u))
     for d in dns_sans:

@@ -19,6 +19,7 @@ This module manages X.509 Bundle objects.
 """
 
 import threading
+from pathlib import Path
 from typing import Set, Optional
 
 from cryptography.hazmat.primitives import serialization
@@ -92,7 +93,7 @@ class X509Bundle(object):
 
     def save(
         self,
-        bundle_path: str,
+        bundle_path: Path | str,
         encoding: serialization.Encoding,
     ) -> None:
         """Saves the X.509 bundle to a file in disk.
@@ -166,7 +167,7 @@ class X509Bundle(object):
     def load(
         cls,
         trust_domain: TrustDomain,
-        bundle_path: str,
+        bundle_path: Path | str,
         encoding: serialization.Encoding,
     ) -> 'X509Bundle':
         """Loads an X.509 bundle from a file in disk containing DER or PEM encoded trusted authorities.

@@ -16,37 +16,61 @@ under the License.
 
 import grpc
 import threading
-from typing import Any
+from collections.abc import Callable
+from pathlib import Path
+from typing import Generic, TypeVar
+
+_T = TypeVar('_T')
 
 
-def read_file_bytes(filename):
+def read_file_bytes(filename: Path | str) -> bytes:
     with open(filename, 'rb') as file:
         return file.read()
 
 
 class FakeCall(grpc.Call, grpc.RpcError):
-    def __init__(self):
+    def __init__(self) -> None:
         self._code = grpc.StatusCode.UNKNOWN
         self._details = 'Error details from Workload API'
 
-    def code(self):
+    def is_active(self) -> bool:
+        return False
+
+    def time_remaining(self) -> float:
+        return 0.0
+
+
+    def cancel(self) -> bool:
+        return False
+
+    def add_callback(self, callback: Callable[[], None]) -> bool:
+        del callback
+        return False
+
+    def initial_metadata(self) -> tuple[()]:
+        return ()
+
+    def trailing_metadata(self) -> tuple[()]:
+        return ()
+
+    def code(self) -> grpc.StatusCode:
         return self._code
 
-    def details(self):
+    def details(self) -> str:
         return self._details
 
 
-class ResponseHolder:
+class ResponseHolder(Generic[_T]):
     """Helper class to be used in test cases for watch methods."""
 
-    def __init__(self):
-        self.error = None
-        self.success = None
+    def __init__(self) -> None:
+        self.error: Exception | None = None
+        self.success: _T | None = None
 
 
 def handle_success(
-    response: Any, response_holder: ResponseHolder, event: threading.Event
-):
+    response: _T, response_holder: ResponseHolder[_T], event: threading.Event
+) -> None:
     """Helper method to store a response when running tests for watch methods."""
 
     response_holder.success = response
@@ -55,14 +79,14 @@ def handle_success(
 
 def handle_error(
     error: Exception, response_holder: ResponseHolder, event: threading.Event
-):
+) -> None:
     """Helper method to store an error when running tests for watch methods."""
 
     response_holder.error = error
     event.set()
 
 
-def assert_error(error: Exception, expected: Exception):
+def assert_error(error: Exception, expected: Exception) -> None:
     """Helper method to assert errors raised when running test for watch methods."""
 
     assert isinstance(error, type(expected))
