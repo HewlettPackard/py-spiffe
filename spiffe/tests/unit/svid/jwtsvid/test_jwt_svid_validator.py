@@ -31,7 +31,6 @@ from spiffe.svid.errors import (
     MissingClaimError,
 )
 
-
 """
     validate_claims tests
 """

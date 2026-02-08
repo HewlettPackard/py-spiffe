@@ -1,8 +1,8 @@
 repos:
   - repo: local
     hooks:
-      - id: poetry-lock
-        name: Update poetry.lock file if dependencies have changed
+      - id: uv-lock
+        name: Update uv.lock files if dependencies have changed
         entry: ./scripts/lock-dependencies.sh
         language: script
         pass_filenames: false

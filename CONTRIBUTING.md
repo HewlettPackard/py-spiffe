@@ -9,15 +9,15 @@ to prepare your development environment and guide you through submitting your co
 
 Before starting, please make sure you have the following installed:
 
-- **Python 3.9 or higher**: Check your Python version with `python --version`.
-- **Poetry**: For managing dependencies and
-  packaging. [Follow the installation instructions here](https://python-poetry.org/docs/#installation).
+- **Python 3.10 or higher**: Check your Python version with `python --version`.
+- **uv**: For dependency management and packaging.
+  [Follow the installation instructions here](https://docs.astral.sh/uv/getting-started/installation/).
 
 ### Setting Up Your Development Environment
 
 1. **Install pre-commit**: This tool ensures your contributions meet our code quality standards.
    ```
-   pip install pre-commit
+   uv tool install pre-commit
    pre-commit install
    ```
 

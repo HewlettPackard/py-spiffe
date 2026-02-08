@@ -21,7 +21,6 @@ import functools
 from spiffe.errors import PySpiffeError, ArgumentError
 from spiffe.workloadapi.errors import WorkloadApiError
 
-
 DEFAULT_WL_API_ERROR_MESSAGE = 'Could not process response from the Workload API'
 
 

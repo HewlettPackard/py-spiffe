@@ -1,40 +1,50 @@
-[tool.poetry]
+[project]
 name = "spiffe-tls"
 version = "0.2.2"
 description = "TLS Support using SPIFFE"
-authors = ["Max Lambrecht <maxlambrecht@gmail.com>"]
 readme = "README.md"
 license = "Apache-2.0"
-repository = "https://github.com/HewlettPackard/py-spiffe"
-
-packages = [
-    { include = "spiffetls", from = "src" },
-]
-include = [
-  { path = "src/spiffetls/py.typed", format = "wheel" },
-  { path = "src/spiffetls/py.typed", format = "sdist" },
+requires-python = ">=3.10"
+authors = [{ name = "Max Lambrecht", email = "maxlambrecht@gmail.com" }]
+dependencies = [
+  "spiffe>=0.2.3,<0.3.0",
+  "pyOpenSSL>=24,<26",
+  "idna>=3,<4",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"  # >= 3.10, < 4.0
-spiffe = "~0.2.3"
-pyOpenSSL = ">=24,<26"
-idna = "^3.0"
+[project.urls]
+Repository = "https://github.com/HewlettPackard/py-spiffe"
 
-[tool.poetry.dev-dependencies]
-black = "^26.1"
-mypy = "^1.19"
-mypy-protobuf = "^5.0"
-types-pyOpenSSL = "^24.1"
-pytest = "^9.0"
-pytest-mock = "^3.15"
-pre-commit = "^4.5"
-flake8 = "^7.3"
-testutils = { path = "../testutils" }
+[dependency-groups]
+dev = [
+  "black>=26.1,<27",
+  "mypy>=1.19,<2",
+  "mypy-protobuf>=5,<6",
+  "types-pyOpenSSL>=24.1,<25",
+  "pytest>=9,<10",
+  "pytest-mock>=3.15,<4",
+  "pre-commit>=4.5,<5",
+  "flake8>=7.3,<8",
+  "testutils",
+]
+
+[tool.uv.sources]
+spiffe = { workspace = true }
+testutils = { workspace = true }
 
 [build-system]
-requires = ["poetry-core>=1.9.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["spiffetls*"]
+
+[tool.setuptools.package-data]
+spiffetls = ["py.typed"]
 
 [tool.mypy]
 ignore_missing_imports = true
