@@ -14,6 +14,7 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from typing import Tuple
 from unittest.mock import PropertyMock, MagicMock, patch
 
 import pytest
@@ -27,7 +28,7 @@ from testutils.certs import TEST_CERTS_DIR
 
 
 @pytest.fixture
-def source_mocks():
+def source_mocks() -> Tuple[MagicMock, PropertyMock, PropertyMock]:
     der_type = serialization.Encoding.DER
     chain_path = TEST_CERTS_DIR / '1-chain.der'
     key_path = TEST_CERTS_DIR / '1-key.der'
@@ -61,7 +62,11 @@ def source_mocks():
         (SSL.TLS_CLIENT_METHOD, True),
     ],
 )
-def test_create_ssl_context(method, use_system_trust_store, source_mocks):
+def test_create_ssl_context(
+    method: int,
+    use_system_trust_store: bool,
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     authorize_fn = MagicMock()
     x509_source, mock_svid, mock_bundle = source_mocks
     with patch('OpenSSL.SSL.Context') as MockContext:
