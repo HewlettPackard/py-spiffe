@@ -28,7 +28,7 @@ These tests also require the presence of a valid registration entry for the call
 """
 
 
-def test_jwt_source():
+def test_jwt_source() -> None:
     jwt_source = None
     try:
         jwt_source = spiffe.JwtSource(timeout_in_seconds=30)

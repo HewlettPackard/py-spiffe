@@ -15,7 +15,7 @@ under the License.
 """
 
 from typing import List, Iterable, Union
-
+from pathlib import Path
 import os
 import pem
 from cryptography import x509
@@ -115,7 +115,7 @@ def parse_der_certificates(der_bytes: bytes) -> List[Certificate]:
         raise ParseCertificateError('Unable to parse DER X.509 certificate') from err
 
 
-def load_certificates_bytes_from_file(certificates_file_path: str) -> bytes:
+def load_certificates_bytes_from_file(certificates_file_path: Path | str) -> bytes:
     """Loads bytes from file path.
 
     Args:
@@ -137,7 +137,7 @@ def load_certificates_bytes_from_file(certificates_file_path: str) -> bytes:
 
 
 def write_certificates_to_file(
-    certs_file_path: str,
+    certs_file_path: Path | str,
     encoding: serialization.Encoding,
     certificates: Iterable[Certificate],
 ) -> None:
@@ -182,7 +182,7 @@ def serialize_certificate(certificate: Certificate, encoding: serialization.Enco
     return cert_bytes
 
 
-def load_private_key_from_file(private_key_path: str) -> bytes:
+def load_private_key_from_file(private_key_path: Path | str) -> bytes:
     """Loads bytes from file path.
 
     Args:
@@ -204,7 +204,7 @@ def load_private_key_from_file(private_key_path: str) -> bytes:
 
 
 def write_private_key_to_file(
-    private_key_path: str,
+    private_key_path: Path | str,
     encoding: serialization.Encoding,
     private_key: PRIVATE_KEY_TYPES,
 ) -> None:
@@ -264,7 +264,7 @@ def parse_pem_private_key(pem_bytes: bytes) -> PRIVATE_KEY_TYPES:
         raise ParsePrivateKeyError(str(err)) from err
 
 
-def _load_bytes_from_file(file_path: str) -> bytes:
+def _load_bytes_from_file(file_path: Path | str) -> bytes:
     with open(file_path, 'rb') as file:
         return file.read()
 

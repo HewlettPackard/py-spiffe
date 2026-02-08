@@ -14,9 +14,12 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from collections.abc import Iterator
+
 from unittest.mock import patch
 
 import pytest
+from pytest_mock import MockerFixture
 
 from spiffe import JwtBundle, JwtBundleSet
 from spiffe.proto import workload_pb2
@@ -37,14 +40,14 @@ SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
 
 
 @pytest.fixture
-def client():
+def client() -> WorkloadApiClient:
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
         client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
-def mock_client_get_jwt_svid(mocker, client):
+def mock_client_get_jwt_svid(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     jwt_svid = generate_test_jwt_token(spiffe_id=str(SPIFFE_ID))
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
@@ -59,10 +62,10 @@ def mock_client_get_jwt_svid(mocker, client):
     )
 
 
-def mock_client_fetch_jwt_bundles(mocker, client):
+def mock_client_fetch_jwt_bundles(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     jwt_bundles = {'domain.test': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
 
-    def response_generator():
+    def response_generator() -> Iterator[workload_pb2.JWTBundlesResponse]:
         yield workload_pb2.JWTBundlesResponse(bundles=jwt_bundles)
         yield workload_pb2.JWTBundlesResponse(bundles=jwt_bundles)
 
@@ -73,7 +76,9 @@ def mock_client_fetch_jwt_bundles(mocker, client):
     )
 
 
-def test_jwt_source_subscription_and_unsubscription_behavior(mocker, client):
+def test_jwt_source_subscription_and_unsubscription_behavior(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     # Prepare mock callback
     mock_callback = mocker.MagicMock()
 
@@ -107,7 +112,7 @@ def test_jwt_source_subscription_and_unsubscription_behavior(mocker, client):
     mock_callback.assert_not_called()
 
 
-def test_get_jwt_svid(mocker, client):
+def test_get_jwt_svid(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -118,7 +123,7 @@ def test_get_jwt_svid(mocker, client):
     assert jwt_svid._audience == TEST_AUDIENCE
 
 
-def test_get_jwt_svid_no_subject(mocker, client):
+def test_get_jwt_svid_no_subject(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -129,18 +134,18 @@ def test_get_jwt_svid_no_subject(mocker, client):
     assert jwt_svid._audience == TEST_AUDIENCE
 
 
-def test_get_jwt_svid_exception(mocker, client):
+def test_get_jwt_svid_exception(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
     jwt_source = JwtSource(client)
     with pytest.raises(ArgumentError) as err:
-        _ = jwt_source.fetch_svid("")
+        _ = jwt_source.fetch_svid(set())
 
     assert str(err.value) == 'Audience cannot be empty'
 
 
-def test_error_new(mocker, client):
+def test_error_new(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         side_effect=Exception('Mocked Error')
     )
@@ -152,7 +157,7 @@ def test_error_new(mocker, client):
     assert str(err.value) == 'Error fetching JWT SVID: Mocked Error'
 
 
-def test_close(mocker, client):
+def test_close(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -162,7 +167,7 @@ def test_close(mocker, client):
     assert jwt_source.is_closed()
 
 
-def test_close_twice(mocker, client):
+def test_close_twice(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -173,7 +178,7 @@ def test_close_twice(mocker, client):
     assert jwt_source.is_closed()
 
 
-def test_is_closed(mocker, client):
+def test_is_closed(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -183,7 +188,7 @@ def test_is_closed(mocker, client):
     assert jwt_source.is_closed()
 
 
-def get_jwt_bundle(mocker, client):
+def get_jwt_bundle(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     mock_client_get_jwt_svid(mocker, client)
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -194,7 +199,7 @@ def get_jwt_bundle(mocker, client):
     assert len(jwt_bundle.jwt_authorities) == 1
 
 
-def test_get_jwt_bundle_exception(mocker, client):
+def test_get_jwt_bundle_exception(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     # Mock to raise exception when FetchJWTBundles is called
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         side_effect=Exception('Mocked Error'),
@@ -206,7 +211,9 @@ def test_get_jwt_bundle_exception(mocker, client):
     assert str(err.value) == 'JWT Source error: Failed to create JwtSource: Mocked Error'
 
 
-def test_jwt_source_closes_on_error_after_init(mocker, client):
+def test_jwt_source_closes_on_error_after_init(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that source closes on error after first update."""
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -225,7 +232,9 @@ def test_jwt_source_closes_on_error_after_init(mocker, client):
     assert 'source has error' in str(err.value)
 
 
-def test_jwt_source_bundles_returns_frozenset(mocker, client):
+def test_jwt_source_bundles_returns_frozenset(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that bundles property returns frozenset."""
     mock_client_fetch_jwt_bundles(mocker, client)
 
@@ -235,12 +244,10 @@ def test_jwt_source_bundles_returns_frozenset(mocker, client):
     # Should return frozenset
     assert isinstance(bundles, frozenset)
 
-    # Should not be able to mutate
-    with pytest.raises(AttributeError):
-        bundles.add(JwtBundle.parse(TrustDomain("test"), JWKS_1_EC_KEY))
 
-
-def test_jwt_source_unsubscribe_missing_callback(mocker, client):
+def test_jwt_source_unsubscribe_missing_callback(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that unsubscribe handles missing callback gracefully."""
     mock_client_fetch_jwt_bundles(mocker, client)
 

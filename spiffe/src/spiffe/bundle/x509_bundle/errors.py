@@ -18,6 +18,7 @@ under the License.
 This module defines X.509 Bundle exceptions.
 """
 
+from pathlib import Path
 from spiffe.errors import PySpiffeError
 
 
@@ -35,12 +36,12 @@ class ParseX509BundleError(X509BundleError):
 class LoadX509BundleError(X509BundleError):
     """Error raised when unable to load an X.509 bundle from a file."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: Path | str) -> None:
         super().__init__(f'Error loading X.509 bundle from {path}')
 
 
 class SaveX509BundleError(X509BundleError):
     """Error raised when unable to save an X.509 bundle to a file."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: Path | str) -> None:
         super().__init__(f'Error saving X.509 bundle to {path}')

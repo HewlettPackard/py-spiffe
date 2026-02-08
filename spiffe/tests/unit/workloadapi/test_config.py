@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from collections.abc import Iterator
+
 import os
 import pytest
 from spiffe.config import ConfigSetter, _SPIFFE_ENDPOINT_SOCKET
@@ -21,14 +23,14 @@ from spiffe.errors import ArgumentError
 
 
 @pytest.fixture(autouse=True)
-def restore_env_vars():
+def restore_env_vars() -> Iterator[None]:
     env_vars = os.environ.copy()
     yield
     os.environ.clear()
     os.environ.update(env_vars)
 
 
-def test_socket_must_be_set(monkeypatch):
+def test_socket_must_be_set(monkeypatch: pytest.MonkeyPatch) -> None:
     # Ensure the SPIFFE_ENDPOINT_SOCKET environment variable is unset
     monkeypatch.delenv(_SPIFFE_ENDPOINT_SOCKET, raising=False)
 
@@ -38,14 +40,14 @@ def test_socket_must_be_set(monkeypatch):
     assert str(exception.value) == 'SPIFFE endpoint socket: socket must be set'
 
 
-def test_pass_socket_as_parameter():
+def test_pass_socket_as_parameter() -> None:
     fake_socket = 'unix:///path/to/endpoint.sock'
     setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
 
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
-def test_read_socket_from_environment_variables():
+def test_read_socket_from_environment_variables() -> None:
     fake_socket = 'unix:///path/to/endpoint.sock'
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = fake_socket
 
@@ -54,7 +56,7 @@ def test_read_socket_from_environment_variables():
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
-def test_socket_parameter_preponderance_over_environment_variable():
+def test_socket_parameter_preponderance_over_environment_variable() -> None:
     fake_socket = 'unix:///path/to/endpoint.sock'
     os.environ['SPIFFE_ENDPOINT_SOCKET'] = 'env_var_socket'
 
@@ -63,7 +65,7 @@ def test_socket_parameter_preponderance_over_environment_variable():
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
-def test_path_scheme_is_valid_unix():
+def test_path_scheme_is_valid_unix() -> None:
     fake_socket = 'unix:///path/to/endpoint.sock'
 
     setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
@@ -71,7 +73,7 @@ def test_path_scheme_is_valid_unix():
     assert setter.get_config().spiffe_endpoint_socket == fake_socket
 
 
-def test_path_scheme_is_valid_tcp():
+def test_path_scheme_is_valid_tcp() -> None:
     fake_socket = 'tcp://127.0.0.1:8000'
 
     setter = ConfigSetter(spiffe_endpoint_socket=fake_socket)
@@ -148,7 +150,7 @@ def test_path_scheme_is_valid_tcp():
         ),
     ],
 )
-def test_invalid_endpoint_socket(test_input, expected):
+def test_invalid_endpoint_socket(test_input: str, expected: str) -> None:
     with pytest.raises(ArgumentError) as exception:
         ConfigSetter(spiffe_endpoint_socket=test_input)
 

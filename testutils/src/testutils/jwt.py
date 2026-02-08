@@ -40,7 +40,7 @@ JWKS_MISSING_KEY_ID = read_file_bytes(TEST_JWKS_DIR / 'jwks_missing_kid.json')
 JWKS_MISSING_X = read_file_bytes(TEST_JWKS_DIR / 'jwks_ec_missing_x.json')
 
 
-def extract_key_pair_pems(private_key: PRIVATE_KEY_TYPES):
+def extract_key_pair_pems(private_key: PRIVATE_KEY_TYPES) -> tuple[bytes, bytes]:
     """
     Extracts PEM-formatted byte strings of a private key and its corresponding public key.
 
@@ -81,13 +81,13 @@ TEST_EXPIRY = timegm(
 
 
 def generate_test_jwt_token(
-    private_key_pem: str = TEST_KEY_PEM,
+    private_key_pem: bytes = TEST_KEY_PEM,
     kid: str = TEST_KEY_ID,
     alg: str = TEST_ALG,
-    audience: Set[str] = None,
+    audience: Set[str] | None = None,
     spiffe_id: str = TEST_SPIFFE_ID,
     expiry: int = TEST_EXPIRY,
-):
+) -> str:
     """
     Generates a JWT token for testing with specified or default parameters.
 

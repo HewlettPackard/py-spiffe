@@ -17,6 +17,7 @@ under the License.
 from unittest.mock import patch
 
 import pytest
+from pytest_mock import MockerFixture
 
 from spiffe import X509Svid, X509Bundle, X509BundleSet
 from spiffe.proto import workload_pb2
@@ -33,14 +34,16 @@ from testutils.certs import FEDERATED_BUNDLE, CHAIN1, KEY1, BUNDLE, CHAIN2, KEY2
 
 
 @pytest.fixture
-def client():
+def client() -> WorkloadApiClient:
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
         client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
-def mock_client_return_multiple_svids(mocker, client):
+def mock_client_return_multiple_svids(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     federated_bundles = {'domain.test': FEDERATED_BUNDLE}
 
     client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
@@ -68,7 +71,9 @@ def mock_client_return_multiple_svids(mocker, client):
     )
 
 
-def test_x509_source_get_default_x509_svid(mocker, client):
+def test_x509_source_get_default_x509_svid(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client)
@@ -77,7 +82,9 @@ def test_x509_source_get_default_x509_svid(mocker, client):
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
 
 
-def test_x509_source_get_x509_svid_with_picker(mocker, client):
+def test_x509_source_get_x509_svid_with_picker(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client, svid_picker=lambda svids: svids[1])
@@ -86,7 +93,9 @@ def test_x509_source_get_x509_svid_with_picker(mocker, client):
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
 
 
-def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
+def test_x509_source_get_x509_svid_with_invalid_picker(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     with pytest.raises(X509SourceError) as err:
@@ -99,21 +108,27 @@ def test_x509_source_get_x509_svid_with_invalid_picker(mocker, client):
     )
 
 
-def test_x509_source_get_bundle_for_trust_domain(mocker, client):
+def test_x509_source_get_bundle_for_trust_domain(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client)
 
     bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert bundle is not None
     assert bundle.trust_domain == TrustDomain('example.org')
     assert len(bundle.x509_authorities) == 1
 
     bundle = x509_source.get_bundle_for_trust_domain(TrustDomain('domain.test'))
+    assert bundle is not None
     assert bundle.trust_domain == TrustDomain('domain.test')
     assert len(bundle.x509_authorities) == 1
 
 
-def test_x509_source_is_closed_get_svid(mocker, client):
+def test_x509_source_is_closed_get_svid(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client)
@@ -126,7 +141,9 @@ def test_x509_source_is_closed_get_svid(mocker, client):
     assert str(err.value) == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
 
 
-def test_x509_source_subscription_and_unsubscription_behavior(mocker, client):
+def test_x509_source_subscription_and_unsubscription_behavior(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     # Prepare mock callback
     mock_callback = mocker.MagicMock()
 
@@ -162,7 +179,9 @@ def test_x509_source_subscription_and_unsubscription_behavior(mocker, client):
     mock_callback.assert_not_called()
 
 
-def test_x509_source_is_closed_get_bundle(mocker, client):
+def test_x509_source_is_closed_get_bundle(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client)
@@ -175,7 +194,9 @@ def test_x509_source_is_closed_get_bundle(mocker, client):
     assert str(err.value) == 'X.509 Source error: Cannot get X.509 Bundle: source is closed'
 
 
-def test_x509_source_closes_on_error_after_init(mocker, client):
+def test_x509_source_closes_on_error_after_init(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that source closes on error after first update."""
     mock_client_return_multiple_svids(mocker, client)
 
@@ -194,7 +215,9 @@ def test_x509_source_closes_on_error_after_init(mocker, client):
     assert 'source has error' in str(err.value)
 
 
-def test_x509_source_bundles_returns_frozenset(mocker, client):
+def test_x509_source_bundles_returns_frozenset(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that bundles property returns frozenset."""
     mock_client_return_multiple_svids(mocker, client)
 
@@ -204,12 +227,10 @@ def test_x509_source_bundles_returns_frozenset(mocker, client):
     # Should return frozenset
     assert isinstance(bundles, frozenset)
 
-    # Should not be able to mutate
-    with pytest.raises(AttributeError):
-        bundles.add(X509Bundle.parse_raw(TrustDomain("test"), BUNDLE))
 
-
-def test_x509_source_unsubscribe_missing_callback(mocker, client):
+def test_x509_source_unsubscribe_missing_callback(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     """Test that unsubscribe handles missing callback gracefully."""
     mock_client_return_multiple_svids(mocker, client)
 

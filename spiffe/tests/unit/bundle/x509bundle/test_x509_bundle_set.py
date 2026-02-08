@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from pathlib import Path
+
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.spiffe_id.spiffe_id import TrustDomain
@@ -23,7 +25,7 @@ trust_domain_1 = TrustDomain('domain.test')
 trust_domain_2 = TrustDomain('example.org')
 
 
-def test_create_new_x509_bundle_set():
+def test_create_new_x509_bundle_set() -> None:
     bundle_bytes = read_bytes(TEST_BUNDLE_CERTS_DIR / 'cert.der')
 
     bundle_1 = X509Bundle.parse_raw(trust_domain_1, bundle_bytes)
@@ -47,7 +49,7 @@ def test_create_new_x509_bundle_set():
     assert found_bundle is None
 
 
-def test_create_x509_bundle_set_from_list_of_bundles():
+def test_create_x509_bundle_set_from_list_of_bundles() -> None:
     bundle_bytes = read_bytes(TEST_BUNDLE_CERTS_DIR / 'certs.der')
 
     bundle_1 = X509Bundle.parse_raw(trust_domain_1, bundle_bytes)
@@ -69,7 +71,7 @@ def test_create_x509_bundle_set_from_list_of_bundles():
     assert found_bundle is None
 
 
-def test_put_bundle():
+def test_put_bundle() -> None:
     bundle_bytes = read_bytes(TEST_BUNDLE_CERTS_DIR / 'certs.der')
     bundle_bytes_2 = read_bytes(TEST_BUNDLE_CERTS_DIR / 'certs.pem')
 
@@ -101,6 +103,6 @@ def test_put_bundle():
     assert found_bundle == other_bundle
 
 
-def read_bytes(path):
+def read_bytes(path: Path) -> bytes:
     with open(path, 'rb') as file:
         return file.read()

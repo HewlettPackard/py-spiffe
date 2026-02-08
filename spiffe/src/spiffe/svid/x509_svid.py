@@ -23,6 +23,7 @@ This module manages X.509 SVID objects.
 """
 
 from typing import List
+from pathlib import Path
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -104,8 +105,8 @@ class X509Svid(object):
 
     def save(
         self,
-        certs_chain_path: str,
-        private_key_path: str,
+        certs_chain_path: Path | str,
+        private_key_path: Path | str,
         encoding: serialization.Encoding,
     ) -> None:
         """Saves the X.509 SVID certs chain and private key in PEM or DER encoded files on disk.
@@ -212,8 +213,8 @@ class X509Svid(object):
     @classmethod
     def load(
         cls,
-        certs_chain_path: str,
-        private_key_path: str,
+        certs_chain_path: Path | str,
+        private_key_path: Path | str,
         encoding: serialization.Encoding,
     ) -> 'X509Svid':
         """Loads the X.509 SVID from PEM or DER encoded files on disk.

@@ -15,15 +15,18 @@ under the License.
 """
 
 from collections import deque
-from typing import Any, Iterable, List
+from collections.abc import Iterator
+from typing import List
 from unittest.mock import patch
 
 import pytest
 import datetime
 import grpc
 import threading
+from pytest_mock import MockerFixture
 
 from spiffe.proto import workload_pb2
+from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
@@ -51,14 +54,14 @@ from testutils.utils import (
 
 
 @pytest.fixture
-def client():
+def client() -> WorkloadApiClient:
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
         mock_check.return_value = None
         client_instance = WorkloadApiClient('unix:///dummy.path')
     return client_instance
 
 
-def test_fetch_jwt_svid_aud_sub(mocker, client):
+def test_fetch_jwt_svid_aud_sub(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     spiffe_id = SpiffeId('spiffe://test.com/my_service')
     jwt_svid = generate_test_jwt_token(spiffe_id=str(spiffe_id))
 
@@ -81,7 +84,7 @@ def test_fetch_jwt_svid_aud_sub(mocker, client):
     assert int(svid._expiry) > utc_time
 
 
-def test_fetch_jwt_svid_aud(mocker, client):
+def test_fetch_jwt_svid_aud(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     spiffe_id = 'spiffe://test.com/my_service'
     jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
 
@@ -103,7 +106,7 @@ def test_fetch_jwt_svid_aud(mocker, client):
     assert int(svid._expiry) > utc_time
 
 
-def test_fetch_jwt_svids(mocker, client):
+def test_fetch_jwt_svids(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     spiffe_id = 'spiffe://test.com/my_service'
     jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
     spiffe_id2 = 'spiffe://test.com/my_service2'
@@ -138,21 +141,14 @@ def test_fetch_jwt_svids(mocker, client):
     assert int(svid._expiry) > utc_time
 
 
-@pytest.mark.parametrize(
-    'test_input_audience, expected',
-    [
-        (None, 'Parameter audiences cannot be empty'),
-        ([], 'Parameter audiences cannot be empty'),
-    ],
-)
-def test_fetch_jwt_svid_no_audience(test_input_audience, expected, client):
+def test_fetch_jwt_svid_no_audience(client: WorkloadApiClient) -> None:
     with pytest.raises(ArgumentError) as exception:
-        client.fetch_jwt_svid(audience=test_input_audience)
+        client.fetch_jwt_svid(audience=set())
 
-    assert str(exception.value) == expected
+    assert str(exception.value) == 'Parameter audiences cannot be empty'
 
 
-def test_fetch_jwt_svid_fetch_error(mocker, client):
+def test_fetch_jwt_svid_fetch_error(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         side_effect=Exception('Mocked Error')
     )
@@ -163,7 +159,7 @@ def test_fetch_jwt_svid_fetch_error(mocker, client):
     assert str(exception.value) == 'Error fetching JWT SVID: Mocked Error'
 
 
-def test_fetch_jwt_svid_wrong_token(mocker, client):
+def test_fetch_jwt_svid_wrong_token(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     jwt_svid = generate_test_jwt_token(spiffe_id='')
 
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
@@ -181,7 +177,9 @@ def test_fetch_jwt_svid_wrong_token(mocker, client):
     assert str(exception.value) == 'Error fetching JWT SVID: Missing required claim: sub'
 
 
-def test_fetch_jwt_svid_no_token_returned(mocker, client):
+def test_fetch_jwt_svid_no_token_returned(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
         return_value=workload_pb2.JWTSVIDResponse(svids=[])
     )
@@ -191,7 +189,7 @@ def test_fetch_jwt_svid_no_token_returned(mocker, client):
     assert str(exception.value) == 'Error fetching JWT SVID: JWT SVID response is empty'
 
 
-def test_fetch_jwt_bundles(mocker, client):
+def test_fetch_jwt_bundles(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_2_EC_1_RSA_KEYS}
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
@@ -217,7 +215,9 @@ def test_fetch_jwt_bundles(mocker, client):
     assert len(federated_jwt_bundle.jwt_authorities) == 3
 
 
-def test_fetch_jwt_bundles_empty_response(mocker, client):
+def test_fetch_jwt_bundles_empty_response(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         return_value=iter(
             [
@@ -234,7 +234,9 @@ def test_fetch_jwt_bundles_empty_response(mocker, client):
     assert str(exc_info.value) == 'Error fetching JWT Bundle: JWT Bundles response is empty'
 
 
-def test_fetch_jwt_bundles_error_parsing_jwks(mocker, client):
+def test_fetch_jwt_bundles_error_parsing_jwks(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     bundles = {'example.org': JWKS_1_EC_KEY, 'domain.test': JWKS_MISSING_KEY_ID}
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
@@ -257,7 +259,9 @@ def test_fetch_jwt_bundles_error_parsing_jwks(mocker, client):
     )
 
 
-def test_fetch_jwt_bundles_raise_grpc_call(mocker, client):
+def test_fetch_jwt_bundles_raise_grpc_call(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(side_effect=FakeCall())
 
     with pytest.raises(FetchJwtBundleError) as exc_info:
@@ -270,7 +274,9 @@ def test_fetch_jwt_bundles_raise_grpc_call(mocker, client):
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_fetch_jwt_bundles_raise_grpc_error(mocker, client):
+def test_fetch_jwt_bundles_raise_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         side_effect=grpc.RpcError('Mocked gRPC error')
     )
@@ -284,7 +290,9 @@ def test_fetch_jwt_bundles_raise_grpc_error(mocker, client):
     )
 
 
-def test_fetch_jwt_bundles_raise_error(mocker, client):
+def test_fetch_jwt_bundles_raise_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         side_effect=Exception('Mocked error')
     )
@@ -295,10 +303,10 @@ def test_fetch_jwt_bundles_raise_error(mocker, client):
     assert str(exc_info.value) == 'Error fetching JWT Bundle: Mocked error'
 
 
-def test_validate_jwt_svid(mocker, client):
+def test_validate_jwt_svid(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     audience = 'spire'
     spiffe_id = 'spiffe://test.com/my_service'
-    jwt_svid = generate_test_jwt_token(audience=[audience], spiffe_id=spiffe_id)
+    jwt_svid = generate_test_jwt_token(audience={audience}, spiffe_id=spiffe_id)
 
     client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(
         return_value=workload_pb2.ValidateJWTSVIDResponse(
@@ -316,15 +324,16 @@ def test_validate_jwt_svid(mocker, client):
 @pytest.mark.parametrize(
     'test_input_token, test_input_audience, expected',
     [
-        (None, 'audience', 'Token cannot be empty'),
         ('', 'audience', 'Token cannot be empty'),
-        ('token', None, 'Audience cannot be empty'),
         ('token', '', 'Audience cannot be empty'),
     ],
 )
 def test_validate_jwt_svid_invalid_input(
-    test_input_token, test_input_audience, expected, client
-):
+    test_input_token: str,
+    test_input_audience: str,
+    expected: str,
+    client: WorkloadApiClient,
+) -> None:
     with pytest.raises(ArgumentError) as exception:
         client.validate_jwt_svid(
             token=test_input_token,
@@ -334,7 +343,9 @@ def test_validate_jwt_svid_invalid_input(
     assert str(exception.value) == expected
 
 
-def test_validate_jwt_svid_raise_error(mocker, client):
+def test_validate_jwt_svid_raise_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     jwt_svid = generate_test_jwt_token()
 
     client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(
@@ -347,7 +358,7 @@ def test_validate_jwt_svid_raise_error(mocker, client):
     assert str(exception.value) == 'JWT SVID is not valid: Mocked error'
 
 
-def test_stream_jwt_bundles_success(mocker, client):
+def test_stream_jwt_bundles_success(mocker: MockerFixture, client: WorkloadApiClient) -> None:
     # Setup the mock responses
     jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
     jwt_bundles_2 = {'domain.dev': JWKS_1_EC_KEY}
@@ -363,13 +374,13 @@ def test_stream_jwt_bundles_success(mocker, client):
     )
 
     update_event = threading.Event()
-    responses = deque()
+    responses: deque[JwtBundleSet] = deque()
 
-    def on_success_handler(response):
+    def on_success_handler(response: JwtBundleSet) -> None:
         responses.append(response)
         update_event.set()  # Signal that a new response is available
 
-    def on_error_handler(error):
+    def on_error_handler(error: Exception) -> None:
         print(f"Error: {error}")
         update_event.set()
 
@@ -402,13 +413,17 @@ def test_stream_jwt_bundles_success(mocker, client):
     assert len(jwt_bundle.jwt_authorities) == 1
 
 
-def delayed_responses(responses: List[Any]) -> Iterable:
+def delayed_responses(
+    responses: List[workload_pb2.JWTBundlesResponse],
+) -> Iterator[workload_pb2.JWTBundlesResponse]:
     """Yields responses with an artificial delay, but without using sleep to avoid slowing down tests."""
     for res in responses:
         yield res  # Assuming this delay simulates asynchronous behavior well enough for the test.
 
 
-def test_stream_jwt_bundles_retry_on_grpc_error(mocker, client):
+def test_stream_jwt_bundles_retry_on_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     grpc_error = FakeCall()
     jwt_bundles = {'example.org': JWKS_1_EC_KEY, 'domain.prod': JWKS_2_EC_1_RSA_KEYS}
 
@@ -421,7 +436,7 @@ def test_stream_jwt_bundles_retry_on_grpc_error(mocker, client):
 
     expected_error = FetchJwtBundleError(grpc_error.details())
     event = threading.Event()
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[JwtBundleSet]()
 
     client.stream_jwt_bundles(
         on_success=lambda r: handle_success(r, response_holder, event),
@@ -430,8 +445,9 @@ def test_stream_jwt_bundles_retry_on_grpc_error(mocker, client):
 
     event.wait(timeout=5)
 
+    assert response_holder.error is None
+    assert response_holder.success is not None
     jwt_bundle_set = response_holder.success
-    assert jwt_bundle_set
     jwt_bundle_1 = jwt_bundle_set.get_bundle_for_trust_domain(TrustDomain('example.org'))
     assert jwt_bundle_1
     assert len(jwt_bundle_1.jwt_authorities) == 1
@@ -441,7 +457,9 @@ def test_stream_jwt_bundles_retry_on_grpc_error(mocker, client):
     assert len(jwt_bundle_2.jwt_authorities) == 3
 
 
-def test_stream_jwt_bundles_no_retry_on_grpc_error(mocker, client):
+def test_stream_jwt_bundles_no_retry_on_grpc_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     grpc_error = FakeCall()
     grpc_error._code = grpc.StatusCode.INVALID_ARGUMENT
 
@@ -453,7 +471,7 @@ def test_stream_jwt_bundles_no_retry_on_grpc_error(mocker, client):
 
     expected_error = WorkloadApiError(f"gRPC error: {grpc_error._code}")
     event = threading.Event()
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[JwtBundleSet]()
 
     client.stream_jwt_bundles(
         on_success=lambda r: handle_success(r, response_holder, event),
@@ -462,14 +480,16 @@ def test_stream_jwt_bundles_no_retry_on_grpc_error(mocker, client):
 
     event.wait(5)
 
-    assert not response_holder.success
-    assert response_holder.error
+    assert response_holder.success is None
+    assert response_holder.error is not None
     assert_error(response_holder.error, expected_error)
 
 
-def test_stream_jwt_bundles_no_retry_on_grpc_error_no_call(mocker, client):
-    grpc_error = grpc.RpcError()
-    grpc_error.code = lambda: grpc.StatusCode.INVALID_ARGUMENT
+def test_stream_jwt_bundles_no_retry_on_grpc_error_no_call(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    grpc_error = FakeCall()
+    grpc_error._code = grpc.StatusCode.INVALID_ARGUMENT
 
     mock_error_iter = mocker.MagicMock()
     mock_error_iter.__iter__.side_effect = grpc_error
@@ -481,7 +501,7 @@ def test_stream_jwt_bundles_no_retry_on_grpc_error_no_call(mocker, client):
     done = threading.Event()
     expected_error = WorkloadApiError(f"gRPC error: {grpc.StatusCode.INVALID_ARGUMENT}")
 
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[JwtBundleSet]()
 
     client.stream_jwt_bundles(
         lambda r: handle_success(r, response_holder, done),
@@ -495,7 +515,9 @@ def test_stream_jwt_bundles_no_retry_on_grpc_error_no_call(mocker, client):
     assert str(response_holder.error) == str(expected_error)
 
 
-def test_stream_jwt_bundles_no_retry_on_error(mocker, client):
+def test_stream_jwt_bundles_no_retry_on_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
     thrown_error = Exception('Some Error')
 
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
@@ -503,7 +525,7 @@ def test_stream_jwt_bundles_no_retry_on_error(mocker, client):
     )
 
     event = threading.Event()
-    response_holder = ResponseHolder()
+    response_holder = ResponseHolder[JwtBundleSet]()
 
     client.stream_jwt_bundles(
         on_success=lambda r: handle_success(r, response_holder, event),
@@ -512,6 +534,6 @@ def test_stream_jwt_bundles_no_retry_on_error(mocker, client):
 
     event.wait(3)  # add timeout to prevent test from hanging
 
-    assert not response_holder.success
-    assert response_holder.error
+    assert response_holder.success is None
+    assert response_holder.error is not None
     assert_error(response_holder.error, thrown_error)

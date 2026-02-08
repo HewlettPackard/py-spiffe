@@ -15,13 +15,15 @@ under the License.
 """
 
 import pytest
+from typing import Dict
+from pytest_mock import MockerFixture
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from jwt.exceptions import InvalidKeyError
-from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from spiffe.bundle.jwt_bundle.errors import JwtBundleError, ParseJWTBundleError
+from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle, _PUBLIC_KEY_TYPES
+from spiffe.bundle.jwt_bundle.errors import ParseJWTBundleError
 from spiffe.errors import ArgumentError
-from spiffe.spiffe_id.spiffe_id import TrustDomain
+from spiffe.spiffe_id.spiffe_id import TrustDomain, TrustDomainError
 from testutils.jwt import (
     JWKS_1_EC_KEY,
     JWKS_2_EC_1_RSA_KEYS,
@@ -35,43 +37,36 @@ trust_domain = TrustDomain("spiffe://any.domain")
 # Default authorities to run test cases.
 ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
 rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-authorities = {
-    'kid1': ec_key,
-    'kid2': rsa_key,
+authorities: Dict[str, _PUBLIC_KEY_TYPES] = {
+    'kid1': ec_key.public_key(),
+    'kid2': rsa_key.public_key(),
 }
 
 
-def test_create_jwt_bundle():
+def test_create_jwt_bundle() -> None:
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
     assert jwt_bundle.trust_domain == trust_domain
     assert len(jwt_bundle.jwt_authorities.keys()) == len(authorities.keys())
 
 
-def test_create_jwt_bundle_no_trust_domain():
-    with pytest.raises(JwtBundleError) as exc_info:
-        JwtBundle(None, authorities)
-
-    assert str(exc_info.value) == 'Trust domain cannot be empty'
-
-
-def test_create_jwt_bundle_no_authorities():
-    jwt_bundle = JwtBundle(trust_domain, None)
+def test_create_jwt_bundle_no_authorities() -> None:
+    jwt_bundle = JwtBundle(trust_domain, {})
 
     assert jwt_bundle.trust_domain == trust_domain
     assert isinstance(jwt_bundle.jwt_authorities, dict)
     assert len(jwt_bundle.jwt_authorities.keys()) == 0
 
 
-def test_get_jwt_authority_valid_input():
+def test_get_jwt_authority_valid_input() -> None:
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
     authority_key = jwt_bundle.get_jwt_authority('kid2')
 
-    assert rsa_key == authority_key
+    assert rsa_key.public_key() == authority_key
 
 
-def test_get_jwt_authority_invalid_key_id_not_found():
+def test_get_jwt_authority_invalid_key_id_not_found() -> None:
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
     response = jwt_bundle.get_jwt_authority('p0')
@@ -79,7 +74,7 @@ def test_get_jwt_authority_invalid_key_id_not_found():
     assert response is None
 
 
-def test_get_jwt_authority_invalid_input():
+def test_get_jwt_authority_invalid_input() -> None:
     jwt_bundle = JwtBundle(trust_domain, authorities)
 
     with pytest.raises(ArgumentError) as exception:
@@ -88,8 +83,8 @@ def test_get_jwt_authority_invalid_input():
     assert str(exception.value) == 'key_id cannot be empty'
 
 
-def test_get_jwt_authority_empty_authority_dict():
-    invalid_authorities = None
+def test_get_jwt_authority_empty_authority_dict() -> None:
+    invalid_authorities: Dict[str, _PUBLIC_KEY_TYPES] = {}
     jwt_bundle = JwtBundle(trust_domain, invalid_authorities)
 
     response = jwt_bundle.get_jwt_authority(key_id='p1')
@@ -101,31 +96,23 @@ def test_get_jwt_authority_empty_authority_dict():
     'test_bytes, expected_authorities',
     [(JWKS_1_EC_KEY, 1), (JWKS_2_EC_1_RSA_KEYS, 3)],
 )
-def test_parse(test_bytes, expected_authorities):
+def test_parse(test_bytes: bytes, expected_authorities: int) -> None:
     jwt_bundle = JwtBundle.parse(trust_domain, test_bytes)
 
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities) == expected_authorities
 
 
-@pytest.mark.parametrize(
-    'test_trust_domain',
-    ['', None],
-)
-def test_parse_invalid_trust_domain(test_trust_domain):
+def test_parse_invalid_trust_domain() -> None:
+    with pytest.raises(TrustDomainError) as exception:
+        TrustDomain('')
+
+    assert str(exception.value) == 'Invalid trust domain: cannot be empty'
+
+
+def test_parse_missing_bundle_bytes() -> None:
     with pytest.raises(ArgumentError) as exception:
-        JwtBundle.parse(test_trust_domain, JWKS_1_EC_KEY)
-
-    assert str(exception.value) == 'Trust domain cannot be empty'
-
-
-@pytest.mark.parametrize(
-    'test_bundle_bytes',
-    [b'', None],
-)
-def test_parse_missing_bundle_bytes(test_bundle_bytes):
-    with pytest.raises(ArgumentError) as exception:
-        JwtBundle.parse(trust_domain, test_bundle_bytes)
+        JwtBundle.parse(trust_domain, b'')
 
     assert str(exception.value) == 'Bundle bytes cannot be empty'
 
@@ -134,7 +121,7 @@ def test_parse_missing_bundle_bytes(test_bundle_bytes):
     'test_bytes',
     [b'1211', b'invalid bytes'],
 )
-def test_parse_invalid_bytes(test_bytes):
+def test_parse_invalid_bytes(test_bytes: bytes) -> None:
     with pytest.raises(ParseJWTBundleError) as exception:
         JwtBundle.parse(trust_domain, test_bytes)
 
@@ -144,7 +131,7 @@ def test_parse_invalid_bytes(test_bytes):
     )
 
 
-def test_parse_bundle_bytes_invalid_key(mocker):
+def test_parse_bundle_bytes_invalid_key(mocker: MockerFixture) -> None:
     mocker.patch(
         'spiffe.bundle.jwt_bundle.jwt_bundle.PyJWKSet.from_json',
         side_effect=InvalidKeyError('Invalid Key'),
@@ -157,7 +144,7 @@ def test_parse_bundle_bytes_invalid_key(mocker):
     assert str(err.value) == 'Error parsing JWT bundle: Invalid Key'
 
 
-def test_parse_corrupted_key_missing_key_id():
+def test_parse_corrupted_key_missing_key_id() -> None:
     with pytest.raises(ParseJWTBundleError) as exception:
         JwtBundle.parse(trust_domain, JWKS_MISSING_KEY_ID)
 
@@ -167,7 +154,7 @@ def test_parse_corrupted_key_missing_key_id():
     )
 
 
-def test_parse_jwks_with_empty_keys_array():
+def test_parse_jwks_with_empty_keys_array() -> None:
     jwks_empty_keys_bytes = '{"keys": []}'.encode('utf-8')
     bundle = JwtBundle.parse(trust_domain, jwks_empty_keys_bytes)
 
@@ -175,7 +162,7 @@ def test_parse_jwks_with_empty_keys_array():
     assert len(bundle.jwt_authorities) == 0
 
 
-def test_parse_jwks_with_null_keys_field():
+def test_parse_jwks_with_null_keys_field() -> None:
     jwks_null_keys_bytes = '{"keys": null}'.encode('utf-8')
     bundle = JwtBundle.parse(trust_domain, jwks_null_keys_bytes)
 

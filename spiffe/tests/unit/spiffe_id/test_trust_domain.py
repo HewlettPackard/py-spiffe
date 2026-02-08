@@ -29,7 +29,7 @@ from spiffe.spiffe_id.spiffe_id import TrustDomain, TrustDomainError
         ("a.b.c.d.e.f", "a.b.c.d.e.f"),
     ],
 )
-def test_valid_trust_domain(input, expected):
+def test_valid_trust_domain(input: str, expected: str) -> None:
     td = TrustDomain(input)
     assert str(td) == expected
 
@@ -72,38 +72,38 @@ def test_valid_trust_domain(input, expected):
         ),
     ],
 )
-def test_invalid_trust_domain(input, expected_error):
+def test_invalid_trust_domain(input: str, expected_error: str) -> None:
     with pytest.raises(TrustDomainError) as exc:
         TrustDomain(input)
     assert str(exc.value) == expected_error
 
 
-def test_trust_domain_equality():
+def test_trust_domain_equality() -> None:
     td1 = TrustDomain("example.org")
     td2 = TrustDomain("example.org")
     assert td1 == td2
     assert td1 == "example.org"
 
 
-def test_trust_domain_inequality():
+def test_trust_domain_inequality() -> None:
     td1 = TrustDomain("example.org")
     td2 = TrustDomain("example.com")
     assert td1 != td2
     assert td1 != "example.com"
 
 
-def test_trust_domain_hash_equality():
+def test_trust_domain_hash_equality() -> None:
     td1 = TrustDomain("example.org")
     td2 = TrustDomain("example.org")
     assert hash(td1) == hash(td2)
 
 
-def test_trust_domain_as_spiffe_id():
+def test_trust_domain_as_spiffe_id() -> None:
     td = TrustDomain("example.org")
     spiffe_id = td.as_spiffe_id()
     assert str(spiffe_id) == "spiffe://example.org"
 
 
-def test_trust_domain_string_representation():
+def test_trust_domain_string_representation() -> None:
     td = TrustDomain("example.org")
     assert str(td) == "example.org"

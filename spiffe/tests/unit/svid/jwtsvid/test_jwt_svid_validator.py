@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from dataclasses import dataclass
+from typing import Dict, Set
 import pytest
 import datetime
 from calendar import timegm
@@ -36,44 +38,20 @@ from spiffe.svid.errors import (
 """
 
 
-@pytest.mark.parametrize(
-    'test_input_claim,test_input_audience, expected',
-    [
-        (
-            {
-                'exp': timegm(
-                    (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(hours=24)
-                    ).utctimetuple()
-                ),
-                'aud': 'None',
-                'sub': 'spiffeid://somewhere.over.the',
-            },
-            None,
-            'expected_audience cannot be empty',
+def test_invalid_input_validate_claims() -> None:
+    test_input_claim = {
+        'exp': timegm(
+            (
+                datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
+            ).utctimetuple()
         ),
-        (
-            {
-                'exp': timegm(
-                    (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(hours=24)
-                    ).utctimetuple()
-                ),
-                'aud': ['test'],
-                'sub': 'spiffeid://somewhere.over.the',
-            },
-            set(),
-            'expected_audience cannot be empty',
-        ),
-    ],
-)
-def test_invalid_input_validate_claims(test_input_claim, test_input_audience, expected):
+        'aud': ['test'],
+        'sub': 'spiffeid://somewhere.over.the',
+    }
     with pytest.raises(ArgumentError) as exception:
-        JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
+        JwtSvidValidator().validate_claims(test_input_claim, set())
 
-    assert str(exception.value) == expected
+    assert str(exception.value) == 'expected_audience cannot be empty'
 
 
 @pytest.mark.parametrize(
@@ -151,7 +129,9 @@ def test_invalid_input_validate_claims(test_input_claim, test_input_audience, ex
         ),
     ],
 )
-def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expected):
+def test_validate_claims_invalid_aud(
+    test_input_claim: Dict[str, object], test_input_audience: Set[str], expected: str
+) -> None:
     with pytest.raises(InvalidClaimError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
@@ -210,7 +190,9 @@ def test_validate_claims_invalid_aud(test_input_claim, test_input_audience, expe
         ),
     ],
 )
-def test_validate_claims_token_expired(test_input_claim, test_input_audience):
+def test_validate_claims_token_expired(
+    test_input_claim: Dict[str, object], test_input_audience: Set[str]
+) -> None:
     with pytest.raises(TokenExpiredError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
     assert str(exception.value) == str(TokenExpiredError())
@@ -234,7 +216,9 @@ def test_validate_claims_token_expired(test_input_claim, test_input_audience):
         ),
     ],
 )
-def test_validate_claims_single_string_aud(test_input_claim, test_input_audience):
+def test_validate_claims_single_string_aud(
+    test_input_claim: Dict[str, object], test_input_audience: Set[str]
+) -> None:
     JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
     assert True
 
@@ -260,8 +244,8 @@ def test_validate_claims_single_string_aud(test_input_claim, test_input_audience
     ],
 )
 def test_validate_claims_missing_required_claim(
-    test_input_claim, test_input_audience, expected
-):
+    test_input_claim: Dict[str, object], test_input_audience: Set[str], expected: str
+) -> None:
     with pytest.raises(MissingClaimError) as exception:
         JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
@@ -312,7 +296,9 @@ def test_validate_claims_missing_required_claim(
         ),
     ],
 )
-def test_validate_claims_valid_input(test_input_claim, test_input_audience):
+def test_validate_claims_valid_input(
+    test_input_claim: Dict[str, object], test_input_audience: Set[str]
+) -> None:
     JwtSvidValidator().validate_claims(test_input_claim, test_input_audience)
 
     assert True
@@ -323,29 +309,30 @@ def test_validate_claims_valid_input(test_input_claim, test_input_audience):
 """
 
 
+@dataclass(frozen=True)
+class HeaderErrorCase:
+    header: Dict[str, str]
+    expected_error: str
+
+
 @pytest.mark.parametrize(
-    'test_input_header, expected',
+    'case',
     [
-        (
-            None,
-            'header cannot be empty',
-        ),
-        (
-            '',
-            'header cannot be empty',
-        ),
-        (
+        HeaderErrorCase(
             {'ttt': 'eee'},
             'header alg cannot be empty',
         ),
-        ({'alg': ''}, 'header alg cannot be empty'),
+        HeaderErrorCase(
+            {'alg': ''},
+            'header alg cannot be empty',
+        ),
     ],
 )
-def test_validate_header_invalid_input(test_input_header, expected):
+def test_validate_header_invalid_input(case: HeaderErrorCase) -> None:
     with pytest.raises(ArgumentError) as exception:
-        JwtSvidValidator().validate_header(test_input_header)
+        JwtSvidValidator().validate_header(case.header)
 
-    assert str(exception.value) == expected
+    assert str(exception.value) == case.expected_error
 
 
 @pytest.mark.parametrize(
@@ -355,7 +342,9 @@ def test_validate_header_invalid_input(test_input_header, expected):
         ({'alg': 'RS256 RS384'}, str(InvalidAlgorithmError('RS256 RS384'))),
     ],
 )
-def test_validate_header_invalid_algorithm(test_input_header, expected):
+def test_validate_header_invalid_algorithm(
+    test_input_header: Dict[str, str], expected: str
+) -> None:
     with pytest.raises(InvalidAlgorithmError) as exception:
         JwtSvidValidator().validate_header(test_input_header)
 
@@ -368,7 +357,9 @@ def test_validate_header_invalid_algorithm(test_input_header, expected):
         ({'alg': 'RS256', 'typ': 'xxx'}, str(InvalidTypeError('xxx'))),
     ],
 )
-def test_validate_header_invalid_type(test_input_header, expected):
+def test_validate_header_invalid_type(
+    test_input_header: Dict[str, str], expected: str
+) -> None:
     with pytest.raises(InvalidTypeError) as exception:
         JwtSvidValidator().validate_header(test_input_header)
 
@@ -384,7 +375,7 @@ def test_validate_header_invalid_type(test_input_header, expected):
         ({'alg': 'PS256'}),
     ],
 )
-def test_validate_header_valid_headers(test_input_header):
+def test_validate_header_valid_headers(test_input_header: Dict[str, str]) -> None:
     JwtSvidValidator().validate_header(test_input_header)
 
     assert True

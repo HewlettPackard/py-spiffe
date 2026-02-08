@@ -22,9 +22,9 @@ from spiffe.workloadapi.errors import WorkloadApiError
 from testutils.utils import FakeCall
 
 
-def test_handle_error():
+def test_handle_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_works():
+    def func_that_works() -> None:
         return None
 
     res = func_that_works()
@@ -32,9 +32,9 @@ def test_handle_error():
     assert res is None
 
 
-def test_handle_error_on_workload_api_error():
+def test_handle_error_on_workload_api_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_workload_api_error():
+    def func_that_raises_workload_api_error() -> None:
         raise WorkloadApiError('Workload API Error')
 
     with pytest.raises(WorkloadApiError) as exc_info:
@@ -43,9 +43,9 @@ def test_handle_error_on_workload_api_error():
     assert str(exc_info.value) == 'Workload API Error'
 
 
-def test_handle_error_on_argument_error():
+def test_handle_error_on_argument_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_workload_api_error():
+    def func_that_raises_workload_api_error() -> None:
         raise ArgumentError('Argument Error')
 
     with pytest.raises(ArgumentError) as exc_info:
@@ -54,9 +54,9 @@ def test_handle_error_on_argument_error():
     assert str(exc_info.value) == 'Argument Error'
 
 
-def test_handle_error_on_py_spiffe_error():
+def test_handle_error_on_py_spiffe_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_py_spiffe_error():
+    def func_that_raises_py_spiffe_error() -> None:
         raise PySpiffeError('PySPIFFE Error')
 
     with pytest.raises(PySpiffeError) as exc_info:
@@ -65,9 +65,9 @@ def test_handle_error_on_py_spiffe_error():
     assert str(exc_info.value) == 'PySPIFFE Error'
 
 
-def test_handle_error_on_grpc_error():
+def test_handle_error_on_grpc_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_grpc_error():
+    def func_that_raises_grpc_error() -> None:
         raise grpc.RpcError('gRPC Error')
 
     with pytest.raises(PySpiffeError) as exc_info:
@@ -76,9 +76,9 @@ def test_handle_error_on_grpc_error():
     assert str(exc_info.value) == 'Could not process response from the Workload API'
 
 
-def test_handle_error_on_grpc_call_error():
+def test_handle_error_on_grpc_call_error() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_grpc_call_error():
+    def func_that_raises_grpc_call_error() -> None:
         raise FakeCall()
 
     with pytest.raises(PySpiffeError) as exc_info:
@@ -90,9 +90,9 @@ def test_handle_error_on_grpc_call_error():
     assert 'StatusCode.UNKNOWN' in msg
 
 
-def test_handle_error_on_exception():
+def test_handle_error_on_exception() -> None:
     @handle_error(error_cls=PySpiffeError)
-    def func_that_raises_exception():
+    def func_that_raises_exception() -> None:
         raise Exception('Some random message')
 
     with pytest.raises(PySpiffeError) as exc_info:

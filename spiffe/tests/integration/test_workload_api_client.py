@@ -27,7 +27,7 @@ These tests also require the presence of a valid registration entry for the call
 """
 
 
-def test_workload_api_client_x509():
+def test_workload_api_client_x509() -> None:
     client = None
     try:
         client = WorkloadApiClient()
@@ -60,7 +60,7 @@ def test_workload_api_client_x509():
             client.close()
 
 
-def test_workload_api_client_jwt():
+def test_workload_api_client_jwt() -> None:
     client = None
     try:
         client = WorkloadApiClient()
