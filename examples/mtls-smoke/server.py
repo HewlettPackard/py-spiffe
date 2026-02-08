@@ -145,7 +145,7 @@ def main():
                 f"[server] svid serial={hex(leaf.serial_number)} "
                 f"not_after={leaf.not_valid_after_utc}"
             )
-            time.sleep(20)
+            stop_event.wait(timeout=20)
     except KeyboardInterrupt:
         print("[server] shutting down...", file=sys.stderr)
     except Exception as e:
