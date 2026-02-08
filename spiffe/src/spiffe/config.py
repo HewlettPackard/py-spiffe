@@ -23,7 +23,6 @@ from urllib.parse import ParseResult, urlparse
 from typing import List, Optional, Tuple, Dict, cast
 from spiffe.errors import ArgumentError
 
-
 _SPIFFE_ENDPOINT_SOCKET = 'SPIFFE_ENDPOINT_SOCKET'
 
 
