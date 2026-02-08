@@ -15,6 +15,7 @@ under the License.
 """
 
 import ssl
+from typing import Tuple
 from unittest.mock import PropertyMock, MagicMock, patch
 
 import pytest
@@ -28,7 +29,7 @@ from testutils.certs import TEST_CERTS_DIR
 
 
 @pytest.fixture
-def source_mocks():
+def source_mocks() -> Tuple[MagicMock, PropertyMock, PropertyMock]:
     """Create mock X509Source with test certificates."""
     der_type = serialization.Encoding.DER
     chain_path = TEST_CERTS_DIR / '1-chain.der'
@@ -59,7 +60,10 @@ def source_mocks():
     "use_system_trust_store",
     [False, True],
 )
-def test_spiffe_ssl_context_initialization(use_system_trust_store, source_mocks):
+def test_spiffe_ssl_context_initialization(
+    use_system_trust_store: bool,
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test SpiffeSSLContext initialization."""
     x509_source, mock_svid, mock_bundle = source_mocks
 
@@ -73,7 +77,9 @@ def test_spiffe_ssl_context_initialization(use_system_trust_store, source_mocks)
     assert mock_bundle.call_count > 0, "Expected x509_source.bundles to be accessed"
 
 
-def test_spiffe_ssl_context_class_property(source_mocks):
+def test_spiffe_ssl_context_class_property(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test that SpiffeSSLContext masquerades as ssl.SSLContext."""
     x509_source, _, _ = source_mocks
 
@@ -83,7 +89,9 @@ def test_spiffe_ssl_context_class_property(source_mocks):
     assert ctx.__class__ == ssl.SSLContext
 
 
-def test_spiffe_ssl_context_options(source_mocks):
+def test_spiffe_ssl_context_options(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test setting and getting SSL options."""
     x509_source, _, _ = source_mocks
 
@@ -97,7 +105,9 @@ def test_spiffe_ssl_context_options(source_mocks):
     assert ctx.options == SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3
 
 
-def test_spiffe_ssl_context_verify_mode(source_mocks):
+def test_spiffe_ssl_context_verify_mode(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test setting and getting verification mode."""
     x509_source, _, _ = source_mocks
 
@@ -111,7 +121,9 @@ def test_spiffe_ssl_context_verify_mode(source_mocks):
     assert ctx.verify_mode == ssl.CERT_OPTIONAL
 
 
-def test_spiffe_ssl_context_tls_versions(source_mocks):
+def test_spiffe_ssl_context_tls_versions(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test setting minimum and maximum TLS versions."""
     x509_source, _, _ = source_mocks
 
@@ -126,7 +138,9 @@ def test_spiffe_ssl_context_tls_versions(source_mocks):
     assert ctx.maximum_version == ssl.TLSVersion.TLSv1_3
 
 
-def test_spiffe_ssl_context_set_ciphers(source_mocks):
+def test_spiffe_ssl_context_set_ciphers(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test setting cipher list."""
     x509_source, _, _ = source_mocks
 
@@ -137,7 +151,9 @@ def test_spiffe_ssl_context_set_ciphers(source_mocks):
     ctx.set_ciphers(b"HIGH:!aNULL:!MD5")
 
 
-def test_spiffe_ssl_context_no_op_methods(source_mocks):
+def test_spiffe_ssl_context_no_op_methods(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test that no-op methods don't raise exceptions."""
     x509_source, _, _ = source_mocks
 
@@ -150,7 +166,10 @@ def test_spiffe_ssl_context_no_op_methods(source_mocks):
 
 
 @patch('socket.socket')
-def test_spiffe_ssl_context_wrap_socket(mock_socket, source_mocks):
+def test_spiffe_ssl_context_wrap_socket(
+    mock_socket: MagicMock,
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test wrapping a socket with SSL."""
     x509_source, _, _ = source_mocks
 
@@ -181,7 +200,9 @@ def test_spiffe_ssl_context_wrap_socket(mock_socket, source_mocks):
         assert wrapped is not None
 
 
-def test_spiffe_ssl_context_set_alpn_protocols(source_mocks):
+def test_spiffe_ssl_context_set_alpn_protocols(
+    source_mocks: Tuple[MagicMock, PropertyMock, PropertyMock],
+) -> None:
     """Test setting ALPN protocols."""
     x509_source, _, _ = source_mocks
 
