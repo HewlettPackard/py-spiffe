@@ -104,6 +104,7 @@ def test_get() -> None:
 
     res = jwt_bundle_set.get_bundle_for_trust_domain(trust_domain_1)
 
+    assert res is not None
     assert res == jwt_bundle
     assert res.trust_domain == jwt_bundle.trust_domain
 

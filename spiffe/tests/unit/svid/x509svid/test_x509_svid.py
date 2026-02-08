@@ -25,7 +25,7 @@ from pytest_mock import MockerFixture
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.x509 import Certificate
-from cryptography.x509.oid import ExtensionOID, ObjectIdentifier
+from cryptography.x509.oid import ExtensionOID, NameOID, ObjectIdentifier
 
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.errors import ArgumentError
@@ -716,9 +716,9 @@ def _make_cert(
 
     subject = issuer = x509.Name(
         [
-            x509.NameAttribute(x509.oid.NameOID.COUNTRY_NAME, "US"),
-            x509.NameAttribute(x509.oid.NameOID.ORGANIZATION_NAME, "test"),
-            x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, "leaf"),
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "test"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "leaf"),
         ]
     )
 
