@@ -20,7 +20,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from spiffe import X509Svid, X509Bundle, X509BundleSet
-from spiffe.proto import workload_pb2
+from spiffe._proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.workloadapi.errors import X509SourceError, WorkloadApiError

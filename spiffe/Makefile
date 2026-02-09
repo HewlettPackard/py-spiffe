@@ -2,7 +2,7 @@
 
 UV_CMD=uv
 ROOT_DIR=$(shell pwd)
-PROTO_DIR=$(ROOT_DIR)/src/spiffe/proto
+PROTO_DIR=$(ROOT_DIR)/src/spiffe/_proto
 
 .PHONY: all
 all: lint build test ## Runs lint, build, and test targets sequentially.
@@ -64,7 +64,7 @@ mypy:
 pyright:
 	@echo "Running pyright."
 	$(UV_CMD) run pyright src tests
-	$(UV_CMD) run pyright --verifytypes spiffe.workloadapi --ignoreexternal
+	$(UV_CMD) run pyright --verifytypes spiffe --ignoreexternal
 
 # Helper target for displaying help
 .PHONY: help

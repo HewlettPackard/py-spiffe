@@ -30,10 +30,10 @@ from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.config import ConfigSetter
 from spiffe.errors import ArgumentError
-from spiffe.proto import (
+from spiffe._proto import (
     workload_pb2,
 )
-from spiffe.proto import workload_pb2_grpc
+from spiffe._proto import workload_pb2_grpc
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.jwt_svid import JwtSvid

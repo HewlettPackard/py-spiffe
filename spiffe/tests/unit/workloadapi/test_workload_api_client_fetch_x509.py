@@ -24,7 +24,7 @@ from pytest_mock import MockerFixture
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
 
-from spiffe.proto import workload_pb2
+from spiffe._proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.workloadapi.errors import (

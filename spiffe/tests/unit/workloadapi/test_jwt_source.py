@@ -22,7 +22,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from spiffe import JwtBundle, JwtBundleSet
-from spiffe.proto import workload_pb2
+from spiffe._proto import workload_pb2
 from spiffe.workloadapi.jwt_source import JwtSource
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from spiffe.spiffe_id.spiffe_id import TrustDomain
