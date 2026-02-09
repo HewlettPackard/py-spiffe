@@ -3,88 +3,77 @@
 isort:skip_file
 """
 
-import builtins
-import collections.abc
-import google.protobuf.descriptor
-import google.protobuf.internal.containers
-import google.protobuf.message
-import google.protobuf.struct_pb2
+from collections import abc as _abc
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf import struct_pb2 as _struct_pb2
+from google.protobuf.internal import containers as _containers
+import builtins as _builtins
 import sys
+import typing as _typing
 
-if sys.version_info >= (3, 8):
-    import typing as typing_extensions
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias as _TypeAlias
 else:
-    import typing_extensions
+    from typing_extensions import TypeAlias as _TypeAlias
 
-DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
+DESCRIPTOR: _descriptor.FileDescriptor
 
-@typing_extensions.final
-class X509SVIDRequest(google.protobuf.message.Message):
+@_typing.final
+class X509SVIDRequest(_message.Message):
     """The X509SVIDRequest message conveys parameters for requesting an X.509-SVID.
     There are currently no request parameters.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-global___X509SVIDRequest = X509SVIDRequest
+Global___X509SVIDRequest: _TypeAlias = X509SVIDRequest  # noqa: Y015
 
-@typing_extensions.final
-class X509SVIDResponse(google.protobuf.message.Message):
+@_typing.final
+class X509SVIDResponse(_message.Message):
     """The X509SVIDResponse message carries X.509-SVIDs and related information,
     including a set of global CRLs and a list of bundles the workload may use
     for federating with foreign trust domains.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing_extensions.final
-    class FederatedBundlesEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class FederatedBundlesEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.bytes
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.bytes
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.bytes = ...,
+            key: _builtins.str = ...,
+            value: _builtins.bytes = ...,
         ) -> None: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
-        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    SVIDS_FIELD_NUMBER: builtins.int
-    CRL_FIELD_NUMBER: builtins.int
-    FEDERATED_BUNDLES_FIELD_NUMBER: builtins.int
-    @property
-    def svids(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___X509SVID
-    ]:
+    SVIDS_FIELD_NUMBER: _builtins.int
+    CRL_FIELD_NUMBER: _builtins.int
+    FEDERATED_BUNDLES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def svids(self) -> _containers.RepeatedCompositeFieldContainer[Global___X509SVID]:
         """Required. A list of X509SVID messages, each of which includes a single
         X.509-SVID, its private key, and the bundle for the trust domain.
         """
 
-    @property
-    def crl(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
-        builtins.bytes
-    ]:
+    @_builtins.property
+    def crl(self) -> _containers.RepeatedScalarFieldContainer[_builtins.bytes]:
         """Optional. ASN.1 DER encoded certificate revocation lists."""
 
-    @property
-    def federated_bundles(
-        self,
-    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.bytes]:
+    @_builtins.property
+    def federated_bundles(self) -> _containers.ScalarMap[_builtins.str, _builtins.bytes]:
         """Optional. CA certificate bundles belonging to foreign trust domains that
         the workload should trust, keyed by the SPIFFE ID of the foreign trust
         domain. Bundles are ASN.1 DER encoded.
@@ -93,122 +82,105 @@ class X509SVIDResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        svids: collections.abc.Iterable[global___X509SVID] | None = ...,
-        crl: collections.abc.Iterable[builtins.bytes] | None = ...,
-        federated_bundles: (
-            collections.abc.Mapping[builtins.str, builtins.bytes] | None
-        ) = ...,
+        svids: _abc.Iterable[Global___X509SVID] | None = ...,
+        crl: _abc.Iterable[_builtins.bytes] | None = ...,
+        federated_bundles: _abc.Mapping[_builtins.str, _builtins.bytes] | None = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "crl", b"crl", "federated_bundles", b"federated_bundles", "svids", b"svids"
-        ],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["crl", b"crl", "federated_bundles", b"federated_bundles", "svids", b"svids"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___X509SVIDResponse = X509SVIDResponse
+Global___X509SVIDResponse: _TypeAlias = X509SVIDResponse  # noqa: Y015
 
-@typing_extensions.final
-class X509SVID(google.protobuf.message.Message):
+@_typing.final
+class X509SVID(_message.Message):
     """The X509SVID message carries a single SVID and all associated information,
     including the X.509 bundle for the trust domain.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SPIFFE_ID_FIELD_NUMBER: builtins.int
-    X509_SVID_FIELD_NUMBER: builtins.int
-    X509_SVID_KEY_FIELD_NUMBER: builtins.int
-    BUNDLE_FIELD_NUMBER: builtins.int
-    spiffe_id: builtins.str
+    SPIFFE_ID_FIELD_NUMBER: _builtins.int
+    X509_SVID_FIELD_NUMBER: _builtins.int
+    X509_SVID_KEY_FIELD_NUMBER: _builtins.int
+    BUNDLE_FIELD_NUMBER: _builtins.int
+    HINT_FIELD_NUMBER: _builtins.int
+    spiffe_id: _builtins.str
     """Required. The SPIFFE ID of the SVID in this entry"""
-    x509_svid: builtins.bytes
+    x509_svid: _builtins.bytes
     """Required. ASN.1 DER encoded certificate chain. MAY include
     intermediates, the leaf certificate (or SVID itself) MUST come first.
     """
-    x509_svid_key: builtins.bytes
+    x509_svid_key: _builtins.bytes
     """Required. ASN.1 DER encoded PKCS#8 private key. MUST be unencrypted."""
-    bundle: builtins.bytes
+    bundle: _builtins.bytes
     """Required. ASN.1 DER encoded X.509 bundle for the trust domain."""
+    hint: _builtins.str
+    """Optional. An operator-specified string used to provide guidance on how this
+    identity should be used by a workload when more than one SVID is returned.
+    For example, `internal` and `external` to indicate an SVID for internal or
+    external use, respectively.
+    """
     def __init__(
         self,
         *,
-        spiffe_id: builtins.str = ...,
-        x509_svid: builtins.bytes = ...,
-        x509_svid_key: builtins.bytes = ...,
-        bundle: builtins.bytes = ...,
+        spiffe_id: _builtins.str = ...,
+        x509_svid: _builtins.bytes = ...,
+        x509_svid_key: _builtins.bytes = ...,
+        bundle: _builtins.bytes = ...,
+        hint: _builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "bundle",
-            b"bundle",
-            "spiffe_id",
-            b"spiffe_id",
-            "x509_svid",
-            b"x509_svid",
-            "x509_svid_key",
-            b"x509_svid_key",
-        ],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle", b"bundle", "hint", b"hint", "spiffe_id", b"spiffe_id", "x509_svid", b"x509_svid", "x509_svid_key", b"x509_svid_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___X509SVID = X509SVID
+Global___X509SVID: _TypeAlias = X509SVID  # noqa: Y015
 
-@typing_extensions.final
-class X509BundlesRequest(google.protobuf.message.Message):
+@_typing.final
+class X509BundlesRequest(_message.Message):
     """The X509BundlesRequest message conveys parameters for requesting X.509
     bundles. There are currently no such parameters.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-global___X509BundlesRequest = X509BundlesRequest
+Global___X509BundlesRequest: _TypeAlias = X509BundlesRequest  # noqa: Y015
 
-@typing_extensions.final
-class X509BundlesResponse(google.protobuf.message.Message):
+@_typing.final
+class X509BundlesResponse(_message.Message):
     """The X509BundlesResponse message carries a set of global CRLs and a map of
     trust bundles the workload should trust.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing_extensions.final
-    class BundlesEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class BundlesEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.bytes
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.bytes
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.bytes = ...,
+            key: _builtins.str = ...,
+            value: _builtins.bytes = ...,
         ) -> None: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
-        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    CRL_FIELD_NUMBER: builtins.int
-    BUNDLES_FIELD_NUMBER: builtins.int
-    @property
-    def crl(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
-        builtins.bytes
-    ]:
+    CRL_FIELD_NUMBER: _builtins.int
+    BUNDLES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def crl(self) -> _containers.RepeatedScalarFieldContainer[_builtins.bytes]:
         """Optional. ASN.1 DER encoded certificate revocation lists."""
 
-    @property
-    def bundles(
-        self,
-    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.bytes]:
+    @_builtins.property
+    def bundles(self) -> _containers.ScalarMap[_builtins.str, _builtins.bytes]:
         """Required. CA certificate bundles belonging to trust domains that the
         workload should trust, keyed by the SPIFFE ID of the trust domain.
         Bundles are ASN.1 DER encoded.
@@ -217,143 +189,131 @@ class X509BundlesResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        crl: collections.abc.Iterable[builtins.bytes] | None = ...,
-        bundles: collections.abc.Mapping[builtins.str, builtins.bytes] | None = ...,
+        crl: _abc.Iterable[_builtins.bytes] | None = ...,
+        bundles: _abc.Mapping[_builtins.str, _builtins.bytes] | None = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal["bundles", b"bundles", "crl", b"crl"],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundles", b"bundles", "crl", b"crl"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___X509BundlesResponse = X509BundlesResponse
+Global___X509BundlesResponse: _TypeAlias = X509BundlesResponse  # noqa: Y015
 
-@typing_extensions.final
-class JWTSVIDRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+@_typing.final
+class JWTSVIDRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
 
-    AUDIENCE_FIELD_NUMBER: builtins.int
-    SPIFFE_ID_FIELD_NUMBER: builtins.int
-    @property
-    def audience(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
-        """Required. The audience(s) the workload intends to authenticate against."""
-    spiffe_id: builtins.str
+    AUDIENCE_FIELD_NUMBER: _builtins.int
+    SPIFFE_ID_FIELD_NUMBER: _builtins.int
+    spiffe_id: _builtins.str
     """Optional. The requested SPIFFE ID for the JWT-SVID. If unset, all
     JWT-SVIDs to which the workload is entitled are requested.
     """
+    @_builtins.property
+    def audience(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """Required. The audience(s) the workload intends to authenticate against."""
+
     def __init__(
         self,
         *,
-        audience: collections.abc.Iterable[builtins.str] | None = ...,
-        spiffe_id: builtins.str = ...,
+        audience: _abc.Iterable[_builtins.str] | None = ...,
+        spiffe_id: _builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "audience", b"audience", "spiffe_id", b"spiffe_id"
-        ],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["audience", b"audience", "spiffe_id", b"spiffe_id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___JWTSVIDRequest = JWTSVIDRequest
+Global___JWTSVIDRequest: _TypeAlias = JWTSVIDRequest  # noqa: Y015
 
-@typing_extensions.final
-class JWTSVIDResponse(google.protobuf.message.Message):
+@_typing.final
+class JWTSVIDResponse(_message.Message):
     """The JWTSVIDResponse message conveys JWT-SVIDs."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SVIDS_FIELD_NUMBER: builtins.int
-    @property
-    def svids(
-        self,
-    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
-        global___JWTSVID
-    ]:
+    SVIDS_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def svids(self) -> _containers.RepeatedCompositeFieldContainer[Global___JWTSVID]:
         """Required. The list of returned JWT-SVIDs."""
 
     def __init__(
         self,
         *,
-        svids: collections.abc.Iterable[global___JWTSVID] | None = ...,
+        svids: _abc.Iterable[Global___JWTSVID] | None = ...,
     ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["svids", b"svids"]
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["svids", b"svids"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___JWTSVIDResponse = JWTSVIDResponse
+Global___JWTSVIDResponse: _TypeAlias = JWTSVIDResponse  # noqa: Y015
 
-@typing_extensions.final
-class JWTSVID(google.protobuf.message.Message):
+@_typing.final
+class JWTSVID(_message.Message):
     """The JWTSVID message carries the JWT-SVID token and associated metadata."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SPIFFE_ID_FIELD_NUMBER: builtins.int
-    SVID_FIELD_NUMBER: builtins.int
-    spiffe_id: builtins.str
+    SPIFFE_ID_FIELD_NUMBER: _builtins.int
+    SVID_FIELD_NUMBER: _builtins.int
+    HINT_FIELD_NUMBER: _builtins.int
+    spiffe_id: _builtins.str
     """Required. The SPIFFE ID of the JWT-SVID."""
-    svid: builtins.str
+    svid: _builtins.str
     """Required. Encoded JWT using JWS Compact Serialization."""
+    hint: _builtins.str
+    """Optional. An operator-specified string used to provide guidance on how this
+    identity should be used by a workload when more than one SVID is returned.
+    For example, `internal` and `external` to indicate an SVID for internal or
+    external use, respectively.
+    """
     def __init__(
         self,
         *,
-        spiffe_id: builtins.str = ...,
-        svid: builtins.str = ...,
+        spiffe_id: _builtins.str = ...,
+        svid: _builtins.str = ...,
+        hint: _builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "spiffe_id", b"spiffe_id", "svid", b"svid"
-        ],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["hint", b"hint", "spiffe_id", b"spiffe_id", "svid", b"svid"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___JWTSVID = JWTSVID
+Global___JWTSVID: _TypeAlias = JWTSVID  # noqa: Y015
 
-@typing_extensions.final
-class JWTBundlesRequest(google.protobuf.message.Message):
+@_typing.final
+class JWTBundlesRequest(_message.Message):
     """The JWTBundlesRequest message conveys parameters for requesting JWT bundles.
     There are currently no such parameters.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
         self,
     ) -> None: ...
 
-global___JWTBundlesRequest = JWTBundlesRequest
+Global___JWTBundlesRequest: _TypeAlias = JWTBundlesRequest  # noqa: Y015
 
-@typing_extensions.final
-class JWTBundlesResponse(google.protobuf.message.Message):
+@_typing.final
+class JWTBundlesResponse(_message.Message):
     """The JWTBundlesReponse conveys JWT bundles."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    @typing_extensions.final
-    class BundlesEntry(google.protobuf.message.Message):
-        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    @_typing.final
+    class BundlesEntry(_message.Message):
+        DESCRIPTOR: _descriptor.Descriptor
 
-        KEY_FIELD_NUMBER: builtins.int
-        VALUE_FIELD_NUMBER: builtins.int
-        key: builtins.str
-        value: builtins.bytes
+        KEY_FIELD_NUMBER: _builtins.int
+        VALUE_FIELD_NUMBER: _builtins.int
+        key: _builtins.str
+        value: _builtins.bytes
         def __init__(
             self,
             *,
-            key: builtins.str = ...,
-            value: builtins.bytes = ...,
+            key: _builtins.str = ...,
+            value: _builtins.bytes = ...,
         ) -> None: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
-        ) -> None: ...
+        _ClearFieldArgType: _TypeAlias = _typing.Literal["key", b"key", "value", b"value"]  # noqa: Y015
+        def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-    BUNDLES_FIELD_NUMBER: builtins.int
-    @property
-    def bundles(
-        self,
-    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.bytes]:
+    BUNDLES_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def bundles(self) -> _containers.ScalarMap[_builtins.str, _builtins.bytes]:
         """Required. JWK encoded JWT bundles, keyed by the SPIFFE ID of the trust
         domain.
         """
@@ -361,58 +321,55 @@ class JWTBundlesResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        bundles: collections.abc.Mapping[builtins.str, builtins.bytes] | None = ...,
+        bundles: _abc.Mapping[_builtins.str, _builtins.bytes] | None = ...,
     ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["bundles", b"bundles"]
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundles", b"bundles"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___JWTBundlesResponse = JWTBundlesResponse
+Global___JWTBundlesResponse: _TypeAlias = JWTBundlesResponse  # noqa: Y015
 
-@typing_extensions.final
-class ValidateJWTSVIDRequest(google.protobuf.message.Message):
+@_typing.final
+class ValidateJWTSVIDRequest(_message.Message):
     """The ValidateJWTSVIDRequest message conveys request parameters for
     JWT-SVID validation.
     """
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    AUDIENCE_FIELD_NUMBER: builtins.int
-    SVID_FIELD_NUMBER: builtins.int
-    audience: builtins.str
+    AUDIENCE_FIELD_NUMBER: _builtins.int
+    SVID_FIELD_NUMBER: _builtins.int
+    audience: _builtins.str
     """Required. The audience of the validating party. The JWT-SVID must
     contain an audience claim which contains this value in order to
     succesfully validate.
     """
-    svid: builtins.str
+    svid: _builtins.str
     """Required. The JWT-SVID to validate, encoded using JWS Compact
     Serialization.
     """
     def __init__(
         self,
         *,
-        audience: builtins.str = ...,
-        svid: builtins.str = ...,
+        audience: _builtins.str = ...,
+        svid: _builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal["audience", b"audience", "svid", b"svid"],
-    ) -> None: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["audience", b"audience", "svid", b"svid"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___ValidateJWTSVIDRequest = ValidateJWTSVIDRequest
+Global___ValidateJWTSVIDRequest: _TypeAlias = ValidateJWTSVIDRequest  # noqa: Y015
 
-@typing_extensions.final
-class ValidateJWTSVIDResponse(google.protobuf.message.Message):
+@_typing.final
+class ValidateJWTSVIDResponse(_message.Message):
     """The ValidateJWTSVIDReponse message conveys the JWT-SVID validation results."""
 
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    DESCRIPTOR: _descriptor.Descriptor
 
-    SPIFFE_ID_FIELD_NUMBER: builtins.int
-    CLAIMS_FIELD_NUMBER: builtins.int
-    spiffe_id: builtins.str
+    SPIFFE_ID_FIELD_NUMBER: _builtins.int
+    CLAIMS_FIELD_NUMBER: _builtins.int
+    spiffe_id: _builtins.str
     """Required. The SPIFFE ID of the validated JWT-SVID."""
-    @property
-    def claims(self) -> google.protobuf.struct_pb2.Struct:
+    @_builtins.property
+    def claims(self) -> _struct_pb2.Struct:
         """Optional. Arbitrary claims contained within the payload of the validated
         JWT-SVID.
         """
@@ -420,17 +377,12 @@ class ValidateJWTSVIDResponse(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        spiffe_id: builtins.str = ...,
-        claims: google.protobuf.struct_pb2.Struct | None = ...,
+        spiffe_id: _builtins.str = ...,
+        claims: _struct_pb2.Struct | None = ...,
     ) -> None: ...
-    def HasField(
-        self, field_name: typing_extensions.Literal["claims", b"claims"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "claims", b"claims", "spiffe_id", b"spiffe_id"
-        ],
-    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["claims", b"claims"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["claims", b"claims", "spiffe_id", b"spiffe_id"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
 
-global___ValidateJWTSVIDResponse = ValidateJWTSVIDResponse
+Global___ValidateJWTSVIDResponse: _TypeAlias = ValidateJWTSVIDResponse  # noqa: Y015
