@@ -63,6 +63,7 @@ ignore_errors = true
 
 [tool.pyright]
 exclude = ["src/spiffe/proto"]
+ignore = ["src/spiffe/proto/workload_pb2_grpc.py"]
 typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]

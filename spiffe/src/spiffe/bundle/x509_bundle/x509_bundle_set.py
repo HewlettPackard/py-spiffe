@@ -41,7 +41,7 @@ class X509BundleSet(object):
             bundles: A dict object of X509Bundle objects keyed by TrustDomain to initialize the X509BundleSet. Default: None.
         """
 
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
         self._bundles: Dict[str, X509Bundle] = {}
 
         if bundles:
@@ -58,13 +58,13 @@ class X509BundleSet(object):
             A X509Bundle object for the given TrustDomain.
             None if the TrustDomain is not found in the set.
         """
-        with self.lock:
+        with self._lock:
             return self._bundles.get(trust_domain.name)
 
     @property
     def bundles(self) -> Set[X509Bundle]:
         """Returns the set of all X509Bundles."""
-        with self.lock:
+        with self._lock:
             return set(self._bundles.values())
 
     def put(self, bundle: X509Bundle) -> None:
@@ -73,7 +73,7 @@ class X509BundleSet(object):
         Args:
             bundle: The new X509Bundle to put into the set.
         """
-        with self.lock:
+        with self._lock:
             self._bundles[bundle.trust_domain.name] = bundle
 
     @classmethod

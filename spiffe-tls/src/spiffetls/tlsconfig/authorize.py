@@ -23,7 +23,7 @@ from spiffe.spiffe_id.spiffe_id import SpiffeId, TrustDomain
 from spiffe.spiffe_id.spiffe_id import SCHEME_PREFIX
 from spiffe.utils.errors import X509CertificateError
 
-logger = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 
 def authorize_any() -> Callable[[crypto.X509], bool]:
@@ -34,7 +34,7 @@ def authorize_any() -> Callable[[crypto.X509], bool]:
             _spiffe_id_from_cert(cert)
             return True
         except X509CertificateError as e:
-            logger.error(f'Failed to authorize certificate due to invalid SPIFFE ID: {e}')
+            _logger.error(f'Failed to authorize certificate due to invalid SPIFFE ID: {e}')
 
         return False
 
@@ -49,7 +49,7 @@ def authorize_id(expected_spiffe_id: SpiffeId) -> Callable[[crypto.X509], bool]:
             spiffe_id = _spiffe_id_from_cert(cert)
             return spiffe_id == expected_spiffe_id
         except X509CertificateError as e:
-            logger.error(f'Failed to extract SPIFFE ID from certificate: {e}')
+            _logger.error(f'Failed to extract SPIFFE ID from certificate: {e}')
 
         return False
 
@@ -65,9 +65,9 @@ def authorize_one_of(allowed_ids: Set[SpiffeId]) -> Callable[[crypto.X509], bool
             if spiffe_id in allowed_ids:
                 return True
             else:
-                logger.error(f"Unauthorized SPIFFE ID: {spiffe_id}")
+                _logger.error(f"Unauthorized SPIFFE ID: {spiffe_id}")
         except X509CertificateError as e:
-            logger.error(f"Failed to extract SPIFFE ID from certificate: {e}")
+            _logger.error(f"Failed to extract SPIFFE ID from certificate: {e}")
 
         return False
 
@@ -84,7 +84,7 @@ def authorize_member_of(
             cert_spiffe_id = _spiffe_id_from_cert(cert)
             return cert_spiffe_id.trust_domain == allowed_trust_domain
         except X509CertificateError as e:
-            logger.error(f'Failed to extract SPIFFE ID from certificate: {e}')
+            _logger.error(f'Failed to extract SPIFFE ID from certificate: {e}')
 
         return False
 

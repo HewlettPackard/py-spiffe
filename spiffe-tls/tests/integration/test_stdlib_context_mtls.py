@@ -14,6 +14,7 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from contextlib import contextmanager
 import queue
 import random
 import ssl
@@ -21,7 +22,7 @@ import threading
 import urllib.request
 import urllib.error
 from collections.abc import Iterator
-from typing import Callable, Optional, Tuple
+from typing import Tuple
 
 import pytest
 from OpenSSL import SSL
@@ -31,46 +32,36 @@ from spiffetls import listen, ListenOptions, SpiffeSSLContext
 from spiffe import X509Source, SpiffeId
 from spiffetls.mode import ServerTlsMode
 
-SetupServerFn = Callable[[ListenOptions], Tuple[SSL.Connection, Tuple[str, int], X509Source]]
 
-
-@pytest.fixture
-def setup_http_server() -> Iterator[SetupServerFn]:
+@contextmanager
+def setup_http_server(
+    options: ListenOptions,
+) -> Iterator[Tuple[SSL.Connection, Tuple[str, int], X509Source]]:
     server_address = ('localhost', random.randint(50000, 60000))
     x509_source = X509Source(timeout_in_seconds=30)
-    server_socket: Optional[SSL.Connection] = None
     exception_queue: queue.Queue[Exception] = queue.Queue()
 
-    def _setup_server(
-        options: ListenOptions,
-    ) -> Tuple[SSL.Connection, Tuple[str, int], X509Source]:
-        nonlocal server_socket
-        server_socket = listen(
-            f"{server_address[0]}:{server_address[1]}", x509_source, options
-        )
-        ready_event = threading.Event()
+    server_socket = listen(f"{server_address[0]}:{server_address[1]}", x509_source, options)
+    ready_event = threading.Event()
 
-        def server_thread_func() -> None:
-            try:
-                http_server_handler(server_socket, ready_event)
-            except Exception as e:
-                exception_queue.put(e)
+    def server_thread_func() -> None:
+        try:
+            http_server_handler(server_socket, ready_event)
+        except Exception as e:
+            exception_queue.put(e)
 
-        server_thread = threading.Thread(target=server_thread_func, daemon=True)
-        server_thread.start()
-        ready_event.wait()
+    server_thread = threading.Thread(target=server_thread_func, daemon=True)
+    server_thread.start()
+    ready_event.wait()
 
-        # Check if there was an exception in the server thread before proceeding
-        if not exception_queue.empty():
-            e = exception_queue.get()
-            pytest.fail(f"Server thread failed with exception: {e}")
+    # Check if there was an exception in the server thread before proceeding
+    if not exception_queue.empty():
+        e = exception_queue.get()
+        pytest.fail(f"Server thread failed with exception: {e}")
 
-        return server_socket, server_address, x509_source
+    yield server_socket, server_address, x509_source
 
-    yield _setup_server
-
-    if server_socket:
-        server_socket.close()
+    server_socket.close()
     x509_source.close()
 
 
@@ -97,70 +88,63 @@ def http_server_handler(server_socket: SSL.Connection, ready_event: threading.Ev
             conn.close()
 
 
-def test_stdlib_context_successful_mtls_connection(
-    setup_http_server: SetupServerFn,
-) -> None:
+def test_stdlib_context_successful_mtls_connection() -> None:
     """Test SpiffeSSLContext with urllib.request against a server requiring mTLS."""
-    x509_source = X509Source(timeout_in_seconds=30)
-    spiffe_id = x509_source.svid.spiffe_id
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        spiffe_id = x509_source.svid.spiffe_id
+        options = ListenOptions(
+            tls_mode=ServerTlsMode.MTLS,
+            authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
+        )
 
-    options = ListenOptions(
-        tls_mode=ServerTlsMode.MTLS,
-        authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
-    )
+        with setup_http_server(options) as (_, server_address, _):
+            # Create SpiffeSSLContext and use it with urllib.request
+            ssl_context = SpiffeSSLContext(x509_source)
+            assert isinstance(ssl_context, ssl.SSLContext)
+            url = f"https://{server_address[0]}:{server_address[1]}/"
 
-    _, server_address, _ = setup_http_server(options)
+            opener = urllib.request.build_opener(
+                urllib.request.HTTPSHandler(context=ssl_context)
+            )
 
-    # Create SpiffeSSLContext and use it with urllib.request
-    ssl_context = SpiffeSSLContext(x509_source)
-    assert isinstance(ssl_context, ssl.SSLContext)
-    url = f"https://{server_address[0]}:{server_address[1]}/"
+            response = opener.open(url, timeout=5)
+            content = response.read()
 
-    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
-
-    response = opener.open(url, timeout=5)
-    content = response.read()
-
-    assert content == b'Hello from SPIFFE server'
-    assert response.status == 200
-
-    x509_source.close()
+            assert content == b'Hello from SPIFFE server'
+            assert response.status == 200
 
 
-def test_stdlib_context_mtls_connection_fails_with_unauthorized_client(
-    setup_http_server: SetupServerFn,
-) -> None:
+def test_stdlib_context_mtls_connection_fails_with_unauthorized_client() -> None:
     """Test SpiffeSSLContext rejects connections when client is not authorized."""
-    x509_source = X509Source(timeout_in_seconds=30)
-    trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
 
-    # Set the server to authorize only a specific SPIFFE ID that the client does not have
-    server_options = ListenOptions(
-        tls_mode=ServerTlsMode.MTLS,
-        authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(
-            SpiffeId(f"{trust_domain}/unauthorized-service")
-        ),
-    )
+        # Set the server to authorize only a specific SPIFFE ID that the client does not have
+        server_options = ListenOptions(
+            tls_mode=ServerTlsMode.MTLS,
+            authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(
+                SpiffeId(f"{trust_domain}/unauthorized-service")
+            ),
+        )
 
-    _, server_address, _ = setup_http_server(server_options)
+        with setup_http_server(server_options) as (_, server_address, _):
+            # Create SpiffeSSLContext and attempt to connect
+            ssl_context = SpiffeSSLContext(x509_source)
+            assert isinstance(ssl_context, ssl.SSLContext)
+            url = f"https://{server_address[0]}:{server_address[1]}/"
 
-    # Create SpiffeSSLContext and attempt to connect
-    ssl_context = SpiffeSSLContext(x509_source)
-    assert isinstance(ssl_context, ssl.SSLContext)
-    url = f"https://{server_address[0]}:{server_address[1]}/"
+            opener = urllib.request.build_opener(
+                urllib.request.HTTPSHandler(context=ssl_context)
+            )
 
-    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
+            # Attempt to connect, expecting failure due to authorization
+            with pytest.raises((urllib.error.URLError, ssl.SSLError)) as exc_info:
+                opener.open(url, timeout=5)
 
-    # Attempt to connect, expecting failure due to authorization
-    with pytest.raises((urllib.error.URLError, ssl.SSLError)) as exc_info:
-        opener.open(url, timeout=5)
-
-    # The connection should fail with an SSL/TLS error
-    error_str = str(exc_info.value)
-    assert (
-        "tlsv1 alert" in error_str.lower()
-        or "SSL" in error_str
-        or "certificate verify failed" in error_str
-    )
-
-    x509_source.close()
+            # The connection should fail with an SSL/TLS error
+            error_str = str(exc_info.value)
+            assert (
+                "tlsv1 alert" in error_str.lower()
+                or "SSL" in error_str
+                or "certificate verify failed" in error_str
+            )
