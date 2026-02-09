@@ -60,7 +60,7 @@ class X509Bundle(object):
             X509BundleError: In case the trust_domain is empty.
         """
 
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
 
         if not trust_domain:
             raise X509BundleError("Trust domain cannot be empty")
@@ -76,17 +76,17 @@ class X509Bundle(object):
     @property
     def x509_authorities(self) -> Set[Certificate]:
         """Returns a copy of set of X.509 authorities in the bundle."""
-        with self.lock:
+        with self._lock:
             return self._x509_authorities.copy()
 
     def add_authority(self, x509_authority: Certificate) -> None:
         """Adds an X.509 authority to the bundle."""
-        with self.lock:
+        with self._lock:
             self._x509_authorities.add(x509_authority)
 
     def remove_authority(self, x509_authority: Certificate) -> None:
         """Removes an X.509 authority from the bundle."""
-        with self.lock:
+        with self._lock:
             if not self._x509_authorities:
                 return
             self._x509_authorities.remove(x509_authority)
@@ -203,7 +203,7 @@ class X509Bundle(object):
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, X509Bundle):
             return False
-        with self.lock:
+        with self._lock:
             return (
                 self.trust_domain.__eq__(o.trust_domain)
                 and self._x509_authorities == o._x509_authorities

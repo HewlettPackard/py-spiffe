@@ -14,11 +14,12 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from contextlib import contextmanager
 import queue
 import random
 import threading
 from collections.abc import Iterator
-from typing import Callable, Optional, Tuple
+from typing import Tuple
 
 import pytest
 from OpenSSL import SSL
@@ -29,147 +30,126 @@ from spiffe import X509Source, SpiffeId
 from spiffetls.errors import TLSConnectionError
 from spiffetls.mode import ServerTlsMode
 
-SetupServerFn = Callable[[ListenOptions], Tuple[SSL.Connection, Tuple[str, int], X509Source]]
 
-
-@pytest.fixture
-def setup_server() -> Iterator[SetupServerFn]:
+@contextmanager
+def setup_server(
+    options: ListenOptions,
+) -> Iterator[Tuple[SSL.Connection, Tuple[str, int], X509Source]]:
     server_address = ('localhost', random.randint(50000, 60000))
     x509_source = X509Source(timeout_in_seconds=30)
-    server_socket: Optional[SSL.Connection] = None
     exception_queue: queue.Queue[Exception] = queue.Queue()
 
-    def _setup_server(
-        options: ListenOptions,
-    ) -> Tuple[SSL.Connection, Tuple[str, int], X509Source]:
-        nonlocal server_socket
-        server_socket = listen(
-            f"{server_address[0]}:{server_address[1]}", x509_source, options
-        )
-        ready_event = threading.Event()
+    server_socket = listen(f"{server_address[0]}:{server_address[1]}", x509_source, options)
+    ready_event = threading.Event()
 
-        def server_thread_func() -> None:
-            try:
-                echo_server_handler(server_socket, ready_event)
-            except Exception as e:
-                exception_queue.put(e)
+    def server_thread_func() -> None:
+        try:
+            echo_server_handler(server_socket, ready_event)
+        except Exception as e:
+            exception_queue.put(e)
 
-        server_thread = threading.Thread(target=server_thread_func, daemon=True)
-        server_thread.start()
-        ready_event.wait()
+    server_thread = threading.Thread(target=server_thread_func, daemon=True)
+    server_thread.start()
+    ready_event.wait()
 
-        # Check if there was an exception in the server thread before proceeding
-        if not exception_queue.empty():
-            e = exception_queue.get()
-            pytest.fail(f"Server thread failed with exception: {e}")
+    # Check if there was an exception in the server thread before proceeding
+    if not exception_queue.empty():
+        e = exception_queue.get()
+        pytest.fail(f"Server thread failed with exception: {e}")
 
-        return server_socket, server_address, x509_source
+    yield server_socket, server_address, x509_source
 
-    yield _setup_server
-
-    if server_socket:
-        server_socket.close()
+    server_socket.close()
     x509_source.close()
 
 
-def test_successful_mtls_connection_with_server_authorization(
-    setup_server: SetupServerFn,
-) -> None:
-    x509_source = X509Source(timeout_in_seconds=30)
-    spiffe_id = x509_source.svid.spiffe_id
+def test_successful_mtls_connection_with_server_authorization() -> None:
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        spiffe_id = x509_source.svid.spiffe_id
+        options = ListenOptions(
+            tls_mode=ServerTlsMode.MTLS,
+            authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
+        )
 
-    options = ListenOptions(
-        tls_mode=ServerTlsMode.MTLS,
-        authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
-    )
-
-    _, server_address, _ = setup_server(options)
-
-    client_connection = dial(f"{server_address[0]}:{server_address[1]}", x509_source)
-    test_message = b"Hello, SPIFFE!"
-    client_connection.sendall(test_message)
-
-    received_message = client_connection.recv(1024)
-    assert received_message == test_message
-
-    client_connection.close()
-
-
-def test_successful_tls_connection_with_client_authorization(
-    setup_server: SetupServerFn,
-) -> None:
-    x509_source = X509Source(timeout_in_seconds=30)
-    spiffe_id = x509_source.svid.spiffe_id
-
-    options = ListenOptions(tls_mode=ServerTlsMode.TLS)
-
-    _, server_address, _ = setup_server(options)
-
-    client_connection = dial(
-        f"{server_address[0]}:{server_address[1]}",
-        x509_source,
-        authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
-    )
-    test_message = b"Hello, SPIFFE!"
-    client_connection.sendall(test_message)
-
-    received_message = client_connection.recv(1024)
-    assert received_message == test_message
-
-    client_connection.close()
-
-
-def test_mtls_connection_fails_with_unauthorized_client(setup_server: SetupServerFn) -> None:
-    x509_source = X509Source(timeout_in_seconds=30)
-    trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
-
-    # Set the server to authorize only a specific SPIFFE ID that the client does not have
-    server_options = ListenOptions(
-        tls_mode=ServerTlsMode.MTLS,
-        authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(
-            SpiffeId(f"{trust_domain}/other")
-        ),
-    )
-
-    _, server_address, _ = setup_server(server_options)
-
-    # Attempt to communicate with the server, expecting failure
-    with pytest.raises(Exception) as exc_info:
-        client_connection = dial(f"{server_address[0]}:{server_address[1]}", x509_source)
-        try:
+        with setup_server(options) as (_, server_address, _):
+            client_connection = dial(f"{server_address[0]}:{server_address[1]}", x509_source)
             test_message = b"Hello, SPIFFE!"
             client_connection.sendall(test_message)
-            client_connection.recv(1024)
-        finally:
+
+            received_message = client_connection.recv(1024)
+            assert received_message == test_message
+
             client_connection.close()
 
-    assert "tlsv1 alert internal error" in str(exc_info.value)
+
+def test_successful_tls_connection_with_client_authorization() -> None:
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        spiffe_id = x509_source.svid.spiffe_id
+        options = ListenOptions(tls_mode=ServerTlsMode.TLS)
+
+        with setup_server(options) as (_, server_address, _):
+            client_connection = dial(
+                f"{server_address[0]}:{server_address[1]}",
+                x509_source,
+                authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(spiffe_id),
+            )
+            test_message = b"Hello, SPIFFE!"
+            client_connection.sendall(test_message)
+
+            received_message = client_connection.recv(1024)
+            assert received_message == test_message
+
+            client_connection.close()
 
 
-def test_tls_connection_fails_due_to_client_certificate_verification_failure(
-    setup_server: SetupServerFn,
-) -> None:
-    x509_source = X509Source(timeout_in_seconds=30)
-    trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
+def test_mtls_connection_fails_with_unauthorized_client() -> None:
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
 
-    options = ListenOptions(tls_mode=ServerTlsMode.MTLS)
-
-    _, server_address, _ = setup_server(options)
-
-    with pytest.raises(TLSConnectionError) as exc_info:
-        dial(
-            f"{server_address[0]}:{server_address[1]}",
-            x509_source,
+        # Set the server to authorize only a specific SPIFFE ID that the client does not have
+        server_options = ListenOptions(
+            tls_mode=ServerTlsMode.MTLS,
             authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(
                 SpiffeId(f"{trust_domain}/other")
             ),
         )
 
-    assert "TLS connection failed" in str(exc_info.value)
-    assert 'reason' in exc_info.value.context
-    error_reason = exc_info.value.context['reason']
-    assert isinstance(error_reason, str)
-    assert "certificate verify failed" in error_reason
+        with setup_server(server_options) as (_, server_address, _):
+            # Attempt to communicate with the server, expecting failure
+            with pytest.raises(Exception) as exc_info:
+                client_connection = dial(
+                    f"{server_address[0]}:{server_address[1]}", x509_source
+                )
+                try:
+                    test_message = b"Hello, SPIFFE!"
+                    client_connection.sendall(test_message)
+                    client_connection.recv(1024)
+                finally:
+                    client_connection.close()
+
+            assert "tlsv1 alert internal error" in str(exc_info.value)
+
+
+def test_tls_connection_fails_due_to_client_certificate_verification_failure() -> None:
+    with X509Source(timeout_in_seconds=30) as x509_source:
+        trust_domain = x509_source.svid.spiffe_id.trust_domain.as_spiffe_id()
+        options = ListenOptions(tls_mode=ServerTlsMode.MTLS)
+
+        with setup_server(options) as (_, server_address, _):
+            with pytest.raises(TLSConnectionError) as exc_info:
+                dial(
+                    f"{server_address[0]}:{server_address[1]}",
+                    x509_source,
+                    authorize_fn=spiffetls.tlsconfig.authorize.authorize_id(
+                        SpiffeId(f"{trust_domain}/other")
+                    ),
+                )
+
+            assert "TLS connection failed" in str(exc_info.value)
+            assert 'reason' in exc_info.value.context
+            error_reason = exc_info.value.context['reason']
+            assert isinstance(error_reason, str)
+            assert "certificate verify failed" in error_reason
 
 
 def echo_server_handler(server_socket: SSL.Connection, ready_event: threading.Event) -> None:

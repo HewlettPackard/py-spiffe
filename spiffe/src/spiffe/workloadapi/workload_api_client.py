@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import threading
@@ -72,23 +74,24 @@ class _CancelableIterator(Protocol[_T_co]):
 
     def __next__(self) -> _T_co: ...
 
-    def cancel(self) -> None: ...
+    def cancel(self) -> bool: ...
 
 
 class _WorkloadApiStub(Protocol):
-    FetchX509SVID: Callable[
-        [workload_pb2.X509SVIDRequest], _CancelableIterator[workload_pb2.X509SVIDResponse]
+    FetchX509SVID: grpc.UnaryStreamMultiCallable[
+        workload_pb2.X509SVIDRequest, workload_pb2.X509SVIDResponse
     ]
-    FetchX509Bundles: Callable[
-        [workload_pb2.X509BundlesRequest],
-        _CancelableIterator[workload_pb2.X509BundlesResponse],
+    FetchX509Bundles: grpc.UnaryStreamMultiCallable[
+        workload_pb2.X509BundlesRequest, workload_pb2.X509BundlesResponse
     ]
-    FetchJWTSVID: Callable[[workload_pb2.JWTSVIDRequest], workload_pb2.JWTSVIDResponse]
-    FetchJWTBundles: Callable[
-        [workload_pb2.JWTBundlesRequest], _CancelableIterator[workload_pb2.JWTBundlesResponse]
+    FetchJWTSVID: grpc.UnaryUnaryMultiCallable[
+        workload_pb2.JWTSVIDRequest, workload_pb2.JWTSVIDResponse
     ]
-    ValidateJWTSVID: Callable[
-        [workload_pb2.ValidateJWTSVIDRequest], workload_pb2.ValidateJWTSVIDResponse
+    FetchJWTBundles: grpc.UnaryStreamMultiCallable[
+        workload_pb2.JWTBundlesRequest, workload_pb2.JWTBundlesResponse
+    ]
+    ValidateJWTSVID: grpc.UnaryUnaryMultiCallable[
+        workload_pb2.ValidateJWTSVIDRequest, workload_pb2.ValidateJWTSVIDResponse
     ]
 
 
@@ -112,8 +115,10 @@ class RetryPolicy:
 
 class RetryHandler:
     def __init__(self, retry_policy: Optional[RetryPolicy] = None) -> None:
-        self.retry_policy = retry_policy if retry_policy is not None else RetryPolicy()
-        self.attempt = 0
+        self.retry_policy: RetryPolicy = (
+            retry_policy if retry_policy is not None else RetryPolicy()
+        )
+        self.attempt: int = 0
 
     def should_retry(self, error_code: StatusCode) -> bool:
         """Determines whether the operation should be retried based on the error code and attempt count."""

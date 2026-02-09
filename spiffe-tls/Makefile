@@ -49,6 +49,7 @@ mypy:
 pyright:
 	@echo "Running pyright."
 	$(UV_CMD) run pyright src tests
+	$(UV_CMD) run pyright --verifytypes spiffetls --ignoreexternal
 
 # Helper target for displaying help
 .PHONY: help

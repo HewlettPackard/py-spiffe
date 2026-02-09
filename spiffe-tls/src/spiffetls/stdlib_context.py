@@ -51,7 +51,7 @@ from typing import TYPE_CHECKING, Literal, MutableSequence, TypeAlias, overload
 
 import OpenSSL.SSL
 from cryptography import x509
-from OpenSSL import SSL
+from OpenSSL import SSL, crypto
 
 from spiffe.workloadapi.x509_source import X509Source
 from spiffetls.context import create_ssl_context
@@ -118,7 +118,7 @@ _PeerCertRetType: TypeAlias = _PeerCertRetDictType | bytes | None
 # OpenSSL will only write 16K at a time
 SSL_WRITE_BLOCKSIZE = 16384
 
-logger = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 
 def _dnsname_to_stdlib(name: str) -> str | None:
@@ -188,7 +188,7 @@ def get_subj_alt_name(peer_cert: X509) -> list[tuple[str, str]]:
     ) as e:
         # A problem has been found with the quality of the certificate. Assume
         # no SAN field is present.
-        logger.warning(
+        _logger.warning(
             "A problem was encountered with the certificate that prevented "
             "extraction of the SubjectAlternativeName field. This can "
             "affect certificate validation. The error was %s",
@@ -437,7 +437,7 @@ class WrappedSocket:
             return None
 
         if binary_form:
-            return OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_ASN1, x509)
+            return crypto.dump_certificate(crypto.FILETYPE_ASN1, x509)
 
         return {
             "subject": ((("commonName", x509.get_subject().CN),),),
@@ -521,10 +521,14 @@ class SpiffeSSLContext:
         self._maximum_version: int = ssl.TLSVersion.MAXIMUM_SUPPORTED
         self._verify_flags: int = ssl.VERIFY_X509_TRUSTED_FIRST
 
-    @property  # type: ignore[misc]
+    @property
     def __class__(self) -> type:
         """Return ssl.SSLContext as the class for compatibility with type checks."""
         return ssl.SSLContext
+
+    @__class__.setter
+    def __class__(self, value: type) -> None:
+        raise TypeError(f"__class__ assignment is not supported for {type(self).__name__}")
 
     @property
     def options(self) -> int:

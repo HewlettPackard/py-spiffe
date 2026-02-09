@@ -56,7 +56,7 @@ class JwtBundle(object):
         Raises:
             JWTBundleError: In case the trust_domain is empty.
         """
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
 
         if not trust_domain:
             raise JwtBundleError("Trust domain cannot be empty")
@@ -72,7 +72,7 @@ class JwtBundle(object):
     @property
     def jwt_authorities(self) -> Dict[str, _PUBLIC_KEY_TYPES]:
         """Returns a copy of JWT authorities in the bundle."""
-        with self.lock:
+        with self._lock:
             return self._jwt_authorities.copy()
 
     def get_jwt_authority(self, key_id: Optional[str]) -> Optional[_PUBLIC_KEY_TYPES]:
@@ -91,7 +91,7 @@ class JwtBundle(object):
         if not key_id:
             raise ArgumentError('key_id cannot be empty')
 
-        with self.lock:
+        with self._lock:
             return self._jwt_authorities.get(key_id)
 
     @classmethod
@@ -146,7 +146,7 @@ class JwtBundle(object):
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, JwtBundle):
             return False
-        with self.lock:
+        with self._lock:
             return (
                 self._trust_domain.__eq__(o._trust_domain)
                 and self._jwt_authorities == o._jwt_authorities

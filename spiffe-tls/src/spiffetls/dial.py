@@ -25,7 +25,7 @@ from spiffetls.context import create_ssl_context
 from spiffetls.errors import TLSConnectionError
 from spiffetls.mode import ClientTlsMode
 
-logger = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 
 def dial(

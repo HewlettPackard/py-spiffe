@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import serialization
 from spiffe.workloadapi.x509_source import X509Source
 from spiffetls.errors import SslContextError
 
-logger = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 
 def create_ssl_context(
@@ -149,4 +149,4 @@ def _on_source_update(ssl_context: SSL.Context, x509_source: X509Source) -> None
     """
     _load_ca_bundles(ssl_context, x509_source)
     _load_certificate_chain(ssl_context, x509_source)
-    logger.info("Certificates updated in SSL context.")
+    _logger.info("Certificates updated in SSL context.")
