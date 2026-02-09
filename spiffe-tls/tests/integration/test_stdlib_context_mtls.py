@@ -16,7 +16,6 @@ under the License.
 
 from contextlib import contextmanager
 import queue
-import random
 import ssl
 import threading
 import urllib.request
@@ -37,11 +36,12 @@ from spiffetls.mode import ServerTlsMode
 def setup_http_server(
     options: ListenOptions,
 ) -> Iterator[Tuple[SSL.Connection, Tuple[str, int], X509Source]]:
-    server_address = ('localhost', random.randint(50000, 60000))
+    server_host = "localhost"
     x509_source = X509Source(timeout_in_seconds=30)
     exception_queue: queue.Queue[Exception] = queue.Queue()
 
-    server_socket = listen(f"{server_address[0]}:{server_address[1]}", x509_source, options)
+    server_socket = listen(f"{server_host}:0", x509_source, options)
+    server_address = (server_host, int(server_socket.getsockname()[1]))
     ready_event = threading.Event()
 
     def server_thread_func() -> None:
