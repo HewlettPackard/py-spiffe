@@ -4,7 +4,7 @@ members = ["spiffe", "spiffe-tls", "testutils"]
 [tool.ruff]
 line-length = 95
 target-version = "py310"
-exclude = ["spiffe/src/spiffe/proto"]
+exclude = ["spiffe/src/spiffe/_proto"]
 
 [tool.ruff.format]
 quote-style = "preserve"

@@ -25,7 +25,7 @@ import grpc
 import threading
 from pytest_mock import MockerFixture
 
-from spiffe.proto import workload_pb2
+from spiffe._proto import workload_pb2
 from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.workloadapi.workload_api_client import WorkloadApiClient
 from spiffe.spiffe_id.spiffe_id import TrustDomain

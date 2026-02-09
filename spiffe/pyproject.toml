@@ -59,12 +59,12 @@ spiffe = ["py.typed"]
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["spiffe.proto.workload_pb2_grpc"]
+module = ["spiffe._proto.workload_pb2_grpc"]
 ignore_errors = true
 
 [tool.pyright]
-exclude = ["src/spiffe/proto"]
-ignore = ["src/spiffe/proto/workload_pb2_grpc.py"]
+exclude = ["src/spiffe/_proto"]
+ignore = ["src/spiffe/_proto/workload_pb2_grpc.py"]
 typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]

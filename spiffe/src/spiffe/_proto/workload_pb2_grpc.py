@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from spiffe.proto import workload_pb2 as spiffe_dot_proto_dot_workload__pb2
+from spiffe._proto import workload_pb2 as spiffe_dot___proto_dot_workload__pb2
 
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in spiffe/proto/workload_pb2_grpc.py depends on'
+        + ' but the generated code in spiffe/_proto/workload_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -39,28 +39,28 @@ class SpiffeWorkloadAPIStub(object):
         """
         self.FetchX509SVID = channel.unary_stream(
                 '/SpiffeWorkloadAPI/FetchX509SVID',
-                request_serializer=spiffe_dot_proto_dot_workload__pb2.X509SVIDRequest.SerializeToString,
-                response_deserializer=spiffe_dot_proto_dot_workload__pb2.X509SVIDResponse.FromString,
+                request_serializer=spiffe_dot___proto_dot_workload__pb2.X509SVIDRequest.SerializeToString,
+                response_deserializer=spiffe_dot___proto_dot_workload__pb2.X509SVIDResponse.FromString,
                 _registered_method=True)
         self.FetchX509Bundles = channel.unary_stream(
                 '/SpiffeWorkloadAPI/FetchX509Bundles',
-                request_serializer=spiffe_dot_proto_dot_workload__pb2.X509BundlesRequest.SerializeToString,
-                response_deserializer=spiffe_dot_proto_dot_workload__pb2.X509BundlesResponse.FromString,
+                request_serializer=spiffe_dot___proto_dot_workload__pb2.X509BundlesRequest.SerializeToString,
+                response_deserializer=spiffe_dot___proto_dot_workload__pb2.X509BundlesResponse.FromString,
                 _registered_method=True)
         self.FetchJWTSVID = channel.unary_unary(
                 '/SpiffeWorkloadAPI/FetchJWTSVID',
-                request_serializer=spiffe_dot_proto_dot_workload__pb2.JWTSVIDRequest.SerializeToString,
-                response_deserializer=spiffe_dot_proto_dot_workload__pb2.JWTSVIDResponse.FromString,
+                request_serializer=spiffe_dot___proto_dot_workload__pb2.JWTSVIDRequest.SerializeToString,
+                response_deserializer=spiffe_dot___proto_dot_workload__pb2.JWTSVIDResponse.FromString,
                 _registered_method=True)
         self.FetchJWTBundles = channel.unary_stream(
                 '/SpiffeWorkloadAPI/FetchJWTBundles',
-                request_serializer=spiffe_dot_proto_dot_workload__pb2.JWTBundlesRequest.SerializeToString,
-                response_deserializer=spiffe_dot_proto_dot_workload__pb2.JWTBundlesResponse.FromString,
+                request_serializer=spiffe_dot___proto_dot_workload__pb2.JWTBundlesRequest.SerializeToString,
+                response_deserializer=spiffe_dot___proto_dot_workload__pb2.JWTBundlesResponse.FromString,
                 _registered_method=True)
         self.ValidateJWTSVID = channel.unary_unary(
                 '/SpiffeWorkloadAPI/ValidateJWTSVID',
-                request_serializer=spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDRequest.SerializeToString,
-                response_deserializer=spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDResponse.FromString,
+                request_serializer=spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDRequest.SerializeToString,
+                response_deserializer=spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDResponse.FromString,
                 _registered_method=True)
 
 
@@ -125,28 +125,28 @@ def add_SpiffeWorkloadAPIServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'FetchX509SVID': grpc.unary_stream_rpc_method_handler(
                     servicer.FetchX509SVID,
-                    request_deserializer=spiffe_dot_proto_dot_workload__pb2.X509SVIDRequest.FromString,
-                    response_serializer=spiffe_dot_proto_dot_workload__pb2.X509SVIDResponse.SerializeToString,
+                    request_deserializer=spiffe_dot___proto_dot_workload__pb2.X509SVIDRequest.FromString,
+                    response_serializer=spiffe_dot___proto_dot_workload__pb2.X509SVIDResponse.SerializeToString,
             ),
             'FetchX509Bundles': grpc.unary_stream_rpc_method_handler(
                     servicer.FetchX509Bundles,
-                    request_deserializer=spiffe_dot_proto_dot_workload__pb2.X509BundlesRequest.FromString,
-                    response_serializer=spiffe_dot_proto_dot_workload__pb2.X509BundlesResponse.SerializeToString,
+                    request_deserializer=spiffe_dot___proto_dot_workload__pb2.X509BundlesRequest.FromString,
+                    response_serializer=spiffe_dot___proto_dot_workload__pb2.X509BundlesResponse.SerializeToString,
             ),
             'FetchJWTSVID': grpc.unary_unary_rpc_method_handler(
                     servicer.FetchJWTSVID,
-                    request_deserializer=spiffe_dot_proto_dot_workload__pb2.JWTSVIDRequest.FromString,
-                    response_serializer=spiffe_dot_proto_dot_workload__pb2.JWTSVIDResponse.SerializeToString,
+                    request_deserializer=spiffe_dot___proto_dot_workload__pb2.JWTSVIDRequest.FromString,
+                    response_serializer=spiffe_dot___proto_dot_workload__pb2.JWTSVIDResponse.SerializeToString,
             ),
             'FetchJWTBundles': grpc.unary_stream_rpc_method_handler(
                     servicer.FetchJWTBundles,
-                    request_deserializer=spiffe_dot_proto_dot_workload__pb2.JWTBundlesRequest.FromString,
-                    response_serializer=spiffe_dot_proto_dot_workload__pb2.JWTBundlesResponse.SerializeToString,
+                    request_deserializer=spiffe_dot___proto_dot_workload__pb2.JWTBundlesRequest.FromString,
+                    response_serializer=spiffe_dot___proto_dot_workload__pb2.JWTBundlesResponse.SerializeToString,
             ),
             'ValidateJWTSVID': grpc.unary_unary_rpc_method_handler(
                     servicer.ValidateJWTSVID,
-                    request_deserializer=spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDRequest.FromString,
-                    response_serializer=spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDResponse.SerializeToString,
+                    request_deserializer=spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDRequest.FromString,
+                    response_serializer=spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -177,8 +177,8 @@ class SpiffeWorkloadAPI(object):
             request,
             target,
             '/SpiffeWorkloadAPI/FetchX509SVID',
-            spiffe_dot_proto_dot_workload__pb2.X509SVIDRequest.SerializeToString,
-            spiffe_dot_proto_dot_workload__pb2.X509SVIDResponse.FromString,
+            spiffe_dot___proto_dot_workload__pb2.X509SVIDRequest.SerializeToString,
+            spiffe_dot___proto_dot_workload__pb2.X509SVIDResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -204,8 +204,8 @@ class SpiffeWorkloadAPI(object):
             request,
             target,
             '/SpiffeWorkloadAPI/FetchX509Bundles',
-            spiffe_dot_proto_dot_workload__pb2.X509BundlesRequest.SerializeToString,
-            spiffe_dot_proto_dot_workload__pb2.X509BundlesResponse.FromString,
+            spiffe_dot___proto_dot_workload__pb2.X509BundlesRequest.SerializeToString,
+            spiffe_dot___proto_dot_workload__pb2.X509BundlesResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -231,8 +231,8 @@ class SpiffeWorkloadAPI(object):
             request,
             target,
             '/SpiffeWorkloadAPI/FetchJWTSVID',
-            spiffe_dot_proto_dot_workload__pb2.JWTSVIDRequest.SerializeToString,
-            spiffe_dot_proto_dot_workload__pb2.JWTSVIDResponse.FromString,
+            spiffe_dot___proto_dot_workload__pb2.JWTSVIDRequest.SerializeToString,
+            spiffe_dot___proto_dot_workload__pb2.JWTSVIDResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -258,8 +258,8 @@ class SpiffeWorkloadAPI(object):
             request,
             target,
             '/SpiffeWorkloadAPI/FetchJWTBundles',
-            spiffe_dot_proto_dot_workload__pb2.JWTBundlesRequest.SerializeToString,
-            spiffe_dot_proto_dot_workload__pb2.JWTBundlesResponse.FromString,
+            spiffe_dot___proto_dot_workload__pb2.JWTBundlesRequest.SerializeToString,
+            spiffe_dot___proto_dot_workload__pb2.JWTBundlesResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -285,8 +285,8 @@ class SpiffeWorkloadAPI(object):
             request,
             target,
             '/SpiffeWorkloadAPI/ValidateJWTSVID',
-            spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDRequest.SerializeToString,
-            spiffe_dot_proto_dot_workload__pb2.ValidateJWTSVIDResponse.FromString,
+            spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDRequest.SerializeToString,
+            spiffe_dot___proto_dot_workload__pb2.ValidateJWTSVIDResponse.FromString,
             options,
             channel_credentials,
             insecure,
