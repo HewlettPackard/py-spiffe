@@ -26,7 +26,7 @@ integration: ## Run integration tests
 .PHONY: compile-proto
 compile-proto:
 	@echo "Compiling protobuf files..."
-	$(UV_CMD) run python -m grpc_tools.protoc -I$(PROTO_DIR) --python_out=$(PROTO_DIR) --grpc_python_out=$(PROTO_DIR) $(PROTO_DIR)/*.proto
+	$(UV_CMD) run python -m grpc_tools.protoc -I$(ROOT_DIR)/src --python_out=$(ROOT_DIR)/src --mypy_out=$(ROOT_DIR)/src --grpc_python_out=$(ROOT_DIR)/src $(PROTO_DIR)/*.proto
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage reporting
