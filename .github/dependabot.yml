@@ -3,9 +3,67 @@ updates:
   - package-ecosystem: "pip"
     directory: "/spiffe"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      python-runtime:
+        patterns:
+          - "cryptography"
+          - "grpcio"
+          - "protobuf"
+          - "pyjwt"
+      asn1-stack:
+        patterns:
+          - "pyasn1"
+          - "pyasn1-modules"
+      pem:
+        patterns:
+          - "pem"
+      dev-tools:
+        dependency-type: "development"
+        patterns:
+          - "black"
+          - "flake8"
+          - "mypy"
+          - "mypy-protobuf"
+          - "pre-commit"
+          - "pytest"
+          - "pytest-mock"
 
   - package-ecosystem: "pip"
     directory: "/spiffe-tls"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      tls-runtime:
+        patterns:
+          - "pyOpenSSL"
+          - "idna"
+      spiffe-runtime:
+        patterns:
+          - "spiffe"
+      dev-tools:
+        dependency-type: "development"
+        patterns:
+          - "black"
+          - "flake8"
+          - "mypy"
+          - "mypy-protobuf"
+          - "pre-commit"
+          - "pytest"
+          - "pytest-mock"
+          - "types-pyOpenSSL"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
