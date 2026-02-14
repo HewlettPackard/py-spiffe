@@ -12,6 +12,8 @@ updates:
           - "cryptography"
           - "grpcio"
           - "protobuf"
+      jwt:
+        patterns:
           - "pyjwt"
       asn1-stack:
         patterns:
