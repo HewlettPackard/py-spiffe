@@ -21,7 +21,7 @@ Repository = "https://github.com/HewlettPackard/py-spiffe"
 
 [dependency-groups]
 dev = [
-  "ruff>=0.13,<0.14",
+  "ruff>=0.13,<0.16",
   "mypy>=1.19,<2",
   "pyright>=1.1.406,<2",
   "grpcio-tools>=1.76.0,<2",
