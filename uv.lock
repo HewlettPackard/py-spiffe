@@ -885,7 +885,7 @@ wheels = [
 
 [[package]]
 name = "spiffe"
-version = "0.2.3"
+version = "0.2.4"
 source = { editable = "spiffe" }
 dependencies = [
     { name = "cryptography" },
@@ -921,7 +921,7 @@ requires-dist = [
     { name = "protobuf", specifier = ">=5,<7" },
     { name = "pyasn1", specifier = ">=0.6.0,<0.7.0" },
     { name = "pyasn1-modules", specifier = ">=0.4.0,<0.5.0" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2,<2.11" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2,<2.12" },
 ]
 
 [package.metadata.requires-dev]
@@ -934,7 +934,7 @@ dev = [
     { name = "pyright", specifier = ">=1.1.406,<2" },
     { name = "pytest", specifier = ">=9,<10" },
     { name = "pytest-mock", specifier = ">=3.15,<4" },
-    { name = "ruff", specifier = ">=0.13,<0.14" },
+    { name = "ruff", specifier = ">=0.13,<0.16" },
     { name = "testutils", editable = "testutils" },
     { name = "types-grpcio", specifier = ">=1.0,<2" },
     { name = "types-pyasn1", specifier = ">=0.6.0.20250914,<0.7.0" },
@@ -942,7 +942,7 @@ dev = [
 
 [[package]]
 name = "spiffe-tls"
-version = "0.2.2"
+version = "0.3.0"
 source = { editable = "spiffe-tls" }
 dependencies = [
     { name = "idna" },
@@ -976,7 +976,7 @@ dev = [
     { name = "pre-commit", specifier = ">=4.5,<5" },
     { name = "pytest", specifier = ">=9,<10" },
     { name = "pytest-mock", specifier = ">=3.15,<4" },
-    { name = "ruff", specifier = ">=0.13,<0.14" },
+    { name = "ruff", specifier = ">=0.13,<0.16" },
     { name = "testutils", editable = "testutils" },
     { name = "types-pyopenssl", specifier = ">=24.1,<25" },
 ]

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] – 2026-02-24
+
+### Added
+- Added `SpiffeSSLContext` for standard library `ssl.SSLContext` compatibility, enabling seamless integration with httpx, requests, urllib3, and other HTTP libraries (#364)
+
+### Changed
+- Added PEP 561 `py.typed` markers for downstream type checking (#372)
+- Migrated build system from Poetry to uv
+- Replaced black and flake8 with ruff for formatting and linting
+
+### Development
+- Enabled mypy strict mode in tests
+- Added pyright type checking with `--verifytypes` validation
+- Improved test reliability by letting OS pick listening ports
+
 ## [0.2.2] – 2026-01-17
 
 ### Changed
