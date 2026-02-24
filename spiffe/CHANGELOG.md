@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.4] – 2026-02-24
+
+### Fixed
+- Hardened JWT and X.509 SVID validation and error handling (#375)
+
+### Changed
+- Refactored workload API source lifecycle and client behavior for improved robustness (#376)
+- Privatized `proto` module internals for cleaner public API surface
+- Added PEP 561 `py.typed` markers for downstream type checking (#372)
+- Migrated build system from Poetry to uv
+- Replaced black and flake8 with ruff for formatting and linting
+- Updated dependencies:
+  - cryptography to 46.0.4
+  - grpcio to 1.78.0
+  - protobuf to 6.33.5
+  - pyjwt[crypto] to permit 2.11.x
+
+### Development
+- Enabled mypy strict mode across src and tests
+- Added pyright type checking with `--verifytypes` validation
+- Updated codegen for protobuf compilation
+
 ## [0.2.3] – 2026-01-17
 
 ### Fixed
