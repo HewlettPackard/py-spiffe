@@ -27,14 +27,12 @@ jobs:
       - name: Publish spiffe
         if: startsWith(github.ref, 'refs/tags/spiffe-') && !startsWith(github.ref, 'refs/tags/spiffe-tls-')
         run: |
-          cd spiffe
-          make build
-          uv publish
+          uv build --package spiffe
+          uv publish dist/spiffe-*
 
       # Conditional step for spiffe-tls module
       - name: Publish spiffe-tls
         if: startsWith(github.ref, 'refs/tags/spiffe-tls-')
         run: |
-          cd spiffe-tls
-          make build
-          uv publish
+          uv build --package spiffe-tls
+          uv publish dist/spiffe_tls-*
