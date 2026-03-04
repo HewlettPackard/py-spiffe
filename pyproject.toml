@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["spiffe", "spiffe-tls", "testutils"]
+members = ["examples", "spiffe", "spiffe-tls", "testutils"]
 
 [dependency-groups]
 dev = [

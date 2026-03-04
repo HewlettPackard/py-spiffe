@@ -16,13 +16,16 @@ under the License.
 Manual mTLS smoke test client. Not intended for production use.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
+import select
 import signal
 import sys
 import time
 import traceback
-import select
+from types import FrameType
 
 from OpenSSL import SSL
 
@@ -30,14 +33,18 @@ from spiffe import X509Source
 from spiffetls import dial
 
 
-def log_error(prefix, err, debug):
+def log_error(prefix: str, err: BaseException, debug: bool) -> None:
     """Log error with optional traceback."""
     print(f"{prefix}: {type(err).__name__}: {err}", file=sys.stderr)
     if debug:
         traceback.print_exception(type(err), err, err.__traceback__)
 
 
-def send_request(conn, path="/health", timeout=5.0):
+def send_request(
+    conn: SSL.Connection,
+    path: str = "/health",
+    timeout: float = 5.0,
+) -> bytes:
     """
     Send HTTP GET request and read response (best-effort, bounded).
 
@@ -53,7 +60,7 @@ def send_request(conn, path="/health", timeout=5.0):
 
     deadline = time.time() + timeout
 
-    def time_left():
+    def time_left() -> float:
         return max(0.0, deadline - time.time())
 
     # ---- Write request (handle WantRead / WantWrite) ----
@@ -99,7 +106,7 @@ def send_request(conn, path="/health", timeout=5.0):
     return data
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="mTLS smoke test client for SPIFFE Workload API validation"
     )
@@ -138,7 +145,8 @@ def main():
 
     stop_requested = False
 
-    def signal_handler(sig, frame):
+    def signal_handler(sig: int, frame: FrameType | None) -> None:
+        del sig, frame
         nonlocal stop_requested
         print("\n[client] shutdown signal received", file=sys.stderr)
         stop_requested = True
@@ -146,7 +154,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    x509_source = None
+    x509_source: X509Source | None = None
 
     try:
         x509_source = X509Source(timeout_in_seconds=args.source_timeout)
@@ -158,14 +166,11 @@ def main():
             leaf = x509_source.svid.cert_chain[0]
             serial = hex(leaf.serial_number)
 
-            conn = None
+            conn: SSL.Connection | None = None
             try:
                 addr = f"{args.host}:{args.port}"
                 conn = dial(addr, x509_source)
-
-                # Best-effort configuration; behavior depends on underlying object
-                if hasattr(conn, "setblocking"):
-                    conn.setblocking(True)
+                conn.setblocking(True)
 
                 response = send_request(conn, args.path, timeout=args.timeout)
 
