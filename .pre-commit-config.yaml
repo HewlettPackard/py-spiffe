@@ -8,9 +8,9 @@ repos:
         pass_filenames: false
         always_run: true
 
-      - id: make-pre-commit
+      - id: pre-commit
         name: Run Make Pre-commit Target
-        entry: make pre-commit
+        entry: ./dev pre-commit
         language: system
         pass_filenames: false
         always_run: true

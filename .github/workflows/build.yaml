@@ -26,11 +26,8 @@ jobs:
       - name: Install Python
         run: uv python install 3.10
 
-      - name: Install Dependencies
-        run: make deps
-
       - name: Lint with pre-commit
-        run: make lint
+        run: ./dev lint
 
   test:
     name: Test
@@ -54,20 +51,17 @@ jobs:
       - name: Install Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Install Dependencies
-        run: make deps
-
       - name: Build
-        run: make build
+        run: ./dev build
 
       - name: Run Tests
-        run: make test
+        run: ./dev test
 
       - name: Start SPIRE
         run: .github/workflows/scripts/run-spire.sh &
 
       - name: Run Integration Tests
-        run: make integration
+        run: ./dev integration
 
       - name: Clean up SPIRE
         run: .github/workflows/scripts/cleanup-spire.sh

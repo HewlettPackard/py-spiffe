@@ -39,18 +39,12 @@ def log_error(prefix, err, debug):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="httpx + SpiffeSSLContext mTLS smoke test"
-    )
+    parser = argparse.ArgumentParser(description="httpx + SpiffeSSLContext mTLS smoke test")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Server host address (default: 127.0.0.1)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8443, help="Server port (default: 8443)"
-    )
-    parser.add_argument(
-        "--path", default="/health", help="Request path (default: /health)"
-    )
+    parser.add_argument("--port", type=int, default=8443, help="Server port (default: 8443)")
+    parser.add_argument("--path", default="/health", help="Request path (default: /health)")
     parser.add_argument(
         "--interval",
         type=float,
@@ -109,10 +103,7 @@ def main():
 
             try:
                 resp = client.get(target, timeout=args.timeout)
-                print(
-                    f"[client] ok status={resp.status_code} "
-                    f"svid_serial={serial}"
-                )
+                print(f"[client] ok status={resp.status_code} svid_serial={serial}")
             except Exception as e:
                 log_error(f"[client] fail svid_serial={serial}", e, args.debug)
 
