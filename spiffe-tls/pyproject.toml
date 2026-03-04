@@ -46,7 +46,7 @@ files = ["."]
 exclude = '^(build|dist)/'
 
 [tool.pyright]
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
 addopts = [
