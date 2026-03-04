@@ -47,6 +47,8 @@ spiffetls = ["py.typed"]
 
 [tool.mypy]
 strict = true
+files = ["."]
+exclude = '^(build|dist)/'
 
 [tool.pyright]
 typeCheckingMode = "standard"

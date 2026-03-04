@@ -57,6 +57,8 @@ spiffe = ["py.typed"]
 # Tool configurations
 [tool.mypy]
 strict = true
+files = ["."]
+exclude = '^(build|dist)/|^src/spiffe/_proto/'
 
 [[tool.mypy.overrides]]
 module = ["spiffe._proto.workload_pb2_grpc"]

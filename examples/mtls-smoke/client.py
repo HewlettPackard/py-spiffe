@@ -47,12 +47,9 @@ def send_request(conn, path="/health", timeout=5.0):
     machine makes progress. This smoke test uses minimal, bounded
     select()-based retries to avoid flakiness.
     """
-    request = (
-        f"GET {path} HTTP/1.1\r\n"
-        f"Host: localhost\r\n"
-        f"Connection: close\r\n"
-        f"\r\n"
-    ).encode("ascii")
+    request = (f"GET {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n").encode(
+        "ascii"
+    )
 
     deadline = time.time() + timeout
 
@@ -109,12 +106,8 @@ def main():
     parser.add_argument(
         "--host", default="127.0.0.1", help="Server host address (default: 127.0.0.1)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8443, help="Server port (default: 8443)"
-    )
-    parser.add_argument(
-        "--path", default="/health", help="Request path (default: /health)"
-    )
+    parser.add_argument("--port", type=int, default=8443, help="Server port (default: 8443)")
+    parser.add_argument("--path", default="/health", help="Request path (default: /health)")
     parser.add_argument(
         "--interval",
         type=float,
@@ -176,9 +169,7 @@ def main():
 
                 response = send_request(conn, args.path, timeout=args.timeout)
 
-                status_line = response.split(b"\r\n")[0].decode(
-                    "ascii", errors="replace"
-                )
+                status_line = response.split(b"\r\n")[0].decode("ascii", errors="replace")
                 body_start = response.find(b"\r\n\r\n")
                 body = (
                     response[body_start + 4 :].strip().decode("ascii", errors="replace")
@@ -186,9 +177,7 @@ def main():
                     else ""
                 )
 
-                print(
-                    f"[client] ok {status_line} body={body} svid_serial={serial}"
-                )
+                print(f"[client] ok {status_line} body={body} svid_serial={serial}")
 
             except Exception as e:
                 log_error(f"[client] fail svid_serial={serial}", e, args.debug)

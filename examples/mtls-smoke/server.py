@@ -53,8 +53,7 @@ def handle_request(conn, addr, debug=False):
             b"Content-Type: text/plain\r\n"
             b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n"
             b"Connection: close\r\n"
-            b"\r\n"
-            + body
+            b"\r\n" + body
         )
         conn.sendall(resp)
     except Exception as e:
@@ -87,9 +86,7 @@ def main():
     parser.add_argument(
         "--host", default="127.0.0.1", help="Server host address (default: 127.0.0.1)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8443, help="Server port (default: 8443)"
-    )
+    parser.add_argument("--port", type=int, default=8443, help="Server port (default: 8443)")
     parser.add_argument(
         "--authorize",
         default="self",

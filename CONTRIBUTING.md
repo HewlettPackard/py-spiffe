@@ -21,36 +21,31 @@ Before starting, please make sure you have the following installed:
    pre-commit install
    ```
 
-2. **Install Project Dependencies**: Navigate to the project directory and run:
+1. **Run Tests**: Ensure your changes don't break anything:
     ```sh
-    make deps
+    ./dev test
     ```
 
-3. **Run Tests**: Ensure your changes don't break anything:
+1. **Check Code Style (Linting)**: To ensure your code complies with our style guide:
     ```sh
-    make test
+    ./dev lint
     ```
 
-4. **Check Code Style (Linting)**: To ensure your code complies with our style guide:
+1. **Format Code**: Automatically format your code to match our project's coding standards:
     ```sh
-    make lint
+    ./dev format
     ```
 
-5. **Format Code**: Automatically format your code to match our project's coding standards:
+1. **Build the Project**
     ```sh
-    make format
-    ```
-
-6. **Build the Project** 
-    ```sh
-    make build
+    ./dev build
     ```
 
 ### Additional Steps
 
 - **Regenerate Protobuf Code**: If you modify `workload.proto`, regenerate the Python code:
     ```sh
-    make compile-proto
+    ./dev compile-proto
     ```
   Then, amend `workload_pb2_grpc.py` by adjusting the import line:
     ```python
