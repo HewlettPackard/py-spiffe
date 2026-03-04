@@ -33,10 +33,12 @@ pip install spiffe-tls
 
 ## Examples
 
-Manual smoke test examples are available in the `examples/` directory:
+Manual smoke test examples are documented in [examples/README.md](examples/README.md).
+They are exposed as `uv` entry points:
 
-- **[mtls-smoke](examples/mtls-smoke/)**: mTLS smoke test using `spiffetls.dial()` and `spiffetls.listen()`
-- **[httpx-stdlib-mtls](examples/httpx-stdlib-mtls/)**: `SpiffeSSLContext` integration with `httpx` and stdlib TLS
+- `uv run --package py-spiffe-examples mtls-smoke-server`
+- `uv run --package py-spiffe-examples mtls-smoke-client`
+- `uv run --package py-spiffe-examples httpx-stdlib-mtls-client`
 
 These examples are intended for manual testing only and not for production use.
 

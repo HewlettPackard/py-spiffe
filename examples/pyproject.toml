@@ -1,0 +1,44 @@
+[project]
+name = "py-spiffe-examples"
+version = "0.1.0"
+description = "Manual examples for py-spiffe"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "spiffe",
+  "spiffe-tls",
+  "httpx>=0.28,<0.29",
+]
+
+[project.scripts]
+mtls-smoke-client = "py_spiffe_examples.mtls_smoke_client:main"
+mtls-smoke-server = "py_spiffe_examples.mtls_smoke_server:main"
+httpx-stdlib-mtls-client = "py_spiffe_examples.httpx_stdlib_mtls_client:main"
+
+[dependency-groups]
+dev = [
+  "types-pyOpenSSL>=24.1,<25",
+]
+
+[tool.uv.sources]
+spiffe = { workspace = true }
+spiffe-tls = { workspace = true }
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["py_spiffe_examples*"]
+
+[tool.mypy]
+strict = true
+files = ["."]
+exclude = '^(build|dist)/'
+
+[tool.pyright]
+typeCheckingMode = "strict"
