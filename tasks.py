@@ -47,6 +47,7 @@ under the License.
 @dataclass(frozen=True)
 class PackageTasks:
     name: str
+    directory: str
     verifytypes_module: str | None = None
     has_unit_tests: bool = True
     has_integration_tests: bool = True
@@ -54,12 +55,21 @@ class PackageTasks:
 
 
 PACKAGES = {
+    "examples": PackageTasks(
+        name="py-spiffe-examples",
+        directory="examples",
+        has_unit_tests=False,
+        has_integration_tests=False,
+        lint_targets=("src",),
+    ),
     "spiffe": PackageTasks(
         name="spiffe",
+        directory="spiffe",
         verifytypes_module="spiffe",
     ),
     "spiffe-tls": PackageTasks(
         name="spiffe-tls",
+        directory="spiffe-tls",
         verifytypes_module="spiffetls",
     ),
 }
@@ -100,7 +110,7 @@ def uv_package(package: PackageTasks, cmd: str, *args: str) -> None:
         package.name,
         *args,
         # Without this mypy doesn't pick up the `files` config.
-        cwd=ROOT / package.name,
+        cwd=ROOT / package.directory,
     )
 
 
