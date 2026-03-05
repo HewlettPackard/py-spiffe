@@ -88,8 +88,8 @@ def select_wait_for_socket(
     """
     if not read and not write:
         raise RuntimeError("must specify at least one of read=True, write=True")
-    rcheck = []
-    wcheck = []
+    rcheck: list[socket.socket] = []
+    wcheck: list[socket.socket] = []
     if read:
         rcheck.append(sock)
     if write:
@@ -220,13 +220,13 @@ def to_bytes(x: str | bytes, encoding: str | None = None, errors: str | None = N
     Raises:
         TypeError: If x is neither str nor bytes.
     """
-    if isinstance(x, bytes):
-        return x
-    elif not isinstance(x, str):
-        raise TypeError(f"not expecting type {type(x).__name__}")
-    if encoding or errors:
-        return x.encode(encoding or "utf-8", errors=errors or "strict")
-    return x.encode()
+    match x:
+        case bytes():
+            return x
+        case str():
+            if encoding or errors:
+                return x.encode(encoding or "utf-8", errors=errors or "strict")
+            return x.encode()
 
 
 _IPV4_PAT = r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}"

@@ -16,6 +16,8 @@ under the License.
 Manual mTLS smoke test server. Not intended for production use.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import signal
@@ -23,6 +25,9 @@ import sys
 import threading
 import time
 import traceback
+from types import FrameType
+
+from OpenSSL import SSL
 
 from spiffe import SpiffeId, X509Source
 from spiffetls import ListenOptions, listen
@@ -30,14 +35,14 @@ from spiffetls.mode import ServerTlsMode
 import spiffetls.tlsconfig.authorize
 
 
-def log_error(prefix, err, debug):
+def log_error(prefix: str, err: BaseException, debug: bool) -> None:
     """Log error with optional traceback."""
     print(f"{prefix}: {type(err).__name__}: {err}", file=sys.stderr)
     if debug:
         traceback.print_exception(type(err), err, err.__traceback__)
 
 
-def handle_request(conn, addr, debug=False):
+def handle_request(conn: SSL.Connection, addr: object, debug: bool = False) -> None:
     """Handle a single client request with bounded HTTP parsing."""
     try:
         data = b""
@@ -53,8 +58,7 @@ def handle_request(conn, addr, debug=False):
             b"Content-Type: text/plain\r\n"
             b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n"
             b"Connection: close\r\n"
-            b"\r\n"
-            + body
+            b"\r\n" + body
         )
         conn.sendall(resp)
     except Exception as e:
@@ -66,7 +70,11 @@ def handle_request(conn, addr, debug=False):
             pass
 
 
-def serve_loop(sock, stop_event, debug=False):
+def serve_loop(
+    sock: SSL.Connection,
+    stop_event: threading.Event,
+    debug: bool = False,
+) -> None:
     """Accept connections and handle requests until stop_event is set."""
     while not stop_event.is_set():
         try:
@@ -80,16 +88,14 @@ def serve_loop(sock, stop_event, debug=False):
             break
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="mTLS smoke test server for SPIFFE Workload API validation"
     )
     parser.add_argument(
         "--host", default="127.0.0.1", help="Server host address (default: 127.0.0.1)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8443, help="Server port (default: 8443)"
-    )
+    parser.add_argument("--port", type=int, default=8443, help="Server port (default: 8443)")
     parser.add_argument(
         "--authorize",
         default="self",
@@ -105,11 +111,12 @@ def main():
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
-    x509_source = None
-    sock = None
+    x509_source: X509Source | None = None
+    sock: SSL.Connection | None = None
     stop_event = threading.Event()
 
-    def signal_handler(sig, frame):
+    def signal_handler(sig: int, frame: FrameType | None) -> None:
+        del sig, frame
         print("\n[server] shutdown signal received", file=sys.stderr)
         stop_event.set()
 

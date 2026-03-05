@@ -39,7 +39,6 @@ class FakeCall(grpc.Call, grpc.RpcError):
     def time_remaining(self) -> float:
         return 0.0
 
-
     def cancel(self) -> bool:
         return False
 

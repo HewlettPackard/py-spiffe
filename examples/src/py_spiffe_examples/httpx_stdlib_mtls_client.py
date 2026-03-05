@@ -19,38 +19,37 @@ Validates certificate rotation and Workload API reconnection behavior
 with Python's ssl.SSLContext integration.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import signal
+import ssl
 import sys
 import time
 import traceback
+from types import FrameType
 
 import httpx
+
 from spiffe import X509Source
 from spiffetls import SpiffeSSLContext
 
 
-def log_error(prefix, err, debug):
+def log_error(prefix: str, err: BaseException, debug: bool) -> None:
     """Log error with optional traceback."""
     print(f"{prefix}: {type(err).__name__}: {err}", file=sys.stderr)
     if debug:
         traceback.print_exception(type(err), err, err.__traceback__)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="httpx + SpiffeSSLContext mTLS smoke test"
-    )
+def main() -> None:
+    parser = argparse.ArgumentParser(description="httpx + SpiffeSSLContext mTLS smoke test")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Server host address (default: 127.0.0.1)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8443, help="Server port (default: 8443)"
-    )
-    parser.add_argument(
-        "--path", default="/health", help="Request path (default: /health)"
-    )
+    parser.add_argument("--port", type=int, default=8443, help="Server port (default: 8443)")
+    parser.add_argument("--path", default="/health", help="Request path (default: /health)")
     parser.add_argument(
         "--interval",
         type=float,
@@ -81,7 +80,8 @@ def main():
 
     stop = False
 
-    def handle_signal(sig, frame):
+    def handle_signal(sig: int, frame: FrameType | None) -> None:
+        del sig, frame
         nonlocal stop
         stop = True
         print("\n[client] shutdown requested", file=sys.stderr)
@@ -89,7 +89,7 @@ def main():
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
 
-    x509_source = None
+    x509_source: X509Source | None = None
 
     try:
         x509_source = X509Source(timeout_in_seconds=args.source_timeout)
@@ -97,7 +97,7 @@ def main():
             x509_source,
             use_system_trusted_cas=True,
         )
-
+        assert isinstance(ssl_context, ssl.SSLContext)
         client = httpx.Client(verify=ssl_context)
 
         target = f"https://{args.host}:{args.port}{args.path}"
@@ -109,10 +109,7 @@ def main():
 
             try:
                 resp = client.get(target, timeout=args.timeout)
-                print(
-                    f"[client] ok status={resp.status_code} "
-                    f"svid_serial={serial}"
-                )
+                print(f"[client] ok status={resp.status_code} svid_serial={serial}")
             except Exception as e:
                 log_error(f"[client] fail svid_serial={serial}", e, args.debug)
 
