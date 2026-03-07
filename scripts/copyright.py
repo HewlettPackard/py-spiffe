@@ -17,7 +17,16 @@ under the License.
 import os
 
 FORBIDDEN_FILES = ["__init__.py"]
-FORBIDDEN_DIRECTORIES = ["proto"]
+FORBIDDEN_DIRECTORIES = [
+    "proto",
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+]
 COPYRIGHT_TEXT = """\"\"\"
 (C) Copyright 2021 Hewlett Packard Enterprise Development LP
 
