@@ -93,6 +93,21 @@ def test_x509_source_get_x509_svid_with_picker(
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
 
 
+def test_x509_source_get_x509_context(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+    x509_context = x509_source.get_x509_context()
+
+    assert x509_context.default_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
+    assert {bundle.trust_domain for bundle in x509_context.x509_bundle_set.bundles} == {
+        TrustDomain('example.org'),
+        TrustDomain('domain.test'),
+    }
+
+
 def test_x509_source_get_x509_svid_with_invalid_picker(
     mocker: MockerFixture, client: WorkloadApiClient
 ) -> None:
@@ -139,6 +154,20 @@ def test_x509_source_is_closed_get_svid(
         x509_source.svid
 
     assert str(err.value) == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
+
+
+def test_x509_source_is_closed_get_x509_context(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+    x509_source.close()
+
+    with pytest.raises(X509SourceError) as err:
+        x509_source.get_x509_context()
+
+    assert str(err.value) == 'X.509 Source error: Cannot get X.509 context: source is closed'
 
 
 def test_x509_source_subscription_and_unsubscription_behavior(
@@ -212,6 +241,20 @@ def test_x509_source_closes_on_error_after_init(
 
     with pytest.raises(X509SourceError) as err:
         _ = x509_source.bundles
+    assert 'source has error' in str(err.value)
+
+
+def test_x509_source_get_x509_context_when_source_has_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_return_multiple_svids(mocker, client)
+
+    x509_source = X509Source(client)
+    x509_source._on_error(WorkloadApiError("Test error"))
+
+    with pytest.raises(X509SourceError) as err:
+        _ = x509_source.get_x509_context()
+
     assert 'source has error' in str(err.value)
 
 
