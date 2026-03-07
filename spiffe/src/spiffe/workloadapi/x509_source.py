@@ -18,6 +18,7 @@ import logging
 import threading
 from typing import Optional, Callable, List, FrozenSet
 
+from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.svid.x509_svid import X509Svid
@@ -119,6 +120,22 @@ class X509Source:
             if self._closed:
                 raise X509SourceError('Cannot get X.509 SVID: source is closed')
             return self._x509_svid
+
+    def get_x509_context(self) -> X509Context:
+        """Returns a coherent X509Context snapshot for this source."""
+        with self._lock:
+            if self._error is not None:
+                raise X509SourceError(
+                    f'Cannot get X.509 context: source has error: {self._error}'
+                )
+            if self._closed:
+                raise X509SourceError('Cannot get X.509 context: source is closed')
+
+            bundle_set = X509BundleSet.of(list(self._x509_bundle_set.bundles))
+            return X509Context(
+                x509_svids=[self._x509_svid],
+                x509_bundle_set=bundle_set,
+            )
 
     @property
     def bundles(self) -> FrozenSet[X509Bundle]:
