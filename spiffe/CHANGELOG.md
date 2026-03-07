@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.5] – 2026-03-07
+
+### Fixed
+- Raised protobuf runtime requirement to `>=6.31.1,<8` to prevent gencode/runtime mismatches with checked-in generated protobuf code (e.g. gencode 6.31.1 with runtime 5.x).
+
+
 ## [0.2.4] – 2026-02-24
 
 ### Fixed
