@@ -78,7 +78,8 @@ def test_x509_source_get_default_x509_svid(
 
     x509_source = X509Source(client)
 
-    x509_svid = x509_source.svid
+    with pytest.warns(DeprecationWarning, match='X509Source.svid is deprecated'):
+        x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
 
 
@@ -89,7 +90,8 @@ def test_x509_source_get_x509_svid_with_picker(
 
     x509_source = X509Source(client, svid_picker=lambda svids: svids[1])
 
-    x509_svid = x509_source.svid
+    with pytest.warns(DeprecationWarning, match='X509Source.svid is deprecated'):
+        x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
 
 
@@ -151,7 +153,8 @@ def test_x509_source_is_closed_get_svid(
     x509_source.close()
 
     with pytest.raises(X509SourceError) as err:
-        x509_source.svid
+        with pytest.warns(DeprecationWarning, match='X509Source.svid is deprecated'):
+            x509_source.svid
 
     assert str(err.value) == 'X.509 Source error: Cannot get X.509 SVID: source is closed'
 
@@ -236,11 +239,13 @@ def test_x509_source_closes_on_error_after_init(
 
     # Source should be closed and accessing svid/bundles should raise error
     with pytest.raises(X509SourceError) as err:
-        _ = x509_source.svid
+        with pytest.warns(DeprecationWarning, match='X509Source.svid is deprecated'):
+            _ = x509_source.svid
     assert 'source has error' in str(err.value)
 
     with pytest.raises(X509SourceError) as err:
-        _ = x509_source.bundles
+        with pytest.warns(DeprecationWarning, match='X509Source.bundles is deprecated'):
+            _ = x509_source.bundles
     assert 'source has error' in str(err.value)
 
 
@@ -265,7 +270,8 @@ def test_x509_source_bundles_returns_frozenset(
     mock_client_return_multiple_svids(mocker, client)
 
     x509_source = X509Source(client)
-    bundles = x509_source.bundles
+    with pytest.warns(DeprecationWarning, match='X509Source.bundles is deprecated'):
+        bundles = x509_source.bundles
 
     # Should return frozenset
     assert isinstance(bundles, frozenset)
