@@ -16,6 +16,7 @@ under the License.
 
 import logging
 import threading
+import warnings
 from typing import Optional, Callable, List, FrozenSet
 
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
@@ -112,6 +113,14 @@ class X509Source:
     @property
     def svid(self) -> X509Svid:
         """Returns an X509-SVID from the source."""
+        warnings.warn(
+            (
+                'X509Source.svid is deprecated; '
+                'use X509Source.get_x509_context().default_svid instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         with self._lock:
             if self._error is not None:
                 raise X509SourceError(
@@ -140,6 +149,14 @@ class X509Source:
     @property
     def bundles(self) -> FrozenSet[X509Bundle]:
         """Returns the set of all X509Bundles."""
+        warnings.warn(
+            (
+                'X509Source.bundles is deprecated; '
+                'use X509Source.get_x509_context().x509_bundle_set.bundles instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         with self._lock:
             if self._error is not None:
                 raise X509SourceError(
