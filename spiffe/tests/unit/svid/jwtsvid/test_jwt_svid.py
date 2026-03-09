@@ -36,6 +36,9 @@ from spiffe.bundle.jwt_bundle.errors import AuthorityNotFoundError
 from testutils.jwt import (
     TEST_TRUST_DOMAIN,
     TEST_KEY,
+    TEST_KEY_PEM,
+    TEST_KEY_ID,
+    TEST_ALG,
     generate_test_jwt_token,
     TEST_AUDIENCE,
     TEST_SPIFFE_ID,
@@ -302,6 +305,26 @@ def test_parse_and_validate_valid_token_EC() -> None:
     assert jwt_svid._audience == TEST_AUDIENCE
     assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
     assert jwt_svid._expiry == TEST_EXPIRY
+    assert jwt_svid._token == token
+
+
+def test_parse_and_validate_valid_token_single_string_aud() -> None:
+    """PyJWT returns aud as a plain string when only one audience is present.
+    Verify the audience is parsed as {'single-audience'}, not split into characters.
+    """
+    token = jwt.encode(
+        {
+            'aud': 'single-audience',
+            'sub': TEST_SPIFFE_ID,
+            'exp': TEST_EXPIRY,
+        },
+        algorithm=TEST_ALG,
+        key=TEST_KEY_PEM,
+        headers={'alg': TEST_ALG, 'typ': 'JWT', 'kid': TEST_KEY_ID},
+    )
+    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'single-audience'})
+    assert jwt_svid._audience == {'single-audience'}
+    assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
     assert jwt_svid._token == token
 
 

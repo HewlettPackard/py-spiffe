@@ -20,7 +20,7 @@ This module manages JWT SVID objects.
 
 import jwt
 from jwt import PyJWTError
-from typing import Dict, Set
+from typing import Dict, Set, Union
 from spiffe.errors import ArgumentError
 from cryptography.hazmat.primitives import serialization
 from spiffe.spiffe_id.spiffe_id import SpiffeId, SpiffeIdError
@@ -39,7 +39,7 @@ class JwtSvid(object):
     def __init__(
         self,
         spiffe_id: SpiffeId,
-        audience: Set[str],
+        audience: Union[str, Set[str]],
         expiry: int,
         claims: Dict[str, str],
         token: str,
@@ -54,7 +54,7 @@ class JwtSvid(object):
             token: Encoded token.
         """
         self._spiffe_id = spiffe_id
-        self._audience = set(audience)
+        self._audience = {audience} if isinstance(audience, str) else set(audience)
         self._expiry = expiry
         self._claims = claims
         self._token = token
