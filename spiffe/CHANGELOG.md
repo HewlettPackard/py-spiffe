@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.6] – 2026-03-15
+
+### Fixed
+- Handle single-string `aud` claim in `JwtSvid` constructor per RFC 7519 §4.1.3 when there is only one audience (Fixes #404).
+- Add atomic X.509 context snapshot getter in workload API for consistent reads during updates. (Fixes #399)
+
+### Deprecated
+- `X509Source.svid` and `X509Source.bundles` are deprecated; use the new snapshot getter API instead.
+
+### Development
+- Move shared dev dependencies to workspace root; replace per-package Makefiles with shared runner.
+
+
 ## [0.2.5] – 2026-03-07
 
 ### Fixed
