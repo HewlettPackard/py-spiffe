@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] – 2026-03-15
+
+### Development
+- Enable pyright strict mode; minor typing and code cleanup in `spiffetls.util`.
+- Move shared dev dependencies to workspace root; replace per-package Makefiles with shared runner.
+
+
 ## [0.3.0] – 2026-02-24
 
 ### Added

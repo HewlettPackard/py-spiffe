@@ -1,6 +1,6 @@
 [project]
 name = "spiffe-tls"
-version = "0.3.0"
+version = "0.3.1"
 description = "TLS Support using SPIFFE"
 readme = "README.md"
 license = "Apache-2.0"
