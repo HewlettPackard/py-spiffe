@@ -983,7 +983,7 @@ wheels = [
 
 [[package]]
 name = "spiffe"
-version = "0.2.5"
+version = "0.2.6"
 source = { editable = "spiffe" }
 dependencies = [
     { name = "cryptography" },

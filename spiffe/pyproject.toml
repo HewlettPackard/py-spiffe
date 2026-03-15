@@ -1,6 +1,6 @@
 [project]
 name = "spiffe"
-version = "0.2.5"
+version = "0.2.6"
 description = "Python library for SPIFFE support"
 readme = "README.md"
 license = "Apache-2.0"
