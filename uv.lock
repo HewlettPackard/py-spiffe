@@ -1028,7 +1028,7 @@ dev = [
 
 [[package]]
 name = "spiffe-tls"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "spiffe-tls" }
 dependencies = [
     { name = "idna" },
