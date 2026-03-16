@@ -56,7 +56,7 @@ rsa_private_key = rsa.generate_private_key(
     serialization.NoEncryption(),
 )
 
-ec_private_key = ec.generate_private_key(ec.SECP256R1(), default_backend()).private_bytes(
+ec_private_key = ec.generate_private_key(ec.SECP384R1(), default_backend()).private_bytes(
     serialization.Encoding.PEM,
     serialization.PrivateFormat.PKCS8,
     serialization.NoEncryption(),
@@ -296,7 +296,7 @@ def test_parse_and_validate_valid_token_RSA() -> None:
 
 
 def test_parse_and_validate_valid_token_EC() -> None:
-    ec_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
+    ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
     jwt_bundle = JwtBundle(TEST_TRUST_DOMAIN, {'kid_ec': ec_key.public_key()})
 
     ec_key_pem, _ = extract_key_pair_pems(ec_key)
