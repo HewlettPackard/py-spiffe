@@ -171,6 +171,10 @@ class X509Svid(object):
 
         private_key = parse_der_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
+        if not spiffe_id.path:
+            raise InvalidLeafCertificateError(
+                'Leaf certificate SPIFFE ID must have a non-root path'
+            )
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -207,6 +211,10 @@ class X509Svid(object):
 
         private_key = parse_pem_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
+        if not spiffe_id.path:
+            raise InvalidLeafCertificateError(
+                'Leaf certificate SPIFFE ID must have a non-root path'
+            )
 
         return X509Svid(spiffe_id, chain, private_key)
 
