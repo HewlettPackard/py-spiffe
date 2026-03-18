@@ -159,9 +159,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the private_key_bytes.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
@@ -169,8 +170,9 @@ class X509Svid(object):
         chain = parse_der_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = parse_der_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
+        _validate_leaf_spiffe_id(spiffe_id)
+        private_key = parse_der_private_key(private_key_bytes)
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -195,9 +197,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the private_key_bytes.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
@@ -205,8 +208,9 @@ class X509Svid(object):
         chain = parse_pem_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = parse_pem_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
+        _validate_leaf_spiffe_id(spiffe_id)
+        private_key = parse_pem_private_key(private_key_bytes)
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -238,9 +242,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the bytes read from private_key_path.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
@@ -305,6 +310,13 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 
     for cert in cert_chain[1:]:
         _validate_intermediate_certificate(cert)
+
+
+def _validate_leaf_spiffe_id(spiffe_id: SpiffeId) -> None:
+    if not spiffe_id.path:
+        raise InvalidLeafCertificateError(
+            'Leaf certificate SPIFFE ID must not be a trust domain root (a path component is required)'
+        )
 
 
 def _validate_leaf_certificate(leaf: Certificate) -> None:
