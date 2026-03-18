@@ -680,6 +680,48 @@ def test_extract_spiffe_id_allows_dns_sans_with_single_spiffe_uri_san() -> None:
     assert _extract_spiffe_id(cert) == SpiffeId("spiffe://example.org/service")
 
 
+def test_parse_rejects_root_path_spiffe_id_in_leaf() -> None:
+    """
+    Leaf SPIFFE ID must not be the trust domain root (empty path).
+    """
+    cert, key = _make_cert(
+        uri_sans=["spiffe://example.org"],
+        dns_sans=[],
+    )
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        X509Svid.parse(cert_pem, key_pem)
+
+    assert 'Leaf certificate SPIFFE ID must have a non-root path' in str(exc.value)
+
+
+def test_parse_raw_rejects_root_path_spiffe_id_in_leaf() -> None:
+    """
+    DER parse path must enforce the same non-root SPIFFE ID rule for leaf certificates.
+    """
+    cert, key = _make_cert(
+        uri_sans=["spiffe://example.org"],
+        dns_sans=[],
+    )
+    cert_der = cert.public_bytes(serialization.Encoding.DER)
+    key_der = key.private_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        X509Svid.parse_raw(cert_der, key_der)
+
+    assert 'Leaf certificate SPIFFE ID must have a non-root path' in str(exc.value)
+
+
 def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe() -> None:
     """
     End-to-end parse path should enforce the same URI SAN cardinality rule.
