@@ -22,7 +22,7 @@ import threading
 from json import JSONDecodeError
 from jwt.api_jwk import PyJWKSet
 from jwt.exceptions import InvalidKeyError, PyJWKSetError
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, get_args
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
 from spiffe.spiffe_id.spiffe_id import TrustDomain
@@ -36,6 +36,8 @@ _PUBLIC_KEY_TYPES = Union[
     ed25519.Ed25519PublicKey,
     ed448.Ed448PublicKey,
 ]
+
+_PUBLIC_KEY_TYPE_VALUES = get_args(_PUBLIC_KEY_TYPES)
 
 
 class JwtBundle(object):
@@ -121,10 +123,26 @@ class JwtBundle(object):
 
             jwt_authorities = {}
             for jwk in jwks.keys:
+                # SPIFFE bundles may contain JWK entries for multiple SVID types.
+                # For JWT-SVID validation we must only extract keys explicitly
+                # marked as `use == "jwt-svid"`, with a non-empty `kid`.
+                jwk_use = None
+                jwk_data = getattr(jwk, '_jwk_data', None)
+                if isinstance(jwk_data, dict):
+                    jwk_use = jwk_data.get('use')
+                else:
+                    jwk_use = getattr(jwk, 'use', None)
+                if jwk_use != 'jwt-svid':
+                    continue
+
                 if not jwk.key_id:
                     raise ParseJWTBundleError(
                         'Error adding authority from JWKS: "keyID" cannot be empty'
                     )
+
+                # Only accept public key types we know how to handle.
+                if not isinstance(jwk.key, _PUBLIC_KEY_TYPE_VALUES):
+                    continue
 
                 jwt_authorities[jwk.key_id] = jwk.key
 

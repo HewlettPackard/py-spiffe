@@ -14,6 +14,7 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import json
 import pytest
 from typing import Dict
 from pytest_mock import MockerFixture
@@ -167,4 +168,47 @@ def test_parse_jwks_with_null_keys_field() -> None:
     bundle = JwtBundle.parse(trust_domain, jwks_null_keys_bytes)
 
     assert bundle
+    assert len(bundle.jwt_authorities) == 0
+
+
+def test_parse_ignores_x509_svid_jwks_entries() -> None:
+    jwks_obj = json.loads(JWKS_1_EC_KEY.decode('utf-8'))
+    jwks_obj['keys'][0]['use'] = 'x509-svid'
+    jwks_bytes = json.dumps(jwks_obj).encode('utf-8')
+
+    bundle = JwtBundle.parse(trust_domain, jwks_bytes)
+    assert len(bundle.jwt_authorities) == 0
+
+
+def test_parse_ignores_jwks_entries_missing_use() -> None:
+    jwks_obj = json.loads(JWKS_1_EC_KEY.decode('utf-8'))
+    jwks_obj['keys'][0].pop('use', None)
+    jwks_bytes = json.dumps(jwks_obj).encode('utf-8')
+
+    bundle = JwtBundle.parse(trust_domain, jwks_bytes)
+    assert len(bundle.jwt_authorities) == 0
+
+
+def test_parse_jwks_mixed_entries_extracts_only_jwt_svid_keys() -> None:
+    jwks_obj = json.loads(JWKS_2_EC_1_RSA_KEYS.decode('utf-8'))
+    keys = jwks_obj['keys']
+
+    jwt_svid_kid = keys[0]['kid']
+    keys[0]['use'] = 'jwt-svid'
+    keys[1]['use'] = 'x509-svid'
+    keys[2].pop('use', None)
+
+    jwks_bytes = json.dumps(jwks_obj).encode('utf-8')
+    bundle = JwtBundle.parse(trust_domain, jwks_bytes)
+
+    assert set(bundle.jwt_authorities.keys()) == {jwt_svid_kid}
+
+
+def test_parse_does_not_fail_on_non_jwt_svid_entry_missing_kid() -> None:
+    jwks_obj = json.loads(JWKS_MISSING_KEY_ID.decode('utf-8'))
+    for key in jwks_obj['keys']:
+        key['use'] = 'x509-svid'
+    jwks_bytes = json.dumps(jwks_obj).encode('utf-8')
+
+    bundle = JwtBundle.parse(trust_domain, jwks_bytes)
     assert len(bundle.jwt_authorities) == 0
