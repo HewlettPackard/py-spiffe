@@ -23,6 +23,12 @@ This module manages SpiffeId and TrustDomain objects.
 """
 
 SCHEME_PREFIX = "spiffe://"
+_SCHEME_LEN = len(SCHEME_PREFIX)
+
+
+def _has_spiffe_scheme(s: str) -> bool:
+    """True if ``s`` begins with the SPIFFE URI scheme (case-insensitive)."""
+    return len(s) >= _SCHEME_LEN and s[:_SCHEME_LEN].lower() == SCHEME_PREFIX
 
 
 class SpiffeIdError(PySpiffeError):
@@ -65,8 +71,9 @@ class TrustDomain:
     """
     Represents the name of a SPIFFE Trust Domain.
 
-    The TrustDomain can be initialized with a name or a full SPIFFE ID, from
-    which the trust domain part is extracted.
+    Trust domain names are stored in lowercase canonical form; input may use
+    mixed case in the domain labels. The TrustDomain can be initialized with a
+    name or a full SPIFFE ID, from which the trust domain part is extracted.
 
     Examples:
         >>> td = TrustDomain("example.org")
@@ -107,8 +114,9 @@ class SpiffeId:
     Represents a SPIFFE Identifier according to the SPIFFE standard.
 
     A SPIFFE ID is composed of a scheme ('spiffe'), a trust domain, and a path.
-    It uniquely identifies a workload within a trust domain. The path is
-    optional and is used to identify specific entities within the trust domain.
+    The scheme and trust domain are matched case-insensitively on input; the
+    trust domain is normalized to lowercase. The path is case-sensitive and
+    preserved exactly as provided.
 
     Examples:
         Creating a SpiffeId with a path:
@@ -126,10 +134,10 @@ class SpiffeId:
         if not id:
             raise SpiffeIdError("cannot be empty")
 
-        if not id.startswith(SCHEME_PREFIX):
+        if not _has_spiffe_scheme(id):
             raise SpiffeIdError("does not start with 'spiffe://'", id)
 
-        rest = id[len(SCHEME_PREFIX) :]
+        rest = id[_SCHEME_LEN:]
         path_idx = rest.find("/")
         if path_idx == -1:
             # No path found; entire `rest` is the trust domain
@@ -193,14 +201,21 @@ class SpiffeId:
 
 
 def extract_and_validate_trust_domain(id_or_name: str) -> str:
-    if ":/" in id_or_name:
-        if not id_or_name.startswith(SCHEME_PREFIX):
+    """Return the trust domain in lowercase canonical form.
+
+    Accepts a bare hostname-style name or a ``spiffe://`` URI (scheme
+    case-insensitive); SPIFFE ID form must use ``://`` after the scheme.
+    """
+    if "://" in id_or_name:
+        if not _has_spiffe_scheme(id_or_name):
             raise TrustDomainError("ID form does not start with 'spiffe://'", id_or_name)
-        trust_domain = id_or_name[len(SCHEME_PREFIX) :].split("/", 1)[0]
+        trust_domain = id_or_name[_SCHEME_LEN:].split("/", 1)[0]
     else:
         trust_domain = id_or_name
 
-    # Validate trust domain
+    trust_domain = trust_domain.lower()
+
+    # Validate trust domain (after lowercase canonicalization)
     if not trust_domain:
         raise TrustDomainError("cannot be empty")
 
@@ -211,7 +226,7 @@ def extract_and_validate_trust_domain(id_or_name: str) -> str:
         raise TrustDomainError("cannot contain consecutive dots", id_or_name)
 
     if not re.match(
-        r'^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*$',
+        r'^[a-z0-9]([a-z0-9\-_]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-_]*[a-z0-9])?)*$',
         trust_domain,
     ):
         raise TrustDomainError("contains disallowed characters", id_or_name)
