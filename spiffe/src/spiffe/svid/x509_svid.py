@@ -159,9 +159,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the private_key_bytes.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
@@ -199,9 +200,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the private_key_bytes.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """
@@ -246,9 +248,10 @@ class X509Svid(object):
             ParsePrivateKeyError: In case the private key cannot be parsed from the bytes read from private_key_path.
             InvalidLeafCertificateError: In case the leaf certificate does not have a SPIFFE ID in the URI SAN,
                                          in case the leaf certificate is CA,
+                                         in case the leaf certificate has a SPIFFE ID with a root path,
                                          in case the leaf certificate has 'keyCertSign' as key usage,
                                          in case the leaf certificate does not have 'digitalSignature' as key usage,
-                                         in case the leaf certificate does not have 'cRLSign' as key usage.
+                                         in case the leaf certificate has 'cRLSign' as key usage.
             InvalidIntermediateCertificateError: In case one of the intermediate certificates is not CA,
                                                  in case one of the intermediate certificates does not have 'keyCertSign' as key usage.
         """

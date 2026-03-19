@@ -698,7 +698,10 @@ def test_parse_rejects_root_path_spiffe_id_in_leaf() -> None:
     with pytest.raises(InvalidLeafCertificateError) as exc:
         X509Svid.parse(cert_pem, key_pem)
 
-    assert 'Leaf certificate SPIFFE ID must have a non-root path' in str(exc.value)
+    assert (
+        str(exc.value)
+        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must have a non-root path'
+    )
 
 
 def test_parse_raw_rejects_root_path_spiffe_id_in_leaf() -> None:
@@ -719,7 +722,10 @@ def test_parse_raw_rejects_root_path_spiffe_id_in_leaf() -> None:
     with pytest.raises(InvalidLeafCertificateError) as exc:
         X509Svid.parse_raw(cert_der, key_der)
 
-    assert 'Leaf certificate SPIFFE ID must have a non-root path' in str(exc.value)
+    assert (
+        str(exc.value)
+        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must have a non-root path'
+    )
 
 
 def test_parse_rejects_multiple_uri_sans_even_if_one_is_spiffe() -> None:
