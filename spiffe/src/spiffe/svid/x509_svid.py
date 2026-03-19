@@ -170,12 +170,9 @@ class X509Svid(object):
         chain = parse_der_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = parse_der_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
-        if not spiffe_id.path:
-            raise InvalidLeafCertificateError(
-                'Leaf certificate SPIFFE ID must have a non-root path'
-            )
+        _validate_leaf_spiffe_id(spiffe_id)
+        private_key = parse_der_private_key(private_key_bytes)
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -211,12 +208,9 @@ class X509Svid(object):
         chain = parse_pem_certificates(certs_chain_bytes)
         _validate_chain(chain)
 
-        private_key = parse_pem_private_key(private_key_bytes)
         spiffe_id = _extract_spiffe_id(chain[0])
-        if not spiffe_id.path:
-            raise InvalidLeafCertificateError(
-                'Leaf certificate SPIFFE ID must have a non-root path'
-            )
+        _validate_leaf_spiffe_id(spiffe_id)
+        private_key = parse_pem_private_key(private_key_bytes)
 
         return X509Svid(spiffe_id, chain, private_key)
 
@@ -316,6 +310,13 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 
     for cert in cert_chain[1:]:
         _validate_intermediate_certificate(cert)
+
+
+def _validate_leaf_spiffe_id(spiffe_id: SpiffeId) -> None:
+    if not spiffe_id.path:
+        raise InvalidLeafCertificateError(
+            'Leaf certificate SPIFFE ID must have a non-root path'
+        )
 
 
 def _validate_leaf_certificate(leaf: Certificate) -> None:
