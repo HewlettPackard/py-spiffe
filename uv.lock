@@ -1049,7 +1049,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "idna", specifier = ">=3,<4" },
-    { name = "pyopenssl", specifier = ">=24,<26" },
+    { name = "pyopenssl", specifier = ">=24,<27" },
     { name = "spiffe", editable = "spiffe" },
 ]
 

@@ -113,3 +113,46 @@ def test_spiffe_id_hash_equality() -> None:
 def test_spiffe_id_string_representation() -> None:
     id = SpiffeId("spiffe://example.org/path")
     assert str(id) == "spiffe://example.org/path"
+
+
+@pytest.mark.parametrize(
+    "id_input, expected_str, expected_td",
+    [
+        (
+            "SPIFFE://example.org/service",
+            "spiffe://example.org/service",
+            "example.org",
+        ),
+        (
+            "spiffe://EXAMPLE.ORG/service",
+            "spiffe://example.org/service",
+            "example.org",
+        ),
+        (
+            "SpIfFe://Example.Org/service",
+            "spiffe://example.org/service",
+            "example.org",
+        ),
+    ],
+)
+def test_spiffe_id_scheme_and_trust_domain_case_insensitive(
+    id_input: str, expected_str: str, expected_td: str
+) -> None:
+    sid = SpiffeId(id_input)
+    assert str(sid) == expected_str
+    assert sid.trust_domain.name == expected_td
+
+
+def test_spiffe_id_path_case_preserved() -> None:
+    sid = SpiffeId("SPIFFE://example.org/Service/API")
+    assert sid.path == "/Service/API"
+    assert str(sid) == "spiffe://example.org/Service/API"
+
+
+def test_spiffe_id_equivalent_inputs_equal() -> None:
+    assert SpiffeId("spiffe://example.org/p") == SpiffeId("SPIFFE://EXAMPLE.ORG/p")
+
+
+def test_spiffe_id_invalid_trust_domain_chars_after_normalization() -> None:
+    with pytest.raises(SpiffeIdError):
+        SpiffeId("SPIFFE://Example$.Org/path")
