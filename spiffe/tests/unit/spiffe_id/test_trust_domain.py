@@ -23,6 +23,7 @@ from spiffe.spiffe_id.spiffe_id import TrustDomain, TrustDomainError
     "input,expected",
     [
         ("example.org", "example.org"),
+        ("trust_domain_1.example.org", "trust_domain_1.example.org"),
         ("spiffe://example.org/service", "example.org"),
         ("spiffe://example.org", "example.org"),
         ("domain.test", "domain.test"),
@@ -114,6 +115,7 @@ def test_trust_domain_canonical_lowercase_regression() -> None:
     a = TrustDomain("ExAmPlE.oRg")
     b = TrustDomain("example.org")
     assert str(a) == "example.org"
+    assert a != "EXAMPLE.ORG"
     assert a == b
     assert a == "example.org"
     assert hash(a) == hash(b)

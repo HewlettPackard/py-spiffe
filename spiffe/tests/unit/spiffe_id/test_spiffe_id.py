@@ -151,6 +151,7 @@ def test_spiffe_id_path_case_preserved() -> None:
 
 def test_spiffe_id_equivalent_inputs_equal() -> None:
     assert SpiffeId("spiffe://example.org/p") == SpiffeId("SPIFFE://EXAMPLE.ORG/p")
+    assert SpiffeId("spiffe://example.org/Service") != SpiffeId("spiffe://example.org/service")
 
 
 def test_spiffe_id_invalid_trust_domain_chars_after_normalization() -> None:

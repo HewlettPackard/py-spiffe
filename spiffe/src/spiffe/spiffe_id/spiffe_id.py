@@ -226,7 +226,7 @@ def extract_and_validate_trust_domain(id_or_name: str) -> str:
         raise TrustDomainError("cannot contain consecutive dots", id_or_name)
 
     if not re.match(
-        r'^[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*$',
+        r'^[a-z0-9]([a-z0-9\-_]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-_]*[a-z0-9])?)*$',
         trust_domain,
     ):
         raise TrustDomainError("contains disallowed characters", id_or_name)
