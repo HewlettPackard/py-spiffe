@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 ### Changed
-- In `X509Svid.parse()` and `X509Svid.parse_raw()`, leaf certificate SPIFFE ID validation now occurs before private key parsing; when both are invalid, `InvalidLeafCertificateError` now takes precedence over `ParsePrivateKeyError`.
+- Tightened `X509Svid` leaf SPIFFE ID validation to reject trust-domain root IDs in leaf certificates (a non-empty path is required).
+- In `X509Svid.parse()`, `X509Svid.parse_raw()`, and `X509Svid.load()`, leaf certificate SPIFFE ID validation now occurs before private key parsing; when both the leaf SPIFFE ID and private key are invalid, `InvalidLeafCertificateError` now takes precedence over `ParsePrivateKeyError`.
 
 ## [0.2.6] – 2026-03-15
 
