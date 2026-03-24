@@ -700,7 +700,7 @@ def test_parse_rejects_root_path_spiffe_id_in_leaf() -> None:
 
     assert (
         str(exc.value)
-        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must have a non-root path'
+        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must not be a trust domain root (a path component is required)'
     )
 
 
@@ -724,7 +724,37 @@ def test_parse_raw_rejects_root_path_spiffe_id_in_leaf() -> None:
 
     assert (
         str(exc.value)
-        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must have a non-root path'
+        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must not be a trust domain root (a path component is required)'
+    )
+
+
+def test_load_rejects_root_path_spiffe_id_in_leaf(tmpdir: str) -> None:
+    """
+    Load path should reject leaf SPIFFE IDs that point to the trust domain root.
+    """
+    cert, key = _make_cert(
+        uri_sans=["spiffe://example.org"],
+        dns_sans=[],
+    )
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    chain_file = tmpdir.join('chain.pem')
+    key_file = tmpdir.join('key.pem')
+    with open(chain_file, "wb") as f:
+        f.write(cert_pem)
+    with open(key_file, "wb") as f:
+        f.write(key_pem)
+
+    with pytest.raises(InvalidLeafCertificateError) as exc:
+        X509Svid.load(chain_file, key_file, serialization.Encoding.PEM)
+
+    assert (
+        str(exc.value)
+        == 'Invalid leaf certificate: Leaf certificate SPIFFE ID must not be a trust domain root (a path component is required)'
     )
 
 

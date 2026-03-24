@@ -315,7 +315,7 @@ def _validate_chain(cert_chain: List[Certificate]) -> None:
 def _validate_leaf_spiffe_id(spiffe_id: SpiffeId) -> None:
     if not spiffe_id.path:
         raise InvalidLeafCertificateError(
-            'Leaf certificate SPIFFE ID must have a non-root path'
+            'Leaf certificate SPIFFE ID must not be a trust domain root (a path component is required)'
         )
 
 
