@@ -7,6 +7,7 @@
 - In `X509Svid.parse()`, `X509Svid.parse_raw()`, and `X509Svid.load()`, leaf certificate SPIFFE ID validation now occurs before private key parsing; when both the leaf SPIFFE ID and private key are invalid, `InvalidLeafCertificateError` now takes precedence over `ParsePrivateKeyError`.
 - Accept mixed-case SPIFFE URI scheme and trust domain input during `SpiffeId`/`TrustDomain` parsing, while canonicalizing trust domains to lowercase output.
 - Allow underscore (`_`) in trust-domain labels (for example `trust_domain_1.example.org`) to align trust-domain validation with SPIFFE ID spec section 2.1.
+- Relax trust-domain validation to follow SPIFFE trust-domain character-set rules (`[a-z0-9._-]`), including non-DNS-shaped names such as `example..org`, `.example.org`, `example.org.`, `-example.org`, and `example-.org`.
 
 ## [0.2.6] – 2026-03-15
 

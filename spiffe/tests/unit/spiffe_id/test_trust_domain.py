@@ -24,8 +24,21 @@ from spiffe.spiffe_id.spiffe_id import TrustDomain, TrustDomainError
     [
         ("example.org", "example.org"),
         ("trust_domain_1.example.org", "trust_domain_1.example.org"),
+        ("_dmarc.example.org", "_dmarc.example.org"),
+        ("example_.org", "example_.org"),
+        ("1.2.3.4", "1.2.3.4"),
+        ("example..org", "example..org"),
+        (".example.org", ".example.org"),
+        ("example.org.", "example.org."),
+        ("-example.org", "-example.org"),
+        ("example-.org", "example-.org"),
         ("spiffe://example.org/service", "example.org"),
         ("spiffe://example.org", "example.org"),
+        ("spiffe://example..org/path", "example..org"),
+        ("spiffe://.example.org/path", ".example.org"),
+        ("spiffe://example.org./path", "example.org."),
+        ("spiffe://-example.org/path", "-example.org"),
+        ("spiffe://example-.org/path", "example-.org"),
         ("domain.test", "domain.test"),
         ("a.b.c.d.e.f", "a.b.c.d.e.f"),
         ("Example.Org", "example.org"),
@@ -48,24 +61,28 @@ def test_valid_trust_domain(input: str, expected: str) -> None:
             "Invalid trust domain 'http://example.org': ID form does not start with 'spiffe://'",
         ),
         (
-            "spiffe://example..org",
-            "Invalid trust domain 'spiffe://example..org': cannot contain consecutive dots",
-        ),
-        (
-            "spiffe://example-.org",
-            "Invalid trust domain 'spiffe://example-.org': contains disallowed characters",
-        ),
-        (
-            "spiffe://-example.org",
-            "Invalid trust domain 'spiffe://-example.org': cannot start or end with '-' or '.'",
-        ),
-        (
             "spiffe://example.org?query",
             "Invalid trust domain 'spiffe://example.org?query': contains disallowed characters",
         ),
         (
             "spiffe://example.org#fragment",
             "Invalid trust domain 'spiffe://example.org#fragment': contains disallowed characters",
+        ),
+        (
+            "user@example.org",
+            "Invalid trust domain 'user@example.org': contains disallowed characters",
+        ),
+        (
+            "example.org:8080",
+            "Invalid trust domain 'example.org:8080': contains disallowed characters",
+        ),
+        (
+            "[::1]",
+            "Invalid trust domain '[::1]': contains disallowed characters",
+        ),
+        (
+            "example%2eorg",
+            "Invalid trust domain 'example%2eorg': contains disallowed characters",
         ),
         (
             "example$org",
@@ -124,6 +141,6 @@ def test_trust_domain_canonical_lowercase_regression() -> None:
 def test_trust_domain_mixed_case_invalid_still_rejected() -> None:
     """Normalization does not fix structural trust-domain errors."""
     with pytest.raises(TrustDomainError):
-        TrustDomain("Example..Org")
+        TrustDomain("Example$.Org")
     with pytest.raises(TrustDomainError):
-        TrustDomain("SPIFFE://Example..Org/path")
+        TrustDomain("SPIFFE://Example$.Org/path")
