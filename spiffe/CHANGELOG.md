@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Raised the minimum `grpcio` requirement to match the version implied by the checked-in `workload_pb2_grpc.py` generated code, so dependency pins cannot resolve to a runtime that fails on import.
+
 ### Changed
 - Tightened `X509Svid` leaf SPIFFE ID validation to reject trust-domain root IDs in leaf certificates (a non-empty path is required).
 - In `X509Svid.parse()`, `X509Svid.parse_raw()`, and `X509Svid.load()`, leaf certificate SPIFFE ID validation now occurs before private key parsing; when both the leaf SPIFFE ID and private key are invalid, `InvalidLeafCertificateError` now takes precedence over `ParsePrivateKeyError`.
