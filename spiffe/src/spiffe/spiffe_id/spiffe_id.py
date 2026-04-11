@@ -219,16 +219,8 @@ def extract_and_validate_trust_domain(id_or_name: str) -> str:
     if not trust_domain:
         raise TrustDomainError("cannot be empty")
 
-    if trust_domain[0] in ['-', '.'] or trust_domain[-1] in ['-', '.']:
-        raise TrustDomainError("cannot start or end with '-' or '.'", id_or_name)
-
-    if '..' in trust_domain:
-        raise TrustDomainError("cannot contain consecutive dots", id_or_name)
-
-    if not re.match(
-        r'^[a-z0-9]([a-z0-9\-_]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-_]*[a-z0-9])?)*$',
-        trust_domain,
-    ):
+    # Validate against the SPIFFE trust-domain character set.
+    if not re.match(r"^[a-z0-9._-]+$", trust_domain):
         raise TrustDomainError("contains disallowed characters", id_or_name)
 
     return trust_domain

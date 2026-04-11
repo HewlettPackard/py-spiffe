@@ -26,6 +26,18 @@ from spiffe.spiffe_id.spiffe_id import SpiffeId, SpiffeIdError
         "spiffe://example.org/path/to/service",
         "spiffe://example.org/another/path",
         "spiffe://domain.test/a/b/c/d/e/f/g",
+        "spiffe://1.2.3.4/service",
+        "spiffe://a",
+        "spiffe://a_b.example/foo",
+        "spiffe://example.org/foo-bar",
+        "spiffe://example.org/foo_bar",
+        "spiffe://example.org/foo.bar",
+        "spiffe://example.com/9eebccd2-12bf-40a6-b262-65fe0487d453",
+        "spiffe://example..org/path",
+        "spiffe://.example.org/path",
+        "spiffe://example.org./path",
+        "spiffe://-example.org/path",
+        "spiffe://example-.org/path",
     ],
 )
 def test_spiffe_id_valid(id_str: str) -> None:
@@ -62,12 +74,76 @@ def test_spiffe_id_valid(id_str: str) -> None:
             "Invalid SPIFFE ID 'spiffe://example.org/service/': path cannot contain empty segments",
         ),
         (
-            "spiffe://example..org/path",
-            "Invalid SPIFFE ID 'spiffe://example..org/path': Invalid trust domain 'example..org': cannot contain consecutive dots",
+            "spiffe://user@example.org/service",
+            "Invalid SPIFFE ID 'spiffe://user@example.org/service': Invalid trust domain 'user@example.org': contains disallowed characters",
         ),
         (
-            "spiffe://example-.org",
-            "Invalid SPIFFE ID 'spiffe://example-.org': Invalid trust domain 'example-.org': contains disallowed characters",
+            "spiffe://user:pass@example.org/service",
+            "Invalid SPIFFE ID 'spiffe://user:pass@example.org/service': Invalid trust domain 'user:pass@example.org': contains disallowed characters",
+        ),
+        (
+            "spiffe://example.org:8080/service",
+            "Invalid SPIFFE ID 'spiffe://example.org:8080/service': Invalid trust domain 'example.org:8080': contains disallowed characters",
+        ),
+        (
+            "spiffe://1.2.3.4:8443/service",
+            "Invalid SPIFFE ID 'spiffe://1.2.3.4:8443/service': Invalid trust domain '1.2.3.4:8443': contains disallowed characters",
+        ),
+        (
+            "spiffe://[::1]/service",
+            "Invalid SPIFFE ID 'spiffe://[::1]/service': Invalid trust domain '[::1]': contains disallowed characters",
+        ),
+        (
+            "spiffe://[2001:db8::1]/service",
+            "Invalid SPIFFE ID 'spiffe://[2001:db8::1]/service': Invalid trust domain '[2001:db8::1]': contains disallowed characters",
+        ),
+        (
+            "spiffe://example%2eorg/service",
+            "Invalid SPIFFE ID 'spiffe://example%2eorg/service': Invalid trust domain 'example%2eorg': contains disallowed characters",
+        ),
+        (
+            "spiffe://example.org/foo%2Fbar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo%2Fbar': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/%61pi",
+            "Invalid SPIFFE ID 'spiffe://example.org/%61pi': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/service?x=1",
+            "Invalid SPIFFE ID 'spiffe://example.org/service?x=1': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/service#frag",
+            "Invalid SPIFFE ID 'spiffe://example.org/service#frag': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/foo/./bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo/./bar': path segments '.' and '..' are not allowed",
+        ),
+        (
+            "spiffe://example.org/foo/../bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo/../bar': path segments '.' and '..' are not allowed",
+        ),
+        (
+            "spiffe://example.org/foo//bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo//bar': path cannot contain empty segments",
+        ),
+        (
+            "spiffe://example.org/foo;bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo;bar': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/foo:bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo:bar': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/foo@bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo@bar': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org/foo bar",
+            "Invalid SPIFFE ID 'spiffe://example.org/foo bar': invalid character in path segment",
         ),
     ],
 )
@@ -94,7 +170,7 @@ def test_spiffe_id_equality() -> None:
     id1 = SpiffeId("spiffe://example.org/path")
     id2 = SpiffeId("spiffe://example.org/path")
     assert id1 == id2
-    # assert id1 == "spiffe://example.org/path"
+    assert id1 == "spiffe://example.org/path"
 
 
 def test_spiffe_id_inequality() -> None:
@@ -151,6 +227,8 @@ def test_spiffe_id_path_case_preserved() -> None:
 
 def test_spiffe_id_equivalent_inputs_equal() -> None:
     assert SpiffeId("spiffe://example.org/p") == SpiffeId("SPIFFE://EXAMPLE.ORG/p")
+    assert SpiffeId("SPIFFE://EXAMPLE.ORG/p") == "spiffe://example.org/p"
+    assert SpiffeId("SPIFFE://EXAMPLE.ORG/p") != "SPIFFE://EXAMPLE.ORG/p"
     assert SpiffeId("spiffe://example.org/Service") != SpiffeId("spiffe://example.org/service")
 
 
