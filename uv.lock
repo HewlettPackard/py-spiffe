@@ -1011,7 +1011,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=45,<47" },
-    { name = "grpcio", specifier = ">=1.62,<2" },
+    { name = "grpcio", specifier = ">=1.78.0,<2" },
     { name = "pem", specifier = ">=23,<24" },
     { name = "protobuf", specifier = ">=6.31.1,<8" },
     { name = "pyasn1", specifier = ">=0.6.0,<0.7.0" },
@@ -1022,7 +1022,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", specifier = ">=7,<8" },
-    { name = "grpcio-tools", specifier = ">=1.76.0,<2" },
+    { name = "grpcio-tools", specifier = ">=1.78.0,<2" },
     { name = "mypy-protobuf", specifier = ">=5,<6" },
     { name = "testutils", editable = "testutils" },
     { name = "types-grpcio", specifier = ">=1.0,<2" },

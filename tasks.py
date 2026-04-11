@@ -149,7 +149,9 @@ def lint(args: argparse.Namespace) -> None:
         )
         run_uv_package(package, "ruff", "check", *package.lint_targets)
         run_uv_package(package, "--all-groups", "mypy")
-        run_uv_package(package, "--all-groups", "pyright")
+        # Pass src/tests explicitly so pyright does not type-check setuptools output
+        # under build/ when no paths are given (it would otherwise assume the package root).
+        run_uv_package(package, "--all-groups", "pyright", *package.lint_targets)
         if package.verifytypes_module is not None:
             run_uv_package(
                 package,

@@ -7,7 +7,7 @@ license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [{ name = "Max Lambrecht", email = "maxlambrecht@gmail.com" }]
 dependencies = [
-  "grpcio>=1.62,<2",
+  "grpcio>=1.78.0,<2",
   "cryptography>=45,<47",
   "pyjwt[crypto]>=2,<2.13",
   "pyasn1>=0.6.0,<0.7.0",
@@ -21,7 +21,7 @@ Repository = "https://github.com/HewlettPackard/py-spiffe"
 
 [dependency-groups]
 dev = [
-  "grpcio-tools>=1.76.0,<2",
+  "grpcio-tools>=1.78.0,<2",
   "mypy-protobuf>=5,<6",
   "coverage>=7,<8",
   "testutils",
@@ -59,7 +59,8 @@ module = ["spiffe._proto.workload_pb2_grpc"]
 ignore_errors = true
 
 [tool.pyright]
-exclude = ["src/spiffe/_proto"]
+# setuptools / local installs copy sources under build/; do not type-check those trees
+exclude = ["src/spiffe/_proto", "build", "dist"]
 ignore = ["src/spiffe/_proto/workload_pb2_grpc.py"]
 typeCheckingMode = "standard"
 
