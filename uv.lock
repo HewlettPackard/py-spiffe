@@ -1060,7 +1060,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptography", specifier = ">=45,<47" },
+    { name = "cryptography", specifier = ">=46,<47" },
     { name = "grpcio", specifier = ">=1.78.0,<2" },
     { name = "pem", specifier = ">=23,<24" },
     { name = "protobuf", specifier = ">=6.31.1,<8" },
@@ -1099,7 +1099,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "idna", specifier = ">=3,<4" },
-    { name = "pyopenssl", specifier = ">=24,<27" },
+    { name = "pyopenssl", specifier = ">=26,<27" },
     { name = "spiffe", editable = "spiffe" },
 ]
 

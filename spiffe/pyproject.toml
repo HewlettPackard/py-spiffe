@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 authors = [{ name = "Max Lambrecht", email = "maxlambrecht@gmail.com" }]
 dependencies = [
   "grpcio>=1.78.0,<2",
-  "cryptography>=45,<47",
+  "cryptography>=46,<47",
   "pyjwt[crypto]>=2,<2.13",
   "pyasn1>=0.6.0,<0.7.0",
   "pyasn1-modules>=0.4.0,<0.5.0",
@@ -65,9 +65,5 @@ ignore = ["src/spiffe/_proto/workload_pb2_grpc.py"]
 typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--doctest-modules",
-]
-testpaths = [
-    "tests",
-]
+addopts = ["--doctest-modules"]
+testpaths = ["tests"]
