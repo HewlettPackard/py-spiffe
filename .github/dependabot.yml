@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/spiffe"
     schedule:
       interval: "weekly"
@@ -32,7 +32,7 @@ updates:
           - "pytest"
           - "pytest-mock"
 
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/spiffe-tls"
     schedule:
       interval: "weekly"
