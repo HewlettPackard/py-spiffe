@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.7] – 2026-04-18
 
 ### Fixed
 - Raised the minimum `grpcio` requirement to match the version implied by the checked-in `workload_pb2_grpc.py` generated code, so dependency pins cannot resolve to a runtime that fails on import.
