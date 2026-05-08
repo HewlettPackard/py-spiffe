@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.8] – 2026-05-08
+
+### Changed
+- Removed the upper bound on the `cryptography` dependency while keeping the `>=46` floor, allowing compatible future `cryptography` releases to resolve without requiring a package update.
+
 ## [0.2.7] – 2026-04-18
 
 ### Fixed
