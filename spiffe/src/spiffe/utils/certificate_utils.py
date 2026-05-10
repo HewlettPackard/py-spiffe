@@ -221,9 +221,20 @@ def write_private_key_to_file(
     try:
         private_key_bytes = _extract_private_key_bytes(encoding, private_key)
 
-        with open(private_key_path, 'wb') as private_key_file:
-            os.chmod(private_key_file.name, _PRIVATE_KEY_FILE_MODE)
-            private_key_file.write(private_key_bytes)
+        fd = -1
+        try:
+            fd = os.open(
+                private_key_path,
+                os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+                _PRIVATE_KEY_FILE_MODE,
+            )
+            os.fchmod(fd, _PRIVATE_KEY_FILE_MODE)
+            with os.fdopen(fd, 'wb') as private_key_file:
+                fd = -1
+                private_key_file.write(private_key_bytes)
+        finally:
+            if fd != -1:
+                os.close(fd)
     except Exception as err:
         raise StorePrivateKeyError(str(err)) from err
 
