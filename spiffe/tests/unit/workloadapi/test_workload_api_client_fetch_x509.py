@@ -16,6 +16,7 @@ under the License.
 
 from collections.abc import Iterator
 import threading
+from typing import Generic, TypeVar
 from unittest.mock import patch
 
 import grpc
@@ -50,6 +51,36 @@ from testutils.utils import (
     handle_error,
     assert_error,
 )
+
+_T = TypeVar('_T')
+
+
+class _FakeStream(Generic[_T]):
+    def __init__(
+        self,
+        responses: list[_T] | None = None,
+        *,
+        error: Exception | None = None,
+        cancel_error: Exception | None = None,
+    ) -> None:
+        self._responses = iter(responses or [])
+        self._error = error
+        self._cancel_error = cancel_error
+        self.cancel_count = 0
+
+    def __iter__(self) -> '_FakeStream[_T]':
+        return self
+
+    def __next__(self) -> _T:
+        if self._error:
+            raise self._error
+        return next(self._responses)
+
+    def cancel(self) -> bool:
+        self.cancel_count += 1
+        if self._cancel_error:
+            raise self._cancel_error
+        return True
 
 
 @pytest.fixture
@@ -88,6 +119,72 @@ def test_fetch_x509_svid_success(mocker: MockerFixture, client: WorkloadApiClien
     assert len(svid.cert_chain) == 2
     assert isinstance(svid.leaf, Certificate)
     assert isinstance(svid.private_key, ec.EllipticCurvePrivateKey)
+
+
+def test_fetch_x509_svid_success_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream = _FakeStream(
+        [
+            workload_pb2.X509SVIDResponse(
+                svids=[
+                    workload_pb2.X509SVID(
+                        spiffe_id='spiffe://example.org/service',
+                        x509_svid=CHAIN1,
+                        x509_svid_key=KEY1,
+                    )
+                ]
+            )
+        ]
+    )
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=stream)
+
+    svid = client.fetch_x509_svid()
+
+    assert svid.spiffe_id == SpiffeId('spiffe://example.org/service')
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_svid_empty_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream = _FakeStream([workload_pb2.X509SVIDResponse(svids=[])])
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509SvidError) as err:
+        client.fetch_x509_svid()
+
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is empty'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_svid_invalid_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.X509SVIDResponse] = _FakeStream([])
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509SvidError) as err:
+        client.fetch_x509_svid()
+
+    assert str(err.value) == 'Error fetching X.509 SVID: X.509 SVID response is invalid'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_svid_exception_cancels_response_stream_without_masking_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.X509SVIDResponse] = _FakeStream(
+        error=Exception('stream failed'),
+        cancel_error=Exception('cancel failed'),
+    )
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509SvidError) as err:
+        client.fetch_x509_svid()
+
+    assert str(err.value) == 'Error fetching X.509 SVID: stream failed'
+    assert stream.cancel_count == 1
 
 
 def test_fetch_x509_svid_empty_response(
@@ -535,6 +632,61 @@ def test_fetch_x509_bundles_success(mocker: MockerFixture, client: WorkloadApiCl
     federated_bundle = bundle_set.get_bundle_for_trust_domain(TrustDomain('domain.test'))
     assert federated_bundle
     assert len(federated_bundle.x509_authorities) == 1
+
+
+def test_fetch_x509_bundles_success_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    bundles = {'example.org': BUNDLE}
+    stream = _FakeStream([workload_pb2.X509BundlesResponse(bundles=bundles)])
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=stream)
+
+    bundle_set = client.fetch_x509_bundles()
+
+    assert bundle_set.get_bundle_for_trust_domain(TrustDomain('example.org')) is not None
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_bundles_empty_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream = _FakeStream([workload_pb2.X509BundlesResponse(bundles={})])
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509BundleError) as err:
+        client.fetch_x509_bundles()
+
+    assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is empty'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_bundles_invalid_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.X509BundlesResponse] = _FakeStream([])
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509BundleError) as err:
+        client.fetch_x509_bundles()
+
+    assert str(err.value) == 'Error fetching X.509 Bundle: X.509 Bundles response is invalid'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_x509_bundles_exception_cancels_response_stream_without_masking_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.X509BundlesResponse] = _FakeStream(
+        error=Exception('stream failed'),
+        cancel_error=Exception('cancel failed'),
+    )
+    client._spiffe_workload_api_stub.FetchX509Bundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchX509BundleError) as err:
+        client.fetch_x509_bundles()
+
+    assert str(err.value) == 'Error fetching X.509 Bundle: stream failed'
+    assert stream.cancel_count == 1
 
 
 def test_fetch_x509_bundles_empty_response(

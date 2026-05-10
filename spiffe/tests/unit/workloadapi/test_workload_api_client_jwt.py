@@ -16,7 +16,7 @@ under the License.
 
 from collections import deque
 from collections.abc import Iterator
-from typing import List
+from typing import Generic, List, TypeVar
 from unittest.mock import patch
 
 import pytest
@@ -51,6 +51,36 @@ from testutils.utils import (
     handle_error,
     assert_error,
 )
+
+_T = TypeVar('_T')
+
+
+class _FakeStream(Generic[_T]):
+    def __init__(
+        self,
+        responses: list[_T] | None = None,
+        *,
+        error: Exception | None = None,
+        cancel_error: Exception | None = None,
+    ) -> None:
+        self._responses = iter(responses or [])
+        self._error = error
+        self._cancel_error = cancel_error
+        self.cancel_count = 0
+
+    def __iter__(self) -> '_FakeStream[_T]':
+        return self
+
+    def __next__(self) -> _T:
+        if self._error:
+            raise self._error
+        return next(self._responses)
+
+    def cancel(self) -> bool:
+        self.cancel_count += 1
+        if self._cancel_error:
+            raise self._cancel_error
+        return True
 
 
 @pytest.fixture
@@ -213,6 +243,61 @@ def test_fetch_jwt_bundles(mocker: MockerFixture, client: WorkloadApiClient) -> 
     )
     assert federated_jwt_bundle
     assert len(federated_jwt_bundle.jwt_authorities) == 3
+
+
+def test_fetch_jwt_bundles_success_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    bundles = {'example.org': JWKS_1_EC_KEY}
+    stream = _FakeStream([workload_pb2.JWTBundlesResponse(bundles=bundles)])
+    client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(return_value=stream)
+
+    jwt_bundle_set = client.fetch_jwt_bundles()
+
+    assert jwt_bundle_set.get_bundle_for_trust_domain(TrustDomain('example.org')) is not None
+    assert stream.cancel_count == 1
+
+
+def test_fetch_jwt_bundles_empty_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream = _FakeStream([workload_pb2.JWTBundlesResponse(bundles={})])
+    client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        client.fetch_jwt_bundles()
+
+    assert str(exc_info.value) == 'Error fetching JWT Bundle: JWT Bundles response is empty'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_jwt_bundles_invalid_response_cancels_response_stream(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.JWTBundlesResponse] = _FakeStream([])
+    client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        client.fetch_jwt_bundles()
+
+    assert str(exc_info.value) == 'Error fetching JWT Bundle: JWT Bundles response is invalid'
+    assert stream.cancel_count == 1
+
+
+def test_fetch_jwt_bundles_exception_cancels_response_stream_without_masking_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    stream: _FakeStream[workload_pb2.JWTBundlesResponse] = _FakeStream(
+        error=Exception('stream failed'),
+        cancel_error=Exception('cancel failed'),
+    )
+    client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(return_value=stream)
+
+    with pytest.raises(FetchJwtBundleError) as exc_info:
+        client.fetch_jwt_bundles()
+
+    assert str(exc_info.value) == 'Error fetching JWT Bundle: stream failed'
+    assert stream.cancel_count == 1
 
 
 def test_fetch_jwt_bundles_empty_response(
