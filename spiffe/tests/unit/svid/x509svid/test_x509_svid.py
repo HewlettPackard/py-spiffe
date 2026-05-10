@@ -19,6 +19,7 @@ from typing import List
 
 import datetime
 import os
+import stat
 
 import pytest
 from pytest_mock import MockerFixture
@@ -516,6 +517,44 @@ def test_save_chain_and_ec_key_as_pem(tmpdir: str, clean_files: List[str]) -> No
     assert isinstance(x509_svid.cert_chain[1], Certificate)
     assert isinstance(saved_svid.private_key, ec.EllipticCurvePrivateKey)
     assert _extract_spiffe_id(saved_svid.leaf) == expected_spiffe_id
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file mode assertion")
+def test_save_private_key_file_mode_is_restrictive(
+    tmpdir: str, clean_files: List[str]
+) -> None:
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('2-key.pem')
+    x509_svid = X509Svid.parse(chain_bytes, key_bytes)
+
+    chain_file = tmpdir.join('chain.pem')
+    key_file = tmpdir.join('key.pem')
+    clean_files.extend([chain_file, key_file])
+
+    x509_svid.save(chain_file, key_file, serialization.Encoding.PEM)
+
+    assert stat.S_IMODE(os.stat(key_file).st_mode) == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file mode assertion")
+def test_save_private_key_file_mode_is_restrictive_when_file_exists(
+    tmpdir: str, clean_files: List[str]
+) -> None:
+    chain_bytes = read_bytes('2-chain.pem')
+    key_bytes = read_bytes('2-key.pem')
+    x509_svid = X509Svid.parse(chain_bytes, key_bytes)
+
+    chain_file = tmpdir.join('chain.pem')
+    key_file = tmpdir.join('key.pem')
+    clean_files.extend([chain_file, key_file])
+
+    with open(key_file, "wb") as f:
+        f.write(b"existing key")
+    os.chmod(key_file, 0o644)
+
+    x509_svid.save(chain_file, key_file, serialization.Encoding.PEM)
+
+    assert stat.S_IMODE(os.stat(key_file).st_mode) == 0o600
 
 
 def test_save_chain_and_rsa_key_as_der(tmpdir: str, clean_files: List[str]) -> None:
