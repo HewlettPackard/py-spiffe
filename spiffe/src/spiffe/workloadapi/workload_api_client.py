@@ -595,9 +595,12 @@ class WorkloadApiClient:
     def _call_fetch_x509_svid(self) -> workload_pb2.X509SVIDResponse:
         response = self._spiffe_workload_api_stub.FetchX509SVID(workload_pb2.X509SVIDRequest())
         try:
-            item = next(response)
-        except StopIteration:
-            raise FetchX509SvidError('X.509 SVID response is invalid')
+            try:
+                item = next(response)
+            except StopIteration:
+                raise FetchX509SvidError('X.509 SVID response is invalid')
+        finally:
+            self._cancel_response_iterator(response)
         if len(item.svids) == 0:
             raise FetchX509SvidError('X.509 SVID response is empty')
         return item
@@ -607,9 +610,12 @@ class WorkloadApiClient:
             workload_pb2.X509BundlesRequest()
         )
         try:
-            item = next(response)
-        except StopIteration:
-            raise FetchX509BundleError('X.509 Bundles response is invalid')
+            try:
+                item = next(response)
+            except StopIteration:
+                raise FetchX509BundleError('X.509 Bundles response is invalid')
+        finally:
+            self._cancel_response_iterator(response)
         if len(item.bundles) == 0:
             raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
@@ -619,12 +625,26 @@ class WorkloadApiClient:
             workload_pb2.JWTBundlesRequest()
         )
         try:
-            item = next(response)
-        except StopIteration:
-            raise FetchJwtBundleError('JWT Bundles response is invalid')
+            try:
+                item = next(response)
+            except StopIteration:
+                raise FetchJwtBundleError('JWT Bundles response is invalid')
+        finally:
+            self._cancel_response_iterator(response)
         if len(item.bundles) == 0:
             raise FetchJwtBundleError('JWT Bundles response is empty')
         return item
+
+    @staticmethod
+    def _cancel_response_iterator(response: object) -> None:
+        cancel = getattr(response, 'cancel', None)
+        if not callable(cancel):
+            return
+
+        try:
+            cancel()
+        except Exception as err:
+            _logger.debug('Error cancelling Workload API response stream: %s', err)
 
     @staticmethod
     def _create_x509_bundle_set(resp_bundles: Mapping[str, bytes]) -> X509BundleSet:
