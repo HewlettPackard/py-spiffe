@@ -14,6 +14,10 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from collections.abc import Callable
+import threading
+import time
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -31,6 +35,48 @@ from spiffe.workloadapi.workload_api_client import (
     WorkloadApiClient,
 )
 from testutils.certs import FEDERATED_BUNDLE, CHAIN1, KEY1, BUNDLE, CHAIN2, KEY2
+
+
+class _FakeCancelHandler:
+    def __init__(self) -> None:
+        self.cancelled = threading.Event()
+        self.cancel_count = 0
+
+    def cancel(self) -> None:
+        self.cancel_count += 1
+        self.cancelled.set()
+
+
+class _FakeX509Client:
+    def __init__(
+        self,
+        cancel_handler: _FakeCancelHandler,
+        *,
+        stream_delay: float = 0,
+        stream_error: Exception | None = None,
+        x509_context: X509Context | None = None,
+    ) -> None:
+        self.cancel_handler = cancel_handler
+        self.stream_delay = stream_delay
+        self.stream_error = stream_error
+        self.x509_context = x509_context
+        self.close_count = 0
+
+    def stream_x509_contexts(
+        self,
+        on_success: Callable[[X509Context], None],
+        on_error: Callable[[Exception], None],
+    ) -> _FakeCancelHandler:
+        if self.stream_delay:
+            time.sleep(self.stream_delay)
+        if self.stream_error:
+            on_error(self.stream_error)
+        if self.x509_context:
+            on_success(self.x509_context)
+        return self.cancel_handler
+
+    def close(self) -> None:
+        self.close_count += 1
 
 
 @pytest.fixture
@@ -69,6 +115,13 @@ def mock_client_return_multiple_svids(
             ]
         )
     )
+
+
+def make_x509_context() -> X509Context:
+    svid = X509Svid.parse_raw(CHAIN1, KEY1)
+    bundle = X509Bundle.parse_raw(TrustDomain("example.org"), BUNDLE)
+    bundle_set = X509BundleSet.of([bundle])
+    return X509Context([svid], bundle_set)
 
 
 def test_x509_source_get_default_x509_svid(
@@ -123,6 +176,54 @@ def test_x509_source_get_x509_svid_with_invalid_picker(
         str(err.value)
         == 'X.509 Source error: Failed to create X509Source: Failed to pick X509 SVID: list index out of range'
     )
+
+
+def test_x509_source_init_timeout_cancels_stream_and_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeX509Client(cancel_handler, stream_delay=0.05)
+
+    with patch('spiffe.workloadapi.x509_source.WorkloadApiClient', return_value=fake_client):
+        with pytest.raises(X509SourceError):
+            X509Source(timeout_in_seconds=0.001)
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_x509_source_init_failure_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeX509Client(cancel_handler, stream_error=Exception("boom"))
+
+    with patch('spiffe.workloadapi.x509_source.WorkloadApiClient', return_value=fake_client):
+        with pytest.raises(X509SourceError):
+            X509Source(timeout_in_seconds=1)
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_x509_source_init_timeout_does_not_close_external_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeX509Client(cancel_handler, stream_delay=0.05)
+
+    with pytest.raises(X509SourceError):
+        X509Source(cast(WorkloadApiClient, fake_client), timeout_in_seconds=0.001)
+
+    assert fake_client.close_count == 0
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_x509_source_on_error_after_init_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeX509Client(cancel_handler, x509_context=make_x509_context())
+
+    with patch('spiffe.workloadapi.x509_source.WorkloadApiClient', return_value=fake_client):
+        x509_source = X509Source(timeout_in_seconds=1)
+
+    x509_source._on_error(WorkloadApiError("Test error"))
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
 
 
 def test_x509_source_get_bundle_for_trust_domain(

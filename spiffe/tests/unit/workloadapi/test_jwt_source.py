@@ -14,8 +14,11 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
+import threading
+import time
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -37,6 +40,48 @@ from testutils.jwt import (
 )
 
 SPIFFE_ID = SpiffeId('spiffe://domain.test/my_service')
+
+
+class _FakeCancelHandler:
+    def __init__(self) -> None:
+        self.cancelled = threading.Event()
+        self.cancel_count = 0
+
+    def cancel(self) -> None:
+        self.cancel_count += 1
+        self.cancelled.set()
+
+
+class _FakeJwtClient:
+    def __init__(
+        self,
+        cancel_handler: _FakeCancelHandler,
+        *,
+        stream_delay: float = 0,
+        stream_error: Exception | None = None,
+        jwt_bundle_set: JwtBundleSet | None = None,
+    ) -> None:
+        self.cancel_handler = cancel_handler
+        self.stream_delay = stream_delay
+        self.stream_error = stream_error
+        self.jwt_bundle_set = jwt_bundle_set
+        self.close_count = 0
+
+    def stream_jwt_bundles(
+        self,
+        on_success: Callable[[JwtBundleSet], None],
+        on_error: Callable[[Exception], None],
+    ) -> _FakeCancelHandler:
+        if self.stream_delay:
+            time.sleep(self.stream_delay)
+        if self.stream_error:
+            on_error(self.stream_error)
+        if self.jwt_bundle_set:
+            on_success(self.jwt_bundle_set)
+        return self.cancel_handler
+
+    def close(self) -> None:
+        self.close_count += 1
 
 
 @pytest.fixture
@@ -74,6 +119,59 @@ def mock_client_fetch_jwt_bundles(mocker: MockerFixture, client: WorkloadApiClie
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
         side_effect=lambda *args, **kwargs: response_generator()
     )
+
+
+def make_jwt_bundle_set() -> JwtBundleSet:
+    bundle = JwtBundle.parse(TrustDomain('domain.test'), JWKS_1_EC_KEY)
+    return JwtBundleSet.of([bundle])
+
+
+def test_jwt_source_init_timeout_cancels_stream_and_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeJwtClient(cancel_handler, stream_delay=0.05)
+
+    with patch('spiffe.workloadapi.jwt_source.WorkloadApiClient', return_value=fake_client):
+        with pytest.raises(JwtSourceError):
+            JwtSource(timeout_in_seconds=0.001)
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_jwt_source_init_failure_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeJwtClient(cancel_handler, stream_error=Exception("boom"))
+
+    with patch('spiffe.workloadapi.jwt_source.WorkloadApiClient', return_value=fake_client):
+        with pytest.raises(JwtSourceError):
+            JwtSource(timeout_in_seconds=1)
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_jwt_source_init_timeout_does_not_close_external_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeJwtClient(cancel_handler, stream_delay=0.05)
+
+    with pytest.raises(JwtSourceError):
+        JwtSource(cast(WorkloadApiClient, fake_client), timeout_in_seconds=0.001)
+
+    assert fake_client.close_count == 0
+    assert cancel_handler.cancelled.wait(timeout=1)
+
+
+def test_jwt_source_on_error_after_init_closes_owned_client() -> None:
+    cancel_handler = _FakeCancelHandler()
+    fake_client = _FakeJwtClient(cancel_handler, jwt_bundle_set=make_jwt_bundle_set())
+
+    with patch('spiffe.workloadapi.jwt_source.WorkloadApiClient', return_value=fake_client):
+        jwt_source = JwtSource(timeout_in_seconds=1)
+
+    jwt_source._on_error(WorkloadApiError("Test error"))
+
+    assert fake_client.close_count == 1
+    assert cancel_handler.cancelled.wait(timeout=1)
 
 
 def test_jwt_source_subscription_and_unsubscription_behavior(
