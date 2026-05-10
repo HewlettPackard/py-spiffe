@@ -84,10 +84,12 @@ class JwtSource:
 
         # Track ownership: if we create the client, we own it
         self._owns_client = workload_api_client is None
+        self._owned_client_closed = False
         self._workload_api_client = (
             workload_api_client if workload_api_client else WorkloadApiClient(socket_path)
         )
         self._client_cancel_handler: Optional[StreamCancelHandler] = None
+        self._stream_cancelled = False
 
         # Start the watcher in a separate thread
         threading.Thread(target=self._start_watcher, daemon=True).start()
@@ -96,13 +98,13 @@ class JwtSource:
         initialized = self._initialization_event.wait(timeout=timeout_in_seconds)
 
         if not initialized:
-            self._closed = True
+            self.close()
             raise JwtSourceError(
                 "Failed to initialize JwtSource: Timeout waiting for the first update."
             )
 
         if self._error is not None:
-            self._closed = True
+            self.close()
             raise JwtSourceError(f"Failed to create JwtSource: {self._error}") from self._error
 
     @property
@@ -175,25 +177,55 @@ class JwtSource:
         """
         _logger.info("Closing JWT Source")
         with self._lock:
-            if self._closed:
+            self._closed = True
+
+        self._cancel_stream()
+        self._close_owned_client()
+
+    def _cancel_stream(self) -> None:
+        cancel_handler: Optional[StreamCancelHandler]
+        with self._lock:
+            if self._stream_cancelled:
                 return
+            self._stream_cancelled = True
+            cancel_handler = self._client_cancel_handler
+
+        try:
+            if cancel_handler:
+                cancel_handler.cancel()
+        except Exception as err:
+            _logger.exception(
+                'JWT Source: Exception canceling the Workload API client connection: {}'.format(
+                    str(err)
+                )
+            )
+
+    def _close_owned_client(self) -> None:
+        with self._lock:
+            if not self._owns_client or self._owned_client_closed:
+                return
+            self._owned_client_closed = True
+
+        try:
+            self._workload_api_client.close()
+        except Exception as err:
+            _logger.exception(
+                'Exception closing owned Workload API client: {}'.format(str(err))
+            )
+
+    def _set_client_cancel_handler(self, cancel_handler: StreamCancelHandler) -> None:
+        with self._lock:
+            self._client_cancel_handler = cancel_handler
+            should_cancel = self._closed or self._stream_cancelled
+
+        if should_cancel:
             try:
-                if self._client_cancel_handler:
-                    self._client_cancel_handler.cancel()
+                cancel_handler.cancel()
             except Exception as err:
                 _logger.exception(
                     'JWT Source: Exception canceling the Workload API client connection: {}'.format(
                         str(err)
                     )
-                )
-            self._closed = True
-
-        if self._owns_client:
-            try:
-                self._workload_api_client.close()
-            except Exception as err:
-                _logger.exception(
-                    'Exception closing owned Workload API client: {}'.format(str(err))
                 )
 
     def is_closed(self) -> bool:
@@ -225,9 +257,10 @@ class JwtSource:
                 pass
 
     def _start_watcher(self) -> None:
-        self._client_cancel_handler = self._workload_api_client.stream_jwt_bundles(
+        cancel_handler = self._workload_api_client.stream_jwt_bundles(
             self._set_jwt_bundle_set, self._on_error
         )
+        self._set_client_cancel_handler(cancel_handler)
 
     def _set_jwt_bundle_set(self, jwt_bundle_set: JwtBundleSet) -> None:
         _logger.debug('JWT Source: setting new bundle update')
@@ -252,11 +285,8 @@ class JwtSource:
         with self._lock:
             self._error = error
             self._closed = True
-            try:
-                if self._client_cancel_handler:
-                    self._client_cancel_handler.cancel()
-            except Exception as err:
-                _logger.exception(f"Exception canceling stream on error: {err}")
+        self._cancel_stream()
+        self._close_owned_client()
         self._initialization_event.set()
 
     @staticmethod
