@@ -14,6 +14,8 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+import json
+
 import pytest
 from typing import Dict
 from pytest_mock import MockerFixture
@@ -40,6 +42,30 @@ rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 authorities: Dict[str, _PUBLIC_KEY_TYPES] = {
     'kid1': ec_key.public_key(),
     'kid2': rsa_key.public_key(),
+}
+
+
+def _jwks_bytes(keys: list[dict[str, object]]) -> bytes:
+    return json.dumps({'keys': keys}).encode('utf-8')
+
+
+EC_JWT_SVID_KEY: dict[str, object] = {
+    "kty": "EC",
+    "use": "jwt-svid",
+    "kid": "C6vs25welZOx6WksNYfbMfiw9l96pMnD",
+    "crv": "P-256",
+    "x": "ngLYQnlfF6GsojUwqtcEE3WgTNG2RUlsGhK73RNEl5k",
+    "y": "tKbiDSUSsQ3F1P7wteeHNXIcU-cx6CgSbroeQrQHTLM",
+}
+
+EC_X509_SVID_KEY: dict[str, object] = {
+    **EC_JWT_SVID_KEY,
+    "use": "x509-svid",
+    "kid": "x509-key",
+}
+
+EC_MISSING_USE_KEY: dict[str, object] = {
+    key: value for key, value in EC_JWT_SVID_KEY.items() if key != "use"
 }
 
 
@@ -101,6 +127,61 @@ def test_parse(test_bytes: bytes, expected_authorities: int) -> None:
 
     assert jwt_bundle
     assert len(jwt_bundle.jwt_authorities) == expected_authorities
+
+
+def test_parse_mixed_jwt_svid_and_x509_svid_keys_only_loads_jwt_svid() -> None:
+    jwt_bundle = JwtBundle.parse(
+        trust_domain,
+        _jwks_bytes([EC_X509_SVID_KEY, EC_JWT_SVID_KEY]),
+    )
+
+    assert len(jwt_bundle.jwt_authorities) == 1
+    assert jwt_bundle.get_jwt_authority(str(EC_JWT_SVID_KEY["kid"])) is not None
+    assert jwt_bundle.get_jwt_authority(str(EC_X509_SVID_KEY["kid"])) is None
+
+
+def test_parse_no_jwt_svid_keys_produces_empty_bundle() -> None:
+    jwt_bundle = JwtBundle.parse(
+        trust_domain,
+        _jwks_bytes([EC_X509_SVID_KEY, EC_MISSING_USE_KEY]),
+    )
+
+    # SPIFFE bundle clients MUST ignore keys with missing or non-jwt-svid use.
+    assert jwt_bundle
+    assert len(jwt_bundle.jwt_authorities) == 0
+
+
+def test_parse_accepted_jwt_svid_key_without_kid_raises() -> None:
+    key_without_kid = {key: value for key, value in EC_JWT_SVID_KEY.items() if key != "kid"}
+
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, _jwks_bytes([key_without_kid]))
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: Error adding authority from JWKS: "keyID" cannot be empty'
+    )
+
+
+def test_parse_malformed_jwt_svid_key_raises_parse_error() -> None:
+    malformed_jwt_svid_key = {
+        key: value for key, value in EC_JWT_SVID_KEY.items() if key != "x"
+    }
+
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, _jwks_bytes([malformed_jwt_svid_key]))
+
+    assert str(exception.value).startswith('Error parsing JWT bundle: ')
+
+
+def test_parse_malformed_non_jwt_svid_key_is_ignored() -> None:
+    malformed_x509_svid_key = {
+        key: value for key, value in EC_X509_SVID_KEY.items() if key != "x"
+    }
+
+    jwt_bundle = JwtBundle.parse(trust_domain, _jwks_bytes([malformed_x509_svid_key]))
+
+    assert len(jwt_bundle.jwt_authorities) == 0
 
 
 def test_parse_invalid_trust_domain() -> None:
@@ -168,3 +249,17 @@ def test_parse_jwks_with_null_keys_field() -> None:
 
     assert bundle
     assert len(bundle.jwt_authorities) == 0
+
+
+@pytest.mark.parametrize(
+    'invalid_keys_json',
+    ['{"keys": false}', '{"keys": ""}', '{"keys": 0}'],
+)
+def test_parse_jwks_with_invalid_keys_type_raises(invalid_keys_json: str) -> None:
+    with pytest.raises(ParseJWTBundleError) as exception:
+        JwtBundle.parse(trust_domain, invalid_keys_json.encode('utf-8'))
+
+    assert (
+        str(exception.value)
+        == 'Error parsing JWT bundle: "bundle_bytes" does not represent a valid jwks'
+    )

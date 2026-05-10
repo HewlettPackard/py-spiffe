@@ -18,11 +18,12 @@ under the License.
 JwtBundle module manages JwtBundle objects.
 """
 
+import json
 import threading
 from json import JSONDecodeError
 from jwt.api_jwk import PyJWKSet
 from jwt.exceptions import InvalidKeyError, PyJWKSetError
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, Any
 from cryptography.hazmat.primitives.asymmetric import ec, rsa, dsa, ed25519, ed448
 
 from spiffe.spiffe_id.spiffe_id import TrustDomain
@@ -117,7 +118,25 @@ class JwtBundle(object):
             raise ArgumentError('Bundle bytes cannot be empty')
 
         try:
-            jwks = PyJWKSet.from_json(bundle_bytes.decode('utf-8'))
+            bundle_json = json.loads(bundle_bytes.decode('utf-8'))
+            if not isinstance(bundle_json, dict):
+                raise ParseJWTBundleError('"bundle_bytes" does not represent a valid jwks')
+
+            jwk_entries = bundle_json.get('keys')
+            if jwk_entries is None:
+                jwk_entries = []
+            elif not isinstance(jwk_entries, list):
+                raise ParseJWTBundleError('"bundle_bytes" does not represent a valid jwks')
+
+            jwt_svid_jwks: list[Dict[str, Any]] = [
+                jwk
+                for jwk in jwk_entries
+                if isinstance(jwk, dict) and jwk.get('use') == 'jwt-svid'
+            ]
+            if not jwt_svid_jwks:
+                return JwtBundle(trust_domain, {})
+
+            jwks = PyJWKSet.from_json(json.dumps({'keys': jwt_svid_jwks}))
 
             jwt_authorities = {}
             for jwk in jwks.keys:
