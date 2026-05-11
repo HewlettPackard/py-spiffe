@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.9] - 2026-05-11
+
+### Fixed
+
+- **Workload API:** Cancel server-stream RPC iterators after one-shot `Fetch*` calls, so gRPC streaming RPCs are not left open.
+- **Workload API sources:** Close the source after `JwtSource` or `X509Source` initialization failures and fatal stream errors. This cancels the stream and closes an owned `WorkloadApiClient`, preventing connection and background-task leaks.
+- **X.509:** Write private key material with restrictive POSIX file permissions (`0o600`) at file creation time, including when overwriting an existing key file.
+
+
 ## [0.2.8] – 2026-05-08
 
 ### Changed
