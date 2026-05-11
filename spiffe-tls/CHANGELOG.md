@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.2] - 2026-05-11
+
+### Fixed
+
+- **TLS peer authorization:** Parse SPIFFE URI subject alternative names safely during peer certificate authorization.
+
+### Changed
+
+- **Dependencies:** Require `spiffe>=0.2.9` so `spiffe-tls` installs stay aligned with the current core release line.
+
+
 ## [0.3.1] – 2026-03-15
 
 ### Development

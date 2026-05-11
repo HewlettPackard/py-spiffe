@@ -1,13 +1,13 @@
 [project]
 name = "spiffe-tls"
-version = "0.3.1"
+version = "0.3.2"
 description = "TLS Support using SPIFFE"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [{ name = "Max Lambrecht", email = "maxlambrecht@gmail.com" }]
 dependencies = [
-  "spiffe>=0.2.3,<0.3.0",
+  "spiffe>=0.2.9,<0.3.0",
   "pyOpenSSL>=26,<27",
   "idna>=3,<4",
 ]
