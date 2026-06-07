@@ -1036,7 +1036,7 @@ wheels = [
 
 [[package]]
 name = "spiffe"
-version = "0.2.9"
+version = "0.2.10"
 source = { editable = "spiffe" }
 dependencies = [
     { name = "cryptography" },

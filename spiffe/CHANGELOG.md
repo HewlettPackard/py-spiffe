@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.10] - 2026-06-07
 
 ### Added
 - **Workload API:** Added `default_timeout` to `WorkloadApiClient` and per-call `timeout` arguments to blocking fetch and JWT validation methods. Per-call timeouts override the client default; `None` preserves the previous unbounded behavior. Streaming methods are unchanged.
