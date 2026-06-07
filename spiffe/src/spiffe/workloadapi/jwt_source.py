@@ -119,12 +119,18 @@ class JwtSource:
                 raise JwtSourceError('Cannot get Jwt Bundles: source is closed')
             return frozenset(self._jwt_bundle_set.bundles)
 
-    def fetch_svid(self, audience: Set[str], subject: Optional[SpiffeId] = None) -> JwtSvid:
+    def fetch_svid(
+        self,
+        audience: Set[str],
+        subject: Optional[SpiffeId] = None,
+        timeout: Optional[float] = None,
+    ) -> JwtSvid:
         """Fetches an JWT-SVID from the source.
 
         Args:
             audience: List of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
+            timeout: Deadline in seconds for the Workload API call. Overrides the client default.
 
         Raises:
             ArgumentError: In case audiences is empty.
@@ -133,17 +139,21 @@ class JwtSource:
         if not audience:
             raise ArgumentError('Audience cannot be empty')
 
-        jwt_svid = self._workload_api_client.fetch_jwt_svid(audience, subject)
+        jwt_svid = self._workload_api_client.fetch_jwt_svid(audience, subject, timeout=timeout)
         return jwt_svid
 
     def fetch_svids(
-        self, audiences: Set[str], subject: Optional[SpiffeId] = None
+        self,
+        audiences: Set[str],
+        subject: Optional[SpiffeId] = None,
+        timeout: Optional[float] = None,
     ) -> List[JwtSvid]:
         """Fetches all JWT-SVIDs from the source.
 
         Args:
             audiences: List of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
+            timeout: Deadline in seconds for the Workload API call. Overrides the client default.
 
         Raises:
             ArgumentError: In case audiences is empty.
@@ -152,7 +162,9 @@ class JwtSource:
         if not audiences:
             raise ArgumentError('Audience cannot be empty')
 
-        jwt_svid = self._workload_api_client.fetch_jwt_svids(audiences, subject)
+        jwt_svid = self._workload_api_client.fetch_jwt_svids(
+            audiences, subject, timeout=timeout
+        )
         return jwt_svid
 
     def get_bundle_for_trust_domain(self, trust_domain: TrustDomain) -> Optional[JwtBundle]:

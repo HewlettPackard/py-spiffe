@@ -19,7 +19,7 @@ from collections.abc import Callable, Iterator
 import threading
 import time
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from pytest_mock import MockerFixture
@@ -230,6 +230,49 @@ def test_get_jwt_svid_no_subject(mocker: MockerFixture, client: WorkloadApiClien
 
     assert jwt_svid._spiffe_id == SPIFFE_ID
     assert jwt_svid._audience == TEST_AUDIENCE
+
+
+def test_fetch_svid_passes_timeout_to_client(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_get_jwt_svid(mocker, client)
+    mock_client_fetch_jwt_bundles(mocker, client)
+    fetch_spy = mocker.spy(client, 'fetch_jwt_svid')
+
+    jwt_source = JwtSource(client)
+    jwt_source.fetch_svid(TEST_AUDIENCE, subject=SPIFFE_ID, timeout=4.0)
+
+    assert fetch_spy.call_args.kwargs['timeout'] == 4.0
+    fetch_jwt_svid_stub = cast(Mock, client._spiffe_workload_api_stub.FetchJWTSVID)
+    assert fetch_jwt_svid_stub.call_args.kwargs['timeout'] == 4.0
+
+
+def test_fetch_svids_passes_timeout_to_client(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_get_jwt_svid(mocker, client)
+    mock_client_fetch_jwt_bundles(mocker, client)
+    fetch_spy = mocker.spy(client, 'fetch_jwt_svids')
+
+    jwt_source = JwtSource(client)
+    jwt_source.fetch_svids(TEST_AUDIENCE, subject=SPIFFE_ID, timeout=4.0)
+
+    assert fetch_spy.call_args.kwargs['timeout'] == 4.0
+    fetch_jwt_svid_stub = cast(Mock, client._spiffe_workload_api_stub.FetchJWTSVID)
+    assert fetch_jwt_svid_stub.call_args.kwargs['timeout'] == 4.0
+
+
+def test_fetch_svid_defaults_timeout_to_none(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_get_jwt_svid(mocker, client)
+    mock_client_fetch_jwt_bundles(mocker, client)
+
+    jwt_source = JwtSource(client)
+    jwt_source.fetch_svid(TEST_AUDIENCE, subject=SPIFFE_ID)
+
+    fetch_jwt_svid_stub = cast(Mock, client._spiffe_workload_api_stub.FetchJWTSVID)
+    assert fetch_jwt_svid_stub.call_args.kwargs['timeout'] is None
 
 
 def test_get_jwt_svid_exception(mocker: MockerFixture, client: WorkloadApiClient) -> None:

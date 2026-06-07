@@ -171,6 +171,106 @@ def test_fetch_jwt_svids(mocker: MockerFixture, client: WorkloadApiClient) -> No
     assert int(svid._expiry) > utc_time
 
 
+@pytest.fixture
+def client_with_default_timeout() -> WorkloadApiClient:
+    with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:
+        mock_check.return_value = None
+        client_instance = WorkloadApiClient('unix:///dummy.path', default_timeout=7.5)
+    return client_instance
+
+
+def test_fetch_jwt_svid_per_call_timeout_passed_to_stub(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
+    stub = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(svids=[workload_pb2.JWTSVID(svid=jwt_svid)])
+    )
+    client._spiffe_workload_api_stub.FetchJWTSVID = stub
+
+    client.fetch_jwt_svid(audience=TEST_AUDIENCE, timeout=3.0)
+
+    assert stub.call_args.kwargs['timeout'] == 3.0
+
+
+def test_fetch_jwt_svid_uses_default_timeout(
+    mocker: MockerFixture, client_with_default_timeout: WorkloadApiClient
+) -> None:
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
+    stub = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(svids=[workload_pb2.JWTSVID(svid=jwt_svid)])
+    )
+    client_with_default_timeout._spiffe_workload_api_stub.FetchJWTSVID = stub
+
+    client_with_default_timeout.fetch_jwt_svid(audience=TEST_AUDIENCE)
+
+    assert stub.call_args.kwargs['timeout'] == 7.5
+
+
+def test_fetch_jwt_svid_per_call_timeout_overrides_default(
+    mocker: MockerFixture, client_with_default_timeout: WorkloadApiClient
+) -> None:
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
+    stub = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(svids=[workload_pb2.JWTSVID(svid=jwt_svid)])
+    )
+    client_with_default_timeout._spiffe_workload_api_stub.FetchJWTSVID = stub
+
+    client_with_default_timeout.fetch_jwt_svid(audience=TEST_AUDIENCE, timeout=1.0)
+
+    assert stub.call_args.kwargs['timeout'] == 1.0
+
+
+def test_fetch_jwt_svid_no_timeout_defaults_to_none(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(spiffe_id=spiffe_id)
+    stub = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(svids=[workload_pb2.JWTSVID(svid=jwt_svid)])
+    )
+    client._spiffe_workload_api_stub.FetchJWTSVID = stub
+
+    client.fetch_jwt_svid(audience=TEST_AUDIENCE)
+
+    assert stub.call_args.kwargs['timeout'] is None
+
+
+def test_validate_jwt_svid_timeout_passed_to_stub(
+    mocker: MockerFixture, client_with_default_timeout: WorkloadApiClient
+) -> None:
+    audience = 'spire'
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(audience={audience}, spiffe_id=spiffe_id)
+    stub = mocker.Mock(return_value=workload_pb2.ValidateJWTSVIDResponse(spiffe_id=spiffe_id))
+    client_with_default_timeout._spiffe_workload_api_stub.ValidateJWTSVID = stub
+
+    client_with_default_timeout.validate_jwt_svid(token=jwt_svid, audience=audience)
+    assert stub.call_args.kwargs['timeout'] == 7.5
+
+    client_with_default_timeout.validate_jwt_svid(
+        token=jwt_svid, audience=audience, timeout=2.0
+    )
+    assert stub.call_args.kwargs['timeout'] == 2.0
+
+
+def test_validate_jwt_svid_deadline_exceeded_surfaced(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    jwt_svid = generate_test_jwt_token()
+    grpc_error = FakeCall()
+    grpc_error._code = grpc.StatusCode.DEADLINE_EXCEEDED
+    client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(side_effect=grpc_error)
+
+    with pytest.raises(ValidateJwtSvidError) as exception:
+        client.validate_jwt_svid(token=jwt_svid, audience='audience', timeout=0.001)
+
+    assert 'StatusCode.DEADLINE_EXCEEDED' in str(exception.value)
+
+
 def test_fetch_jwt_svid_no_audience(client: WorkloadApiClient) -> None:
     with pytest.raises(ArgumentError) as exception:
         client.fetch_jwt_svid(audience=set())

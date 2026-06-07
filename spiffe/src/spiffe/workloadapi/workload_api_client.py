@@ -183,7 +183,11 @@ class StreamCancelHandler:
 class WorkloadApiClient:
     """A SPIFFE Workload API Client."""
 
-    def __init__(self, socket_path: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        socket_path: Optional[str] = None,
+        default_timeout: Optional[float] = None,
+    ) -> None:
         """
         Creates a new Workload API Client.
 
@@ -193,11 +197,18 @@ class WorkloadApiClient:
         Parameters:
             socket_path (Optional[str]): The file path to the Workload API UDS. If omitted, the client looks for the
                                         path in the `SPIFFE_ENDPOINT_SOCKET` environment variable.
+            default_timeout (Optional[float]): Default deadline, in seconds, applied to every blocking
+                                        Workload API call (the one-shot fetch and validate methods). Each
+                                        call may override it with its own `timeout` argument. When `None`
+                                        (the default), calls block without a deadline, preserving the
+                                        previous behavior. This deadline does not apply to the long-lived
+                                        streaming methods (`stream_x509_contexts`, `stream_jwt_bundles`).
 
         Raises:
             ArgumentError: If `socket_path` is not provided and no path is found in the `SPIFFE_ENDPOINT_SOCKET`
                            environment variable, or if the provided `socket_path` is invalid.
         """
+        self._default_timeout = default_timeout
         try:
             self._config = ConfigSetter(spiffe_endpoint_socket=socket_path).get_config()
             self._check_spiffe_socket_exists(self._config.spiffe_endpoint_socket)
@@ -210,9 +221,16 @@ class WorkloadApiClient:
             workload_pb2_grpc.SpiffeWorkloadAPIStub(self._channel)  # type: ignore[no-untyped-call]
         )
 
+    def _resolve_timeout(self, timeout: Optional[float]) -> Optional[float]:
+        """Returns the per-call timeout when provided, otherwise the client default."""
+        return timeout if timeout is not None else self._default_timeout
+
     @handle_error(error_cls=FetchX509SvidError)
-    def fetch_x509_svid(self) -> X509Svid:
+    def fetch_x509_svid(self, timeout: Optional[float] = None) -> X509Svid:
         """Fetches the default X509-SVID, i.e. the first in the list returned by the Workload API.
+
+        Args:
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             X509Svid: Instance of X509Svid object.
@@ -221,15 +239,18 @@ class WorkloadApiClient:
             FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
                                 response payload cannot be processed to be converted to a X509Svid object.
         """
-        response = self._call_fetch_x509_svid()
+        response = self._call_fetch_x509_svid(self._resolve_timeout(timeout))
 
         svid = response.svids[0]
 
         return self._create_x509_svid(svid)
 
     @handle_error(error_cls=FetchX509SvidError)
-    def fetch_x509_svids(self) -> List[X509Svid]:
+    def fetch_x509_svids(self, timeout: Optional[float] = None) -> List[X509Svid]:
         """Fetches all X509-SVIDs.
+
+        Args:
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             X509Svid: List of of X509Svid object.
@@ -238,7 +259,7 @@ class WorkloadApiClient:
             FetchX509SvidError: When there is an error fetching the X.509 SVID from the Workload API, or when the
                                 response payload cannot be processed to be converted to a X509Svid object.
         """
-        response = self._call_fetch_x509_svid()
+        response = self._call_fetch_x509_svid(self._resolve_timeout(timeout))
 
         result = []
         for svid in response.svids:
@@ -247,8 +268,11 @@ class WorkloadApiClient:
         return result
 
     @handle_error(error_cls=FetchX509SvidError)
-    def fetch_x509_context(self) -> X509Context:
+    def fetch_x509_context(self, timeout: Optional[float] = None) -> X509Context:
         """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain).
+
+        Args:
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             X509Context: An object containing a List of X509Svids and a X509BundleSet.
@@ -260,12 +284,15 @@ class WorkloadApiClient:
             FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
                                   response payload cannot be processed to be converted to a X509Bundle objects.
         """
-        response = self._call_fetch_x509_svid()
+        response = self._call_fetch_x509_svid(self._resolve_timeout(timeout))
         return self._process_x509_context(response)
 
     @handle_error(error_cls=FetchX509BundleError)
-    def fetch_x509_bundles(self) -> X509BundleSet:
+    def fetch_x509_bundles(self, timeout: Optional[float] = None) -> X509BundleSet:
         """Fetches X.509 bundles, keyed by trust domain.
+
+        Args:
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             X509BundleSet: Set of X509Bundle objects.
@@ -274,18 +301,22 @@ class WorkloadApiClient:
             FetchX509BundleError: When there is an error fetching the X.509 Bundles from the Workload API, or when the
                                   response payload cannot be processed to be converted to a X509Bundle objects.
         """
-        response = self._call_fetch_x509_bundles()
+        response = self._call_fetch_x509_bundles(self._resolve_timeout(timeout))
         return self._create_x509_bundle_set(response.bundles)
 
     @handle_error(error_cls=FetchJwtSvidError)
     def fetch_jwt_svid(
-        self, audience: Set[str], subject: Optional[SpiffeId] = None
+        self,
+        audience: Set[str],
+        subject: Optional[SpiffeId] = None,
+        timeout: Optional[float] = None,
     ) -> JwtSvid:
         """Fetches a SPIFFE JWT-SVID.
 
         Args:
             audience: Set of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             JwtSvid: Instance of JwtSvid object.
@@ -301,7 +332,8 @@ class WorkloadApiClient:
             workload_pb2.JWTSVIDRequest(
                 audience=audience,
                 spiffe_id=subject_str,
-            )
+            ),
+            timeout=self._resolve_timeout(timeout),
         )
 
         if len(response.svids) == 0:
@@ -312,13 +344,17 @@ class WorkloadApiClient:
 
     @handle_error(error_cls=FetchJwtSvidError)
     def fetch_jwt_svids(
-        self, audience: Set[str], subject: Optional[SpiffeId] = None
+        self,
+        audience: Set[str],
+        subject: Optional[SpiffeId] = None,
+        timeout: Optional[float] = None,
     ) -> List[JwtSvid]:
         """Fetches all SPIFFE JWT-SVIDs.
 
         Args:
             audience: List of audiences for the JWT SVID.
             subject: SPIFFE ID subject for the JWT.
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Raises:
             ArgumentError: In case audience is empty.
@@ -332,7 +368,8 @@ class WorkloadApiClient:
             workload_pb2.JWTSVIDRequest(
                 audience=audience,
                 spiffe_id=subject_str,
-            )
+            ),
+            timeout=self._resolve_timeout(timeout),
         )
 
         if len(response.svids) == 0:
@@ -345,8 +382,11 @@ class WorkloadApiClient:
         return svids
 
     @handle_error(error_cls=FetchJwtBundleError)
-    def fetch_jwt_bundles(self) -> JwtBundleSet:
+    def fetch_jwt_bundles(self, timeout: Optional[float] = None) -> JwtBundleSet:
         """Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
+
+        Args:
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             JwtBundleSet: Set of JwtBundle objects.
@@ -355,17 +395,20 @@ class WorkloadApiClient:
             FetchJwtBundleError: In case there is an error in fetching the JWT-Bundle from the Workload API or
                                 in case the set of jwt_authorities cannot be parsed from the Workload API Response.
         """
-        response = self._call_fetch_jwt_bundles()
+        response = self._call_fetch_jwt_bundles(self._resolve_timeout(timeout))
         jwt_bundles: Dict[TrustDomain, JwtBundle] = self._create_td_jwt_bundle_dict(response)
         return JwtBundleSet(jwt_bundles)
 
     @handle_error(error_cls=ValidateJwtSvidError)
-    def validate_jwt_svid(self, token: str, audience: str) -> JwtSvid:
+    def validate_jwt_svid(
+        self, token: str, audience: str, timeout: Optional[float] = None
+    ) -> JwtSvid:
         """Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.
 
         Args:
             token: JWT to validate.
             audience: expected audience to validate against.
+            timeout: Deadline in seconds for this call. Overrides the client default.
 
         Returns:
             JwtSvid: If the token and audience could be validated.
@@ -384,7 +427,8 @@ class WorkloadApiClient:
             workload_pb2.ValidateJWTSVIDRequest(
                 audience=audience,
                 svid=token,
-            )
+            ),
+            timeout=self._resolve_timeout(timeout),
         )
         return JwtSvid.parse_insecure(token, {audience})
 
@@ -592,8 +636,12 @@ class WorkloadApiClient:
 
         return grpc.intercept_channel(grpc_insecure_channel, spiffe_client_interceptor)
 
-    def _call_fetch_x509_svid(self) -> workload_pb2.X509SVIDResponse:
-        response = self._spiffe_workload_api_stub.FetchX509SVID(workload_pb2.X509SVIDRequest())
+    def _call_fetch_x509_svid(
+        self, timeout: Optional[float] = None
+    ) -> workload_pb2.X509SVIDResponse:
+        response = self._spiffe_workload_api_stub.FetchX509SVID(
+            workload_pb2.X509SVIDRequest(), timeout=timeout
+        )
         try:
             try:
                 item = next(response)
@@ -605,9 +653,11 @@ class WorkloadApiClient:
             raise FetchX509SvidError('X.509 SVID response is empty')
         return item
 
-    def _call_fetch_x509_bundles(self) -> workload_pb2.X509BundlesResponse:
+    def _call_fetch_x509_bundles(
+        self, timeout: Optional[float] = None
+    ) -> workload_pb2.X509BundlesResponse:
         response = self._spiffe_workload_api_stub.FetchX509Bundles(
-            workload_pb2.X509BundlesRequest()
+            workload_pb2.X509BundlesRequest(), timeout=timeout
         )
         try:
             try:
@@ -620,9 +670,11 @@ class WorkloadApiClient:
             raise FetchX509BundleError('X.509 Bundles response is empty')
         return item
 
-    def _call_fetch_jwt_bundles(self) -> workload_pb2.JWTBundlesResponse:
+    def _call_fetch_jwt_bundles(
+        self, timeout: Optional[float] = None
+    ) -> workload_pb2.JWTBundlesResponse:
         response = self._spiffe_workload_api_stub.FetchJWTBundles(
-            workload_pb2.JWTBundlesRequest()
+            workload_pb2.JWTBundlesRequest(), timeout=timeout
         )
         try:
             try:

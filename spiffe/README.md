@@ -42,6 +42,20 @@ with WorkloadApiClient() as client:
     print(f'SPIFFE ID: {jwt_svid.spiffe_id}')
 ```
 
+By default, blocking Workload API calls wait without a deadline. To avoid
+indefinitely blocking a calling thread when the Workload API is unresponsive,
+set `default_timeout` on the client or pass a per-call `timeout` in seconds:
+
+```python
+with WorkloadApiClient(default_timeout=5.0) as client:
+    jwt_svid = client.fetch_jwt_svid(audience={"test"})
+    jwt_svid = client.fetch_jwt_svid(audience={"test"}, timeout=1.0)
+```
+
+Per-call timeouts override `default_timeout`. Deadline expiry is reported as
+the SPIFFE-specific error for the call, such as `FetchJwtSvidError`. Timeouts do
+not apply to long-lived streaming methods.
+
 ### X509Source
 
 ```python
