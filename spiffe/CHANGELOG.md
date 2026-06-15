@@ -1,10 +1,18 @@
 # Changelog
 
-## [0.2.10] - 2026-06-07
+## [0.3.0] - 2026-06-15
+
+### Breaking
+- This release contains changes originally published as `0.2.10`. Because those changes are not patch-compatible, `0.2.10` has been yanked and the changes are republished as `0.3.0`.
 
 ### Added
 - **Workload API:** Added `default_timeout` to `WorkloadApiClient` and per-call `timeout` arguments to blocking fetch and JWT validation methods. Per-call timeouts override the client default; `None` preserves the previous unbounded behavior. Streaming methods are unchanged.
 - **JwtSource:** Added per-call `timeout` to `fetch_svid` and `fetch_svids`, passed through to the underlying `WorkloadApiClient`.
+
+## [0.2.10] - 2026-06-07 [YANKED]
+
+### Yanked
+- Yanked because it included changes that were not patch-compatible. Use `0.3.0` instead.
 
 ## [0.2.9] - 2026-05-11
 

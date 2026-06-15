@@ -1036,7 +1036,7 @@ wheels = [
 
 [[package]]
 name = "spiffe"
-version = "0.2.10"
+version = "0.3.0"
 source = { editable = "spiffe" }
 dependencies = [
     { name = "cryptography" },
@@ -1081,7 +1081,7 @@ dev = [
 
 [[package]]
 name = "spiffe-tls"
-version = "0.3.2"
+version = "0.4.0"
 source = { editable = "spiffe-tls" }
 dependencies = [
     { name = "idna" },

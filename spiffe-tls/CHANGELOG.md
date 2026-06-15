@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0] - 2026-06-15
+
+### Changed
+
+- **Dependencies:** Require `spiffe>=0.3.0,<0.4.0` so `spiffe-tls` installs resolve against the corrected `spiffe` `0.3.x` release line.
+
 ## [0.3.2] - 2026-05-11
 
 ### Fixed
