@@ -337,8 +337,7 @@ def test_parse_and_validate_valid_token_future_iat() -> None:
     """
     future_iat = timegm(
         (
-            datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(hours=1)
+            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
         ).utctimetuple()
     )
     token = jwt.encode(
@@ -358,7 +357,9 @@ def test_parse_and_validate_valid_token_future_iat() -> None:
     assert jwt_svid._audience == TEST_AUDIENCE
     assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
     assert jwt_svid._expiry == TEST_EXPIRY
-    assert jwt_svid._claims['iat'] == future_iat
+    # linter thinks iat is a string, because it's the _claims dict is
+    # of type [str, str].
+    assert int(jwt_svid._claims['iat']) == future_iat
     assert jwt_svid._token == token
 
 
