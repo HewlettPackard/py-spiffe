@@ -328,6 +328,40 @@ def test_parse_and_validate_valid_token_single_string_aud() -> None:
     assert jwt_svid._token == token
 
 
+def test_parse_and_validate_valid_token_future_iat() -> None:
+    """A token whose 'iat' claim is in the future must still validate.
+
+    PyJWT verifies 'iat' by default and rejects such tokens with a
+    "token is not yet valid (iat)" error, so JwtSvid disables 'iat'
+    verification. This guards against a regression of that setting.
+    """
+    future_iat = timegm(
+        (
+            datetime.datetime.now(datetime.timezone.utc)
+            + datetime.timedelta(hours=1)
+        ).utctimetuple()
+    )
+    token = jwt.encode(
+        {
+            'aud': list(TEST_AUDIENCE),
+            'sub': TEST_SPIFFE_ID,
+            'exp': TEST_EXPIRY,
+            'iat': future_iat,
+        },
+        algorithm=TEST_ALG,
+        key=TEST_KEY_PEM,
+        headers={'alg': TEST_ALG, 'typ': 'JWT', 'kid': TEST_KEY_ID},
+    )
+
+    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
+
+    assert jwt_svid._audience == TEST_AUDIENCE
+    assert str(jwt_svid._spiffe_id) == TEST_SPIFFE_ID
+    assert jwt_svid._expiry == TEST_EXPIRY
+    assert jwt_svid._claims['iat'] == future_iat
+    assert jwt_svid._token == token
+
+
 def test_parse_and_validate_valid_token_multiple_keys_bundle() -> None:
     ec_key = ec.generate_private_key(ec.SECP521R1(), default_backend())
     jwt_bundle = JwtBundle(
