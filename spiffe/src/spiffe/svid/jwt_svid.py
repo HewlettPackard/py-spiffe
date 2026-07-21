@@ -176,6 +176,7 @@ class JwtSvid(object):
                     'verify_signature': True,
                     'verify_aud': True,
                     'verify_exp': True,
+                    'verify_iat': False,
                 },
             )
 
