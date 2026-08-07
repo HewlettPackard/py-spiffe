@@ -14,21 +14,12 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
-from typing import List, Iterable, Union
+from typing import List, Iterable
 from pathlib import Path
 import os
 import pem
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import (
-    ed25519,
-    ed448,
-    rsa,
-    ec,
-    dsa,
-    dh,
-    x25519,
-    x448,
-)
+from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from cryptography.hazmat.primitives.serialization import (
     load_der_private_key,
     load_pem_private_key,
@@ -52,16 +43,7 @@ from spiffe.utils.errors import (
 _CERTS_FILE_MODE = 0o644
 _PRIVATE_KEY_FILE_MODE = 0o600
 
-PRIVATE_KEY_TYPES = Union[
-    dh.DHPrivateKey,
-    ed25519.Ed25519PrivateKey,
-    ed448.Ed448PrivateKey,
-    rsa.RSAPrivateKey,
-    dsa.DSAPrivateKey,
-    ec.EllipticCurvePrivateKey,
-    x25519.X25519PrivateKey,
-    x448.X448PrivateKey,
-]
+PRIVATE_KEY_TYPES = PrivateKeyTypes
 
 
 def parse_pem_certificates(pem_bytes: bytes) -> List[Certificate]:
