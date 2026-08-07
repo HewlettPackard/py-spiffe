@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- **X.509:** Define `PRIVATE_KEY_TYPES` by aliasing cryptography's canonical `PrivateKeyTypes` instead of hand-maintaining a copy of the union. The previous copy referenced `dh.DHPrivateKey`, which [cryptography 50.0.0 deprecated](https://cryptography.io/en/latest/changelog/#v50-0-0) (FFDH), so touching it emits a `CryptographyDeprecationWarning` at import time; because that warning subclasses `UserWarning`, strict `filterwarnings = error` policies turned importing `spiffe` into an error. The alias also keeps the type in sync with cryptography (e.g. the newer ML-DSA/ML-KEM key types).
+
 ## [0.3.0] - 2026-06-15
 
 ### Breaking
