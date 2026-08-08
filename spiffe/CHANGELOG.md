@@ -1,9 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.1] - 2026-08-08
 
 ### Fixed
 - **X.509:** Define `PRIVATE_KEY_TYPES` by aliasing cryptography's canonical `PrivateKeyTypes` instead of hand-maintaining a copy of the union. The previous copy referenced `dh.DHPrivateKey`, which [cryptography 50.0.0 deprecated](https://cryptography.io/en/latest/changelog/#v50-0-0) (FFDH), so touching it emits a `CryptographyDeprecationWarning` at import time; because that warning subclasses `UserWarning`, strict `filterwarnings = error` policies turned importing `spiffe` into an error. The alias also keeps the type in sync with cryptography (e.g. the newer ML-DSA/ML-KEM key types).
+
+### Changed
+- **JWT-SVID:** `JwtSvid.parse_and_validate()` no longer verifies the optional `iat` claim, preventing valid SVIDs from being rejected when issuer and validator clocks differ. Signature, audience, subject, and expiration validation are unchanged.
 
 ## [0.3.0] - 2026-06-15
 
