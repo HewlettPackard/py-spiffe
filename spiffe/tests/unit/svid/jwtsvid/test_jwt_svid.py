@@ -25,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from spiffe.svid.jwt_svid import JwtSvid
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
+from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.errors import ArgumentError
 from spiffe.svid.errors import (
     TokenExpiredError,
@@ -384,3 +385,76 @@ def test_parse_and_validate_valid_token_multiple_keys_bundle() -> None:
     assert str(jwt_svid2._spiffe_id) == TEST_SPIFFE_ID
     assert jwt_svid2._expiry == TEST_EXPIRY
     assert jwt_svid2._token == token2
+
+
+def _trust_domain_mismatch_message(subject_trust_domain: str, bundle_trust_domain: str) -> str:
+    return (
+        f"JWT-SVID subject trust domain '{subject_trust_domain}' does not match "
+        f"the trust domain '{bundle_trust_domain}' of the supplied JwtBundle"
+    )
+
+
+def test_parse_and_validate_subject_trust_domain_matches_bundle() -> None:
+    """A token whose 'sub' trust domain matches the bundle's trust domain must succeed."""
+    token = generate_test_jwt_token(spiffe_id='spiffe://test.com/workload')
+    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
+    assert str(jwt_svid._spiffe_id) == 'spiffe://test.com/workload'
+    assert jwt_svid._spiffe_id.trust_domain == JWT_BUNDLE.trust_domain
+
+
+def test_parse_and_validate_subject_trust_domain_matches_bundle_case_insensitive() -> None:
+    """Trust domain comparison must use SPIFFE-normalized (lowercase) names."""
+    token = generate_test_jwt_token(spiffe_id='spiffe://TEST.COM/workload')
+    jwt_svid = JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
+    assert str(jwt_svid._spiffe_id) == 'spiffe://test.com/workload'
+    assert jwt_svid._spiffe_id.trust_domain == JWT_BUNDLE.trust_domain
+
+
+@pytest.mark.parametrize(
+    'subject_spiffe_id',
+    [
+        'spiffe://other.org/workload',
+        'spiffe://evil-test.com/workload',
+        'spiffe://test.com.evil.org/workload',
+    ],
+)
+def test_parse_and_validate_subject_trust_domain_mismatch(subject_spiffe_id: str) -> None:
+    """A correctly signed token whose 'sub' claims a different trust domain than the
+    supplied JwtBundle must be rejected, including lookalike / suffix-confusion domains.
+    """
+    token = generate_test_jwt_token(spiffe_id=subject_spiffe_id)
+    subject_trust_domain = TrustDomain(subject_spiffe_id)
+    expected = _trust_domain_mismatch_message(
+        str(subject_trust_domain), str(TEST_TRUST_DOMAIN)
+    )
+
+    with pytest.raises(InvalidTokenError) as exception:
+        JwtSvid.parse_and_validate(token, JWT_BUNDLE, {'test'})
+
+    assert str(exception.value) == expected
+
+
+def test_parse_and_validate_subject_trust_domain_mismatch_shared_key_across_bundles() -> None:
+    """Reusing the same signing key and 'kid' across bundles for two different trust
+    domains must not allow a token issued for one trust domain to validate against a
+    JwtBundle for a different trust domain.
+    """
+    trust_domain_b = TrustDomain('other.org')
+    shared_kid = 'shared-kid'
+    jwt_bundle_a = JwtBundle(TEST_TRUST_DOMAIN, {shared_kid: TEST_KEY.public_key()})
+    jwt_bundle_b = JwtBundle(trust_domain_b, {shared_kid: TEST_KEY.public_key()})
+
+    token_for_b = generate_test_jwt_token(
+        kid=shared_kid, spiffe_id='spiffe://other.org/workload'
+    )
+    expected = _trust_domain_mismatch_message('other.org', 'test.com')
+
+    # Signature verifies fine against bundle_a (same key/kid reused), but the subject's
+    # trust domain does not match bundle_a's trust domain, so it must be rejected.
+    with pytest.raises(InvalidTokenError) as exception:
+        JwtSvid.parse_and_validate(token_for_b, jwt_bundle_a, {'test'})
+    assert str(exception.value) == expected
+
+    # Validating against the correct bundle (matching trust domain) succeeds.
+    jwt_svid = JwtSvid.parse_and_validate(token_for_b, jwt_bundle_b, {'test'})
+    assert str(jwt_svid._spiffe_id) == 'spiffe://other.org/workload'
