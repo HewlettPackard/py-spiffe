@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- **JWT-SVID:** `JwtSvid.parse_and_validate()` now rejects a token whose `sub` claims a SPIFFE ID from a trust domain different from the supplied `JwtBundle`'s trust domain. Previously, a token signed by a key present in the bundle (e.g. a key/`kid` reused across trust domains) could validate even though its subject belonged to another trust domain. Callers validating federated tokens should select the matching bundle (for example via `JwtBundleSet.get_bundle_for_trust_domain`) before calling `parse_and_validate`.
+
 ## [0.3.1] - 2026-08-08
 
 ### Fixed
