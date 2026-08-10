@@ -16,7 +16,7 @@ under the License.
 
 from collections import deque
 from collections.abc import Iterator
-from typing import Generic, List, TypeVar
+from typing import Callable, Generic, List, TypeVar
 from unittest.mock import patch
 
 import pytest
@@ -27,7 +27,12 @@ from pytest_mock import MockerFixture
 
 from spiffe._proto import workload_pb2
 from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
-from spiffe.workloadapi.workload_api_client import WorkloadApiClient
+from spiffe.workloadapi.workload_api_client import (
+    RetryHandler,
+    RetryPolicy,
+    StreamCancelHandler,
+    WorkloadApiClient,
+)
 from spiffe.spiffe_id.spiffe_id import TrustDomain
 from spiffe.spiffe_id.spiffe_id import SpiffeId
 from spiffe.errors import ArgumentError
@@ -62,10 +67,12 @@ class _FakeStream(Generic[_T]):
         *,
         error: Exception | None = None,
         cancel_error: Exception | None = None,
+        on_eof: Callable[[], None] | None = None,
     ) -> None:
         self._responses = iter(responses or [])
         self._error = error
         self._cancel_error = cancel_error
+        self._on_eof = on_eof
         self.cancel_count = 0
 
     def __iter__(self) -> '_FakeStream[_T]':
@@ -74,13 +81,30 @@ class _FakeStream(Generic[_T]):
     def __next__(self) -> _T:
         if self._error:
             raise self._error
-        return next(self._responses)
+        try:
+            return next(self._responses)
+        except StopIteration:
+            if self._on_eof:
+                on_eof = self._on_eof
+                self._on_eof = None
+                on_eof()
+            raise
 
     def cancel(self) -> bool:
         self.cancel_count += 1
         if self._cancel_error:
             raise self._cancel_error
         return True
+
+
+class _RecordingCancelHandler(StreamCancelHandler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.backoffs: list[float] = []
+
+    def wait_cancelled(self, timeout: float) -> bool:
+        self.backoffs.append(timeout)
+        return self.is_cancelled()
 
 
 @pytest.fixture
@@ -550,7 +574,7 @@ def test_stream_jwt_bundles_success(mocker: MockerFixture, client: WorkloadApiCl
 
     # Configure the mock for FetchJWTBundles
     client._spiffe_workload_api_stub.FetchJWTBundles = mocker.Mock(
-        return_value=delayed_responses(
+        return_value=_FakeStream(
             [
                 workload_pb2.JWTBundlesResponse(bundles=jwt_bundles),
                 workload_pb2.JWTBundlesResponse(bundles=jwt_bundles_2),
@@ -559,21 +583,31 @@ def test_stream_jwt_bundles_success(mocker: MockerFixture, client: WorkloadApiCl
     )
 
     update_event = threading.Event()
+    cancel_handler_ready = threading.Event()
     responses: deque[JwtBundleSet] = deque()
+    response_count = 0
+    cancel_handler: StreamCancelHandler | None = None
 
     def on_success_handler(response: JwtBundleSet) -> None:
+        nonlocal response_count
+        response_count += 1
         responses.append(response)
         update_event.set()  # Signal that a new response is available
+        if response_count == 2:
+            assert cancel_handler_ready.wait(timeout=5)
+            assert cancel_handler is not None
+            cancel_handler.cancel()
 
     def on_error_handler(error: Exception) -> None:
         print(f"Error: {error}")
         update_event.set()
 
     # Start streaming
-    client.stream_jwt_bundles(
+    cancel_handler = client.stream_jwt_bundles(
         on_success=on_success_handler,
         on_error=on_error_handler,
     )
+    cancel_handler_ready.set()
 
     # Wait for the first update
     update_event.wait(timeout=5)
@@ -606,6 +640,153 @@ def delayed_responses(
         yield res  # Assuming this delay simulates asynchronous behavior well enough for the test.
 
 
+def _jwt_stream_response(
+    bundles: dict[str, bytes] | None = None,
+) -> workload_pb2.JWTBundlesResponse:
+    return workload_pb2.JWTBundlesResponse(bundles=bundles or {'example.org': JWKS_1_EC_KEY})
+
+
+def test_stream_jwt_bundles_reconnects_after_eof_and_delivers_rotated_update(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    fetch_jwt_bundles = mocker.Mock(
+        side_effect=[
+            _FakeStream([_jwt_stream_response()]),
+            _FakeStream([_jwt_stream_response({'domain.dev': JWKS_2_EC_1_RSA_KEYS})]),
+        ]
+    )
+    client._spiffe_workload_api_stub.FetchJWTBundles = fetch_jwt_bundles
+    cancel_handler = StreamCancelHandler()
+    responses: list[JwtBundleSet] = []
+    errors: list[Exception] = []
+
+    def on_success(response: JwtBundleSet) -> None:
+        responses.append(response)
+        if len(responses) == 2:
+            cancel_handler.cancel()
+
+    client._watch_jwt_bundles_updates(
+        cancel_handler,
+        RetryHandler(RetryPolicy(base_backoff_in_seconds=0)),
+        on_success,
+        errors.append,
+    )
+
+    assert responses[0].get_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert responses[1].get_bundle_for_trust_domain(TrustDomain('domain.dev'))
+    assert errors == []
+    assert fetch_jwt_bundles.call_count == 2
+
+
+def test_stream_jwt_bundles_cancellation_during_iteration_is_silent(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    fetch_jwt_bundles = mocker.Mock(
+        return_value=_FakeStream(
+            [
+                _jwt_stream_response(),
+                _jwt_stream_response({'domain.dev': JWKS_1_EC_KEY}),
+            ]
+        )
+    )
+    client._spiffe_workload_api_stub.FetchJWTBundles = fetch_jwt_bundles
+    cancel_handler = StreamCancelHandler()
+    responses: list[JwtBundleSet] = []
+    errors: list[Exception] = []
+
+    def on_success(response: JwtBundleSet) -> None:
+        responses.append(response)
+        cancel_handler.cancel()
+
+    client._watch_jwt_bundles_updates(
+        cancel_handler,
+        RetryHandler(RetryPolicy(base_backoff_in_seconds=0)),
+        on_success,
+        errors.append,
+    )
+
+    assert len(responses) == 1
+    assert errors == []
+    assert fetch_jwt_bundles.call_count == 1
+
+
+def test_stream_jwt_bundles_cancellation_at_eof_is_silent(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    cancel_handler = StreamCancelHandler()
+    stream = _FakeStream([_jwt_stream_response()], on_eof=cancel_handler.cancel)
+    fetch_jwt_bundles = mocker.Mock(return_value=stream)
+    client._spiffe_workload_api_stub.FetchJWTBundles = fetch_jwt_bundles
+    errors: list[Exception] = []
+
+    client._watch_jwt_bundles_updates(
+        cancel_handler,
+        RetryHandler(RetryPolicy(base_backoff_in_seconds=0)),
+        lambda _: None,
+        errors.append,
+    )
+
+    assert errors == []
+    assert fetch_jwt_bundles.call_count == 1
+
+
+def test_stream_jwt_bundles_retry_state_resets_only_after_delivered_update(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    fetch_jwt_bundles = mocker.Mock(
+        side_effect=[
+            _FakeStream(),
+            _FakeStream(),
+            _FakeStream([_jwt_stream_response()]),
+            _FakeStream([_jwt_stream_response({'domain.dev': JWKS_1_EC_KEY})]),
+        ]
+    )
+    client._spiffe_workload_api_stub.FetchJWTBundles = fetch_jwt_bundles
+    cancel_handler = _RecordingCancelHandler()
+    responses: list[JwtBundleSet] = []
+    errors: list[Exception] = []
+
+    def on_success(response: JwtBundleSet) -> None:
+        responses.append(response)
+        if len(responses) == 2:
+            cancel_handler.cancel()
+
+    client._watch_jwt_bundles_updates(
+        cancel_handler,
+        RetryHandler(
+            RetryPolicy(
+                max_retries=3,
+                base_backoff_in_seconds=1,
+                backoff_factor=2,
+                max_backoff=10,
+            )
+        ),
+        on_success,
+        errors.append,
+    )
+
+    assert errors == []
+    assert cancel_handler.backoffs == [1, 2, 1]
+    assert fetch_jwt_bundles.call_count == 4
+
+
+def test_stream_jwt_bundles_eof_without_retry_reports_error(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    fetch_jwt_bundles = mocker.Mock(return_value=_FakeStream())
+    client._spiffe_workload_api_stub.FetchJWTBundles = fetch_jwt_bundles
+    errors: list[Exception] = []
+
+    client._watch_jwt_bundles_updates(
+        StreamCancelHandler(), None, lambda _: pytest.fail('unexpected update'), errors.append
+    )
+
+    assert len(errors) == 1
+    assert isinstance(errors[0], WorkloadApiError)
+    assert str(errors[0]) == 'Workload API stream ended unexpectedly'
+    assert fetch_jwt_bundles.call_count == 1
+
+
 def test_stream_jwt_bundles_retry_on_grpc_error(
     mocker: MockerFixture, client: WorkloadApiClient
 ) -> None:
@@ -621,12 +802,21 @@ def test_stream_jwt_bundles_retry_on_grpc_error(
 
     expected_error = FetchJwtBundleError(grpc_error.details())
     event = threading.Event()
+    cancel_handler_ready = threading.Event()
     response_holder = ResponseHolder[JwtBundleSet]()
+    cancel_handler: StreamCancelHandler | None = None
 
-    client.stream_jwt_bundles(
-        on_success=lambda r: handle_success(r, response_holder, event),
+    def on_success(response: JwtBundleSet) -> None:
+        handle_success(response, response_holder, event)
+        assert cancel_handler_ready.wait(timeout=5)
+        assert cancel_handler is not None
+        cancel_handler.cancel()
+
+    cancel_handler = client.stream_jwt_bundles(
+        on_success=on_success,
         on_error=lambda e: assert_error(e, expected_error),
     )
+    cancel_handler_ready.set()
 
     event.wait(timeout=5)
 
