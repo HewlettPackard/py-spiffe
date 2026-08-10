@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Workload API:** X.509 and JWT watchers now reconnect when an active response stream ends normally, preserve retry state until a valid update is delivered, and treat explicit cancellation as a silent terminal condition.
+
 ## [0.3.1] - 2026-08-08
 
 ### Fixed
