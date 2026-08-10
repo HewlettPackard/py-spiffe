@@ -123,11 +123,15 @@ class JwtSvid(object):
     ) -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
 
-        The JWT-SVID signature is verified using the JWT bundle source.
+        The JWT-SVID signature is verified using the supplied JWT bundle.
+        The bundle's trust domain must equal the trust domain of the SPIFFE ID in
+        the token's 'sub' claim. Callers validating federated tokens should select
+        the matching bundle (for example via JwtBundleSet.get_bundle_for_trust_domain)
+        before calling this method.
 
         Args:
             token: A token as a string that is parsed and validated.
-            jwt_bundle: An instance of JwtBundle that provides the JWT authorities to verify the signature.
+            jwt_bundle: JwtBundle for the subject's trust domain; used to verify the signature.
             audience: A set of strings used to validate the 'aud' claim.
 
         Returns:
@@ -140,10 +144,10 @@ class JwtSvid(object):
                             when the signature cannot be verified, or
                             when the 'aud' claim has an audience that is not in the audience list provided as parameter.
             ArgumentError:     When the token is blank or cannot be parsed.
-            BundleNotFoundError:    If the bundle for the trust domain of the SPIFFE ID from the 'sub'
-                                    cannot be found the jwt_bundle_source.
             AuthorityNotFoundError: If the authority cannot be found in the bundle using the value from the 'kid' header.
-            InvalidTokenError: In case token is malformed and fails to decode.
+            InvalidTokenError: In case token is malformed and fails to decode, or when the trust domain of the
+                                SPIFFE ID from the 'sub' claim does not match the trust domain of the supplied
+                                jwt_bundle.
         """
         if not token:
             raise ArgumentError('token cannot be empty')
@@ -184,6 +188,12 @@ class JwtSvid(object):
             if not sub_claim:
                 raise InvalidTokenError('JWT token must contain a non-empty \'sub\' claim')
             spiffe_id = SpiffeId(sub_claim)
+
+            if spiffe_id.trust_domain != jwt_bundle.trust_domain:
+                raise InvalidTokenError(
+                    f"JWT-SVID subject trust domain '{spiffe_id.trust_domain}' does not match "
+                    f"the trust domain '{jwt_bundle.trust_domain}' of the supplied JwtBundle"
+                )
 
             return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
         except PyJWTError as err:
