@@ -64,6 +64,8 @@ _logger = logging.getLogger(__name__)
 #  - CANCELLED is not retried because it occurs when the caller has canceled the operation.
 _NON_RETRYABLE_CODES = {grpc.StatusCode.CANCELLED, grpc.StatusCode.INVALID_ARGUMENT}
 
+_STREAM_ENDED_ERROR = 'Workload API stream ended unexpectedly'
+
 __all__ = ['WorkloadApiClient', 'RetryPolicy']
 
 _T_co = TypeVar("_T_co", covariant=True)
@@ -124,6 +126,10 @@ class RetryHandler:
         """Determines whether the operation should be retried based on the error code and attempt count."""
         if error_code in _NON_RETRYABLE_CODES:
             return False
+        return self.can_retry()
+
+    def can_retry(self) -> bool:
+        """Determines whether the retry limit allows another attempt."""
         # Allow unlimited retries when max_retries is set to UNLIMITED_RETRIES (0)
         if (
             self.retry_policy.max_retries != RetryPolicy.UNLIMITED_RETRIES
@@ -170,7 +176,10 @@ class StreamCancelHandler:
         self._cancel_event.set()
         with self._lock:
             if self.response_iterator:
-                self.response_iterator.cancel()
+                try:
+                    self.response_iterator.cancel()
+                except Exception:
+                    pass
 
     def is_cancelled(self) -> bool:
         return self._cancel_event.is_set()
@@ -443,13 +452,19 @@ class WorkloadApiClient:
         Establishes a streaming gRPC connection to receive continuous updates of X.509 contexts from the Workload API.
 
         This method asynchronously listens for X.509 context updates, invoking `on_success` with each new context received.
-        If an error occurs during streaming or processing, `on_error` is called with the encountered exception. The method
-        supports automatic reconnection attempts based on the specified `retry_policy`.
+        If an error occurs during streaming or processing, `on_error` is called with the encountered exception.
+
+        While the watcher remains active, a normal end of the response stream is not treated as permanent completion.
+        When `retry_connect` is True, the client reconnects according to `retry_policy` (retry/backoff state resets only
+        after a valid update is delivered). When `retry_connect` is False, stream end is fail-closed and `on_error` is
+        called. Calling `cancel()` on the returned handler stops the watcher promptly without invoking `on_error` or
+        starting another connection.
 
         Parameters:
             on_success (Callable[[X509Context], None]): Callback for each update received.
-            on_error (Callable[[Exception], None]): Callback for handling streaming or processing errors.
-            retry_connect (bool, optional): Enables automatic retries on connection failures. Defaults to True.
+            on_error (Callable[[Exception], None]): Callback for streaming, processing, or fail-closed stream-end errors.
+            retry_connect (bool, optional): Enables automatic retries on stream end and connection failures.
+                Defaults to True.
             retry_policy (Optional[RetryPolicy], optional): Custom retry behavior; uses default if None.
 
         Returns:
@@ -484,20 +499,26 @@ class WorkloadApiClient:
         Establishes a streaming gRPC connection to receive continuous updates of Jwt Bundles from the Workload API.
 
         This method asynchronously listens for Jwt Bundles updates, invoking `on_success` with each new update received.
-        If an error occurs during streaming or processing, `on_error` is called with the encountered exception. The method
-        supports automatic reconnection attempts based on the specified `retry_policy`.
+        If an error occurs during streaming or processing, `on_error` is called with the encountered exception.
+
+        While the watcher remains active, a normal end of the response stream is not treated as permanent completion.
+        When `retry_connect` is True, the client reconnects according to `retry_policy` (retry/backoff state resets only
+        after a valid update is delivered). When `retry_connect` is False, stream end is fail-closed and `on_error` is
+        called. Calling `cancel()` on the returned handler stops the watcher promptly without invoking `on_error` or
+        starting another connection.
 
         Parameters:
-            on_success (Callable[[X509Context], None]): Callback for each update received.
-            on_error (Callable[[Exception], None]): Callback for handling streaming or processing errors.
-            retry_connect (bool, optional): Enables automatic retries on connection failures. Defaults to True.
+            on_success (Callable[[JwtBundleSet], None]): Callback for each update received.
+            on_error (Callable[[Exception], None]): Callback for streaming, processing, or fail-closed stream-end errors.
+            retry_connect (bool, optional): Enables automatic retries on stream end and connection failures.
+                Defaults to True.
             retry_policy (Optional[RetryPolicy], optional): Custom retry behavior; uses default if None.
 
         Returns:
             StreamCancelHandler: A handler that can be used to cancel the streaming operation.
 
         Usage example:
-            cancel_handler = client.stream_x509_contexts(on_success, on_error)
+            cancel_handler = client.stream_jwt_bundles(on_success, on_error)
             # To cancel the streaming:
             cancel_handler.cancel()
         """
@@ -549,12 +570,17 @@ class WorkloadApiClient:
                         break
                     x509_context = self._process_x509_context(item)
                     on_success(x509_context)
+                    if retry_handler:
+                        retry_handler.reset()
 
-                if retry_handler:
-                    retry_handler.reset()
-                break
+                if not self._reconnect_after_stream_end(
+                    cancel_handler, retry_handler, on_error
+                ):
+                    break
 
             except grpc.RpcError as grpc_err:
+                if cancel_handler.is_cancelled():
+                    break
                 if retry_handler is None or not retry_handler.should_retry(grpc_err.code()):
                     on_error(WorkloadApiError(f"gRPC error: {str(grpc_err.code())}"))
                     break
@@ -564,6 +590,8 @@ class WorkloadApiClient:
                     break
 
             except Exception as err:
+                if cancel_handler.is_cancelled():
+                    break
                 on_error(WorkloadApiError(str(err)))
                 break  # Exit on unexpected errors
 
@@ -588,12 +616,17 @@ class WorkloadApiClient:
                         break
                     jwt_bundles = self._process_jwt_bundles(item)
                     on_success(jwt_bundles)
+                    if retry_handler:
+                        retry_handler.reset()
 
-                if retry_handler:
-                    retry_handler.reset()
-                break
+                if not self._reconnect_after_stream_end(
+                    cancel_handler, retry_handler, on_error
+                ):
+                    break
 
             except grpc.RpcError as grpc_err:
+                if cancel_handler.is_cancelled():
+                    break
                 if retry_handler is None or not retry_handler.should_retry(grpc_err.code()):
                     on_error(WorkloadApiError(f"gRPC error: {str(grpc_err.code())}"))
                     break
@@ -603,8 +636,27 @@ class WorkloadApiClient:
                     break
 
             except Exception as err:
+                if cancel_handler.is_cancelled():
+                    break
                 on_error(WorkloadApiError(str(err)))
                 break  # Exit on unexpected errors
+
+    @staticmethod
+    def _reconnect_after_stream_end(
+        cancel_handler: StreamCancelHandler,
+        retry_handler: Optional[RetryHandler],
+        on_error: Callable[[Exception], None],
+    ) -> bool:
+        if cancel_handler.is_cancelled():
+            return False
+
+        if retry_handler is None or not retry_handler.can_retry():
+            if not cancel_handler.is_cancelled():
+                on_error(WorkloadApiError(_STREAM_ENDED_ERROR))
+            return False
+
+        backoff = retry_handler.get_backoff()
+        return not cancel_handler.wait_cancelled(backoff)
 
     def _process_x509_context(
         self, x509_svid_response: workload_pb2.X509SVIDResponse
