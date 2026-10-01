@@ -43,6 +43,8 @@ class JwtSvid(object):
         expiry: int,
         claims: Dict[str, str],
         token: str,
+        *,
+        hint: str = '',
     ) -> None:
         """Creates a JwtSvid instance.
 
@@ -52,12 +54,15 @@ class JwtSvid(object):
             expiry: Date and time in UTC specifying expiry date of the JwtSvid.
             claims: Key-value pairs with all the claims present in the token.
             token: Encoded token.
+            hint: An operator-specified string provided by the Workload API to guide which SVID
+                  a workload should use when more than one is returned. Empty when not set.
         """
         self._spiffe_id = spiffe_id
         self._audience = {audience} if isinstance(audience, str) else set(audience)
         self._expiry = expiry
         self._claims = claims
         self._token = token
+        self._hint = hint
 
     @property
     def spiffe_id(self) -> SpiffeId:
@@ -79,14 +84,26 @@ class JwtSvid(object):
         """Returns the token."""
         return self._token
 
+    @property
+    def hint(self) -> str:
+        """Returns the hint, or an empty string if the SVID has no hint.
+
+        The hint is unauthenticated metadata attached by the local Workload API to help a
+        workload choose among its own SVIDs. It is not part of the token and must not be
+        used for authorization decisions. SVIDs from parse_and_validate() always have an
+        empty hint.
+        """
+        return self._hint
+
     @classmethod
-    def parse_insecure(cls, token: str, audience: Set[str]) -> 'JwtSvid':
+    def parse_insecure(cls, token: str, audience: Set[str], *, hint: str = '') -> 'JwtSvid':
         """Parses and validates a JWT-SVID token and returns an instance of a JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud',
         and expiry from 'exp' claim. The JWT-SVID signature is not verified.
 
         Args:
             token: A token as a string that is parsed and validated.
             audience: Audience is a set of strings used to validate the 'aud' claim.
+            hint: Optional hint to attach to the parsed SVID, as provided by the Workload API.
 
         Returns:
             An instance of JwtSvid with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
@@ -113,7 +130,7 @@ class JwtSvid(object):
             if not sub_claim:
                 raise InvalidTokenError('JWT token must contain a non-empty \'sub\' claim')
             spiffe_id = SpiffeId(sub_claim)
-            return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token)
+            return JwtSvid(spiffe_id, claims['aud'], claims['exp'], claims, token, hint=hint)
         except PyJWTError as err:
             raise InvalidTokenError(str(err)) from err
 

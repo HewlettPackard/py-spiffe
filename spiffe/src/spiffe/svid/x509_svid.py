@@ -53,7 +53,7 @@ class X509Svid(object):
     """
     Represents a SPIFFE X.509-SVID.
 
-    Contains a SpiffeId, a private key and a chain of X.509 certificates.
+    Contains a SpiffeId, a private key, a chain of X.509 certificates, and an optional hint.
     """
 
     def __init__(
@@ -61,6 +61,8 @@ class X509Svid(object):
         spiffe_id: SpiffeId,
         cert_chain: List[Certificate],
         private_key: PRIVATE_KEY_TYPES,
+        *,
+        hint: str = '',
     ) -> None:
         """Creates a X509Svid instance.
 
@@ -68,6 +70,8 @@ class X509Svid(object):
             spiffe_id: A SpiffeId instance.
             cert_chain: A list representing a chain of X.509 Certificate.
             private_key: A Private Key object.
+            hint: An operator-specified string provided by the Workload API to guide which SVID
+                  a workload should use when more than one is returned. Empty when not set.
         """
 
         if not spiffe_id:
@@ -82,6 +86,7 @@ class X509Svid(object):
         self._spiffe_id = spiffe_id
         self._cert_chain = cert_chain
         self._private_key = private_key
+        self._hint = hint
 
     @property
     def leaf(self) -> Certificate:
@@ -102,6 +107,16 @@ class X509Svid(object):
     def spiffe_id(self) -> SpiffeId:
         """Returns the SpiffeId."""
         return self._spiffe_id
+
+    @property
+    def hint(self) -> str:
+        """Returns the hint, or an empty string if the SVID has no hint.
+
+        The hint is unauthenticated metadata attached by the local Workload API to help a
+        workload choose among its own SVIDs. It is not part of the certificate and must not
+        be used for authorization decisions.
+        """
+        return self._hint
 
     def save(
         self,
@@ -138,7 +153,9 @@ class X509Svid(object):
         write_private_key_to_file(private_key_path, encoding, self._private_key)
 
     @classmethod
-    def parse_raw(cls, certs_chain_bytes: bytes, private_key_bytes: bytes) -> 'X509Svid':
+    def parse_raw(
+        cls, certs_chain_bytes: bytes, private_key_bytes: bytes, *, hint: str = ''
+    ) -> 'X509Svid':
         """Parses the X509-SVID from certificate chain and private key bytes.
 
         The certificate chain must be ASN.1 DER (concatenated with no intermediate padding if there are more than
@@ -149,6 +166,7 @@ class X509Svid(object):
         Args:
             certs_chain_bytes: Chain of X.509 certificates in ASN.1 DER format.
             private_key_bytes: Private key as PKCS#8 ASN.1 DER.
+            hint: Optional hint to attach to the parsed SVID, as provided by the Workload API.
 
         Returns:
             An instance of a 'X509Svid' containing the chain of certificates, the private key, and the SPIFFE ID of the
@@ -174,7 +192,7 @@ class X509Svid(object):
         _validate_leaf_spiffe_id(spiffe_id)
         private_key = parse_der_private_key(private_key_bytes)
 
-        return X509Svid(spiffe_id, chain, private_key)
+        return X509Svid(spiffe_id, chain, private_key, hint=hint)
 
     @classmethod
     def parse(cls, certs_chain_bytes: bytes, private_key_bytes: bytes) -> 'X509Svid':

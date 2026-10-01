@@ -48,9 +48,11 @@ bin/spire-agent run -config conf/agent/agent.conf -joinToken "$(< token_stripped
 wait_for_service "bin/spire-agent healthcheck" "SPIRE Agent" "${spire_agent_log_file}"
 
 # Register workloads
-for service in "myservice" "myservice2"; do
-  echo "Creating entry for '${service}'"
-  bin/spire-server entry create -parentID ${agent_id} -spiffeID spiffe://example.org/${service} -selector unix:uid:$(id -u) -ttl 5
+for service_hint in "myservice:internal" "myservice2:external"; do
+  service="${service_hint%%:*}"
+  hint="${service_hint#*:}"
+  echo "Creating entry for '${service}' with hint '${hint}'"
+  bin/spire-server entry create -parentID ${agent_id} -spiffeID spiffe://example.org/${service} -selector unix:uid:$(id -u) -ttl 5 -hint "${hint}"
 done
 
 uid=$(id -u)

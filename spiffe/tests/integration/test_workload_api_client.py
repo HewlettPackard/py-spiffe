@@ -14,6 +14,10 @@ License for the specific language governing permissions and limitations
 under the License.
 """
 
+from typing import Iterable, Set, Tuple
+
+import pytest
+
 from spiffe import SpiffeId, WorkloadApiClient
 
 """
@@ -24,7 +28,23 @@ ensure the SPIFFE_ENDPOINT_SOCKET environment variable is correctly set to point
 to the SPIRE Agent's Workload API socket path.
 
 These tests also require the presence of a valid registration entry for the calling workload.
+The hint tests additionally expect the hinted entries created by
+.github/workflows/scripts/run-spire.sh and are skipped when those SPIFFE IDs are absent.
 """
+
+# Registration entries and hints created by .github/workflows/scripts/run-spire.sh.
+_EXPECTED_HINTS = {
+    ('spiffe://example.org/myservice', 'internal'),
+    ('spiffe://example.org/myservice2', 'external'),
+}
+
+
+def _assert_expected_hints(id_hint_pairs: Iterable[Tuple[str, str]]) -> None:
+    pairs: Set[Tuple[str, str]] = set(id_hint_pairs)
+    expected_ids = {spiffe_id for spiffe_id, _ in _EXPECTED_HINTS}
+    if not expected_ids <= {spiffe_id for spiffe_id, _ in pairs}:
+        pytest.skip('hinted registration entries from run-spire.sh are not present')
+    assert pairs >= _EXPECTED_HINTS
 
 
 def test_workload_api_client_x509() -> None:
@@ -40,6 +60,7 @@ def test_workload_api_client_x509() -> None:
 
         svids = client.fetch_x509_svids()
         assert len(svids) > 0
+        assert all(isinstance(s.hint, str) for s in svids)
 
         bundle_set = client.fetch_x509_bundles()
         bundle = bundle_set.get_bundle_for_trust_domain(svid.spiffe_id.trust_domain)
@@ -75,6 +96,7 @@ def test_workload_api_client_jwt() -> None:
 
         svids = client.fetch_jwt_svids(audience={"other"})
         assert len(svids) > 0
+        assert all(isinstance(s.hint, str) for s in svids)
         svid = svids[0]
         assert "other" in svid.audience
 
@@ -88,3 +110,15 @@ def test_workload_api_client_jwt() -> None:
     finally:
         if client is not None:
             client.close()
+
+
+def test_workload_api_client_x509_hints() -> None:
+    with WorkloadApiClient() as client:
+        svids = client.fetch_x509_svids()
+    _assert_expected_hints((str(s.spiffe_id), s.hint) for s in svids)
+
+
+def test_workload_api_client_jwt_hints() -> None:
+    with WorkloadApiClient() as client:
+        svids = client.fetch_jwt_svids(audience={"other"})
+    _assert_expected_hints((str(s.spiffe_id), s.hint) for s in svids)

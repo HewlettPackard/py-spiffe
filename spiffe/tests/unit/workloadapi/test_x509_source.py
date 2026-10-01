@@ -61,12 +61,14 @@ class _FakeX509Client:
         self.stream_error = stream_error
         self.x509_context = x509_context
         self.close_count = 0
+        self.on_success: Callable[[X509Context], None] | None = None
 
     def stream_x509_contexts(
         self,
         on_success: Callable[[X509Context], None],
         on_error: Callable[[Exception], None],
     ) -> _FakeCancelHandler:
+        self.on_success = on_success
         if self.stream_delay:
             time.sleep(self.stream_delay)
         if self.stream_error:
@@ -146,6 +148,106 @@ def test_x509_source_get_x509_svid_with_picker(
     with pytest.warns(DeprecationWarning, match='X509Source.svid is deprecated'):
         x509_svid = x509_source.svid
     assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
+
+
+def test_x509_source_picker_selects_svid_by_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter(
+            [
+                workload_pb2.X509SVIDResponse(
+                    svids=[
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service',
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
+                            hint='internal',
+                        ),
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service2',
+                            x509_svid=CHAIN2,
+                            x509_svid_key=KEY2,
+                            bundle=BUNDLE,
+                            hint='external',
+                        ),
+                    ],
+                )
+            ]
+        )
+    )
+    received_hints: list[str] = []
+
+    def pick_external(svids: list[X509Svid]) -> X509Svid:
+        received_hints.extend(svid.hint for svid in svids)
+        for svid in svids:
+            if svid.hint == 'external':
+                return svid
+        raise ValueError("no SVID with hint 'external'")
+
+    x509_source = X509Source(client, svid_picker=pick_external)
+    default_svid = x509_source.get_x509_context().default_svid
+
+    assert received_hints == ['internal', 'external']
+    assert default_svid.spiffe_id == SpiffeId('spiffe://example.org/service2')
+    assert default_svid.hint == 'external'
+
+
+def _hint_picker(hint: str) -> Callable[[list[X509Svid]], X509Svid]:
+    def pick(svids: list[X509Svid]) -> X509Svid:
+        for svid in svids:
+            if svid.hint == hint:
+                return svid
+        raise ValueError(f"no SVID with hint '{hint}'")
+
+    return pick
+
+
+def test_x509_source_picker_fails_closed_when_hint_missing(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    mock_client_return_multiple_svids(mocker, client)
+
+    with pytest.raises(X509SourceError) as err:
+        X509Source(client, svid_picker=_hint_picker('external'))
+
+    assert str(err.value) == (
+        "X.509 Source error: Failed to create X509Source: "
+        "Failed to pick X509 SVID: no SVID with hint 'external'"
+    )
+
+
+def test_x509_source_picker_failure_on_later_update_closes_source_permanently() -> None:
+    cancel_handler = _FakeCancelHandler()
+    bundle_set = make_x509_context().x509_bundle_set
+    hinted_context = X509Context(
+        [X509Svid.parse_raw(CHAIN1, KEY1, hint='internal')], bundle_set
+    )
+    fake_client = _FakeX509Client(cancel_handler, x509_context=hinted_context)
+
+    x509_source = X509Source(
+        cast(WorkloadApiClient, fake_client), svid_picker=_hint_picker('internal')
+    )
+    assert not x509_source.is_closed()
+    assert fake_client.on_success is not None
+
+    fake_client.on_success(X509Context([X509Svid.parse_raw(CHAIN2, KEY2)], bundle_set))
+
+    assert x509_source.is_closed()
+    assert cancel_handler.cancelled.wait(timeout=1)
+    with pytest.raises(X509SourceError) as err:
+        x509_source.get_x509_context()
+    assert str(err.value) == (
+        "X.509 Source error: Cannot get X.509 context: source has error: "
+        "Failed to pick X509 SVID: no SVID with hint 'internal'"
+    )
+
+    fake_client.on_success(hinted_context)
+
+    assert x509_source.is_closed()
+    with pytest.raises(X509SourceError):
+        x509_source.get_x509_context()
 
 
 def test_x509_source_get_x509_context(

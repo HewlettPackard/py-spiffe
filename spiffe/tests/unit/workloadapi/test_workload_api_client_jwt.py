@@ -195,6 +195,103 @@ def test_fetch_jwt_svids(mocker: MockerFixture, client: WorkloadApiClient) -> No
     assert int(svid._expiry) > utc_time
 
 
+def test_fetch_jwt_svid_propagates_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    jwt_svid = generate_test_jwt_token(spiffe_id='spiffe://test.com/my_service')
+
+    client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[workload_pb2.JWTSVID(svid=jwt_svid, hint='external')]
+        )
+    )
+
+    svid = client.fetch_jwt_svid(audience=TEST_AUDIENCE)
+
+    assert svid.hint == 'external'
+
+
+def test_fetch_jwt_svids_propagates_hints(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    jwt_svid = generate_test_jwt_token(spiffe_id='spiffe://test.com/my_service')
+    jwt_svid2 = generate_test_jwt_token(spiffe_id='spiffe://test.com/my_service2')
+
+    client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(svid=jwt_svid, hint='internal'),
+                workload_pb2.JWTSVID(svid=jwt_svid2),
+            ]
+        )
+    )
+
+    svids = client.fetch_jwt_svids(audience=TEST_AUDIENCE)
+
+    assert [svid.hint for svid in svids] == ['internal', '']
+
+
+def test_fetch_jwt_svids_keeps_first_svid_per_hint_and_all_without_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    tokens = [
+        generate_test_jwt_token(spiffe_id=f'spiffe://test.com/service{i}') for i in range(4)
+    ]
+
+    client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(svid=tokens[0], hint='internal'),
+                workload_pb2.JWTSVID(svid=tokens[1], hint='internal'),
+                workload_pb2.JWTSVID(svid=tokens[2]),
+                workload_pb2.JWTSVID(svid=tokens[3]),
+            ]
+        )
+    )
+
+    svids = client.fetch_jwt_svids(audience=TEST_AUDIENCE)
+
+    assert [(svid.token, svid.hint) for svid in svids] == [
+        (tokens[0], 'internal'),
+        (tokens[2], ''),
+        (tokens[3], ''),
+    ]
+
+
+def test_fetch_jwt_svids_skips_duplicate_hint_before_parsing(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    jwt_svid = generate_test_jwt_token(spiffe_id='spiffe://test.com/my_service')
+
+    client._spiffe_workload_api_stub.FetchJWTSVID = mocker.Mock(
+        return_value=workload_pb2.JWTSVIDResponse(
+            svids=[
+                workload_pb2.JWTSVID(svid=jwt_svid, hint='internal'),
+                workload_pb2.JWTSVID(svid='not-a-jwt', hint='internal'),
+            ]
+        )
+    )
+
+    svids = client.fetch_jwt_svids(audience=TEST_AUDIENCE)
+
+    assert [svid.token for svid in svids] == [jwt_svid]
+
+
+def test_validate_jwt_svid_has_no_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    audience = 'spire'
+    spiffe_id = 'spiffe://test.com/my_service'
+    jwt_svid = generate_test_jwt_token(audience={audience}, spiffe_id=spiffe_id)
+    client._spiffe_workload_api_stub.ValidateJWTSVID = mocker.Mock(
+        return_value=workload_pb2.ValidateJWTSVIDResponse(spiffe_id=spiffe_id)
+    )
+
+    svid = client.validate_jwt_svid(token=jwt_svid, audience=audience)
+
+    assert svid.hint == ''
+
+
 @pytest.fixture
 def client_with_default_timeout() -> WorkloadApiClient:
     with patch.object(WorkloadApiClient, '_check_spiffe_socket_exists') as mock_check:

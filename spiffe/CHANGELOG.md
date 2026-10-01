@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **SVIDs:** Added `X509Svid.hint` and `JwtSvid.hint`, populated from the Workload API, to distinguish between multiple SVIDs (e.g. in an `X509Source` `svid_picker`). Empty when unset. ([#452](https://github.com/HewlettPackard/py-spiffe/issues/452))
+
+### Changed
+- **Workload API:** When multiple SVIDs share the same non-empty hint, only the first is kept, per the SPIFFE Workload API spec. Trust bundles of skipped X.509-SVIDs are still added to the X.509 context.
+
 ## [0.3.2] - 2026-10-01
 
 ### Fixed
