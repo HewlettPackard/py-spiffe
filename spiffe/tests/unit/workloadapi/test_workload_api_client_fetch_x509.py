@@ -15,6 +15,7 @@ under the License.
 """
 
 from collections.abc import Iterator
+import datetime
 import threading
 from typing import Callable, Generic, TypeVar
 from unittest.mock import patch
@@ -22,8 +23,11 @@ from unittest.mock import patch
 import grpc
 import pytest
 from pytest_mock import MockerFixture
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509 import Certificate
+from cryptography.x509.oid import NameOID
 
 from spiffe._proto import workload_pb2
 from spiffe.spiffe_id.spiffe_id import SpiffeId
@@ -331,6 +335,262 @@ def test_fetch_x509_svids_success(mocker: MockerFixture, client: WorkloadApiClie
     assert len(svid2.cert_chain) == 1
     assert isinstance(svid2.leaf, Certificate)
     assert isinstance(svid2.private_key, ec.EllipticCurvePrivateKey)
+
+
+def _x509_svid_response_with_hints() -> workload_pb2.X509SVIDResponse:
+    return workload_pb2.X509SVIDResponse(
+        svids=[
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service',
+                x509_svid=CHAIN1,
+                x509_svid_key=KEY1,
+                bundle=BUNDLE,
+                hint='internal',
+            ),
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service2',
+                x509_svid=CHAIN2,
+                x509_svid_key=KEY2,
+                bundle=BUNDLE,
+            ),
+        ]
+    )
+
+
+def test_fetch_x509_svid_propagates_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([_x509_svid_response_with_hints()])
+    )
+
+    svid = client.fetch_x509_svid()
+
+    assert svid.hint == 'internal'
+
+
+def test_fetch_x509_svids_propagates_hints(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([_x509_svid_response_with_hints()])
+    )
+
+    svids = client.fetch_x509_svids()
+
+    assert [svid.hint for svid in svids] == ['internal', '']
+
+
+def test_fetch_x509_context_propagates_hints(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([_x509_svid_response_with_hints()])
+    )
+
+    x509_context = client.fetch_x509_context()
+
+    assert [svid.hint for svid in x509_context.x509_svids] == ['internal', '']
+
+
+def _x509_svid_response_with_duplicate_hints() -> workload_pb2.X509SVIDResponse:
+    return workload_pb2.X509SVIDResponse(
+        svids=[
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service',
+                x509_svid=CHAIN1,
+                x509_svid_key=KEY1,
+                bundle=BUNDLE,
+                hint='internal',
+            ),
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service2',
+                x509_svid=CHAIN2,
+                x509_svid_key=KEY2,
+                bundle=BUNDLE,
+                hint='internal',
+            ),
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service',
+                x509_svid=CHAIN1,
+                x509_svid_key=KEY1,
+                bundle=BUNDLE,
+            ),
+            workload_pb2.X509SVID(
+                spiffe_id='spiffe://example.org/service2',
+                x509_svid=CHAIN2,
+                x509_svid_key=KEY2,
+                bundle=BUNDLE,
+            ),
+        ]
+    )
+
+
+def test_fetch_x509_svids_keeps_first_svid_per_hint_and_all_without_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([_x509_svid_response_with_duplicate_hints()])
+    )
+
+    svids = client.fetch_x509_svids()
+
+    assert [(str(s.spiffe_id), s.hint) for s in svids] == [
+        ('spiffe://example.org/service', 'internal'),
+        ('spiffe://example.org/service', ''),
+        ('spiffe://example.org/service2', ''),
+    ]
+
+
+def test_fetch_x509_context_keeps_first_svid_per_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter([_x509_svid_response_with_duplicate_hints()])
+    )
+
+    x509_context = client.fetch_x509_context()
+
+    assert [(str(s.spiffe_id), s.hint) for s in x509_context.x509_svids] == [
+        ('spiffe://example.org/service', 'internal'),
+        ('spiffe://example.org/service', ''),
+        ('spiffe://example.org/service2', ''),
+    ]
+
+
+def _make_leaf_svid(spiffe_id: str) -> tuple[bytes, bytes]:
+    key = ec.generate_private_key(ec.SECP256R1())
+    now = datetime.datetime.now(datetime.timezone.utc)
+    name = x509.Name([x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'test')])
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(hours=1))
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(
+            x509.SubjectAlternativeName([x509.UniformResourceIdentifier(spiffe_id)]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    key_der = key.private_bytes(
+        serialization.Encoding.DER,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+    return cert.public_bytes(serialization.Encoding.DER), key_der
+
+
+def test_fetch_x509_context_keeps_bundle_of_duplicate_hint_svid_in_other_trust_domain(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    other_td_chain, other_td_key = _make_leaf_svid('spiffe://domain.test/workload')
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter(
+            [
+                workload_pb2.X509SVIDResponse(
+                    svids=[
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service',
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
+                            hint='internal',
+                        ),
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://domain.test/workload',
+                            x509_svid=other_td_chain,
+                            x509_svid_key=other_td_key,
+                            bundle=FEDERATED_BUNDLE,
+                            hint='internal',
+                        ),
+                    ]
+                )
+            ]
+        )
+    )
+
+    x509_context = client.fetch_x509_context()
+
+    assert [str(s.spiffe_id) for s in x509_context.x509_svids] == [
+        'spiffe://example.org/service'
+    ]
+    bundle_set = x509_context.x509_bundle_set
+    example_bundle = bundle_set.get_bundle_for_trust_domain(TrustDomain('example.org'))
+    assert example_bundle
+    assert len(example_bundle.x509_authorities) == 1
+    other_bundle = bundle_set.get_bundle_for_trust_domain(TrustDomain('domain.test'))
+    assert other_bundle
+    assert len(other_bundle.x509_authorities) == 1
+
+
+@pytest.mark.parametrize(
+    'duplicate_chain, duplicate_key, duplicate_bundle',
+    [
+        pytest.param(CORRUPTED, CORRUPTED, CORRUPTED, id='corrupted-chain'),
+        pytest.param(CHAIN2, KEY2, CORRUPTED, id='corrupted-bundle'),
+    ],
+)
+def test_fetch_x509_context_malformed_duplicate_hint_svid_does_not_fail_response(
+    mocker: MockerFixture,
+    client: WorkloadApiClient,
+    duplicate_chain: bytes,
+    duplicate_key: bytes,
+    duplicate_bundle: bytes,
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=iter(
+            [
+                workload_pb2.X509SVIDResponse(
+                    svids=[
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service',
+                            x509_svid=CHAIN1,
+                            x509_svid_key=KEY1,
+                            bundle=BUNDLE,
+                            hint='internal',
+                        ),
+                        workload_pb2.X509SVID(
+                            spiffe_id='spiffe://example.org/service2',
+                            x509_svid=duplicate_chain,
+                            x509_svid_key=duplicate_key,
+                            bundle=duplicate_bundle,
+                            hint='internal',
+                        ),
+                    ]
+                )
+            ]
+        )
+    )
+
+    x509_context = client.fetch_x509_context()
+
+    assert [str(s.spiffe_id) for s in x509_context.x509_svids] == [
+        'spiffe://example.org/service'
+    ]
+    bundle = x509_context.x509_bundle_set.get_bundle_for_trust_domain(
+        TrustDomain('example.org')
+    )
+    assert bundle
+    assert len(bundle.x509_authorities) == 1
 
 
 def test_fetch_x509_svids_empty_response(
@@ -936,6 +1196,62 @@ def test_stream_x509_contexts_reconnects_after_eof_and_delivers_rotated_update(
     assert responses[0].default_svid.leaf != responses[1].default_svid.leaf
     assert errors == []
     assert fetch_x509_svid.call_count == 2
+
+
+def test_stream_x509_contexts_propagates_hints(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=_FakeStream([_x509_svid_response_with_hints()])
+    )
+    cancel_handler = StreamCancelHandler()
+    responses: list[X509Context] = []
+    errors: list[Exception] = []
+
+    def on_success(response: X509Context) -> None:
+        responses.append(response)
+        cancel_handler.cancel()
+
+    client._watch_x509_context_updates(
+        cancel_handler,
+        RetryHandler(RetryPolicy(base_backoff_in_seconds=0)),
+        on_success,
+        errors.append,
+    )
+
+    assert errors == []
+    assert len(responses) == 1
+    assert [svid.hint for svid in responses[0].x509_svids] == ['internal', '']
+
+
+def test_stream_x509_contexts_keeps_first_svid_per_hint(
+    mocker: MockerFixture, client: WorkloadApiClient
+) -> None:
+    client._spiffe_workload_api_stub.FetchX509SVID = mocker.Mock(
+        return_value=_FakeStream([_x509_svid_response_with_duplicate_hints()])
+    )
+    cancel_handler = StreamCancelHandler()
+    responses: list[X509Context] = []
+    errors: list[Exception] = []
+
+    def on_success(response: X509Context) -> None:
+        responses.append(response)
+        cancel_handler.cancel()
+
+    client._watch_x509_context_updates(
+        cancel_handler,
+        RetryHandler(RetryPolicy(base_backoff_in_seconds=0)),
+        on_success,
+        errors.append,
+    )
+
+    assert errors == []
+    assert len(responses) == 1
+    assert [(str(s.spiffe_id), s.hint) for s in responses[0].x509_svids] == [
+        ('spiffe://example.org/service', 'internal'),
+        ('spiffe://example.org/service', ''),
+        ('spiffe://example.org/service2', ''),
+    ]
 
 
 def test_stream_x509_contexts_cancellation_during_iteration_is_silent(

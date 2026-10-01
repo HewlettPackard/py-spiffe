@@ -66,9 +66,12 @@ class X509Source:
                                 the connection with the Workload API fails, it will block Indefinitely while
                                 the connection is retried.
 
-            svid_picker: Function to choose the X.509 SVID from the list returned by the Workload API.
-                    If it is not set, the default SVID is picked. If the picker function throws an error,
-                    it will render the X509Source invalid and it will be closed.
+            svid_picker: Function to choose the X.509 SVID from the list returned by the Workload API,
+                    for example by `X509Svid.hint`. If it is not set, the default SVID is picked.
+                    The picker is called on every Workload API update, not only during initialization.
+                    If it raises at any time, the X509Source fails closed: it is closed permanently and
+                    does not recover when a later update would match again, so any TLS context built on
+                    it (for example with spiffe-tls) stops working until a new source is created.
 
         Returns:
             X509Source: New X509Source object, initialized with the X509Context fetched from the Workload API.
