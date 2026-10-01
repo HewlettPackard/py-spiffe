@@ -56,6 +56,29 @@ Per-call timeouts override `default_timeout`. Deadline expiry is reported as
 the SPIFFE-specific error for the call, such as `FetchJwtSvidError`. Timeouts do
 not apply to long-lived streaming methods.
 
+When a workload is entitled to more than one identity, the Workload API may
+attach an operator-defined `hint` (for example `internal` or `external`) to each
+SVID. The hint is exposed on `X509Svid` and `JwtSvid`, and is an empty string
+when not set:
+
+```python
+with WorkloadApiClient() as client:
+    svids = client.fetch_x509_svids()
+    external = next((s for s in svids if s.hint == 'external'), None)
+```
+
+The hint is metadata that the local Workload API attaches to the workload's own
+SVIDs. It is not part of the certificate or token, is not authenticated, and is
+never sent to peers, so it must not be used to authorize a peer. SVIDs obtained by
+validating a peer's token (`JwtSvid.parse_and_validate()`,
+`WorkloadApiClient.validate_jwt_svid()`) always have an empty hint.
+
+Handling a missing or unexpected hint is the workload's responsibility. Servers
+must keep non-empty hints unique. If a response nevertheless contains more than
+one SVID with the same hint, the client keeps only the first one, as the SPIFFE
+Workload API specification recommends. The trust bundles of skipped X.509-SVIDs
+are still added to the X.509 context. SVIDs without a hint are never dropped.
+
 ### X509Source
 
 ```python
@@ -65,6 +88,33 @@ from spiffe import X509Source
 with X509Source() as source:
     x509_svid = source.svid
     print(f'SPIFFE ID: {x509_svid.spiffe_id}')
+```
+
+When the workload receives more than one X.509-SVID, pass an `svid_picker` to
+choose which one the source uses, for example by `hint`. The picker is called with
+all SVIDs on every Workload API update, not only at startup, and the chosen SVID
+is what the source (and `spiffe-tls`) serves.
+
+If the picker raises, the source fails closed: it is closed permanently and does
+not recover when a later update would match again. This applies to any update, so
+renaming or removing the expected hint at runtime takes the source (and any TLS
+context built on it) out of service until the process creates a new source. Raise
+a descriptive error when no SVID matches:
+
+```python
+from spiffe import X509Source
+
+
+def pick_internal(svids):
+    for svid in svids:
+        if svid.hint == 'internal':
+            return svid
+    raise ValueError("no X.509-SVID with hint 'internal'")
+
+
+with X509Source(svid_picker=pick_internal) as source:
+    x509_svid = source.get_x509_context().default_svid
+    print(f'SPIFFE ID: {x509_svid.spiffe_id}, hint: {x509_svid.hint}')
 ```
 
 ### JwtSource

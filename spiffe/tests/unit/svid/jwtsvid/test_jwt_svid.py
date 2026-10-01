@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from spiffe.svid.jwt_svid import JwtSvid
 from spiffe.bundle.jwt_bundle.jwt_bundle import JwtBundle
-from spiffe.spiffe_id.spiffe_id import TrustDomain
+from spiffe.spiffe_id.spiffe_id import SpiffeId, TrustDomain
 from spiffe.errors import ArgumentError
 from spiffe.svid.errors import (
     TokenExpiredError,
@@ -234,6 +234,44 @@ def test_parse_insecure_valid(case: ParseInsecureValidCase) -> None:
     result = JwtSvid.parse_insecure(case.token, case.audience)
     assert result._token == case.token
     assert str(result._spiffe_id) == case.expected_spiffe_id
+    assert result.hint == ''
+
+
+def test_parse_insecure_with_hint() -> None:
+    token = generate_test_jwt_token(audience=TEST_AUDIENCE, spiffe_id=TEST_SPIFFE_ID)
+
+    result = JwtSvid.parse_insecure(token, TEST_AUDIENCE, hint='external')
+
+    assert result.hint == 'external'
+    assert str(result.spiffe_id) == TEST_SPIFFE_ID
+    assert result.token == token
+
+
+def test_parse_and_validate_has_no_hint() -> None:
+    token = generate_test_jwt_token(audience=TEST_AUDIENCE, spiffe_id=TEST_SPIFFE_ID)
+
+    result = JwtSvid.parse_and_validate(token, JWT_BUNDLE, TEST_AUDIENCE)
+
+    assert result.hint == ''
+
+
+def test_create_jwt_svid_with_hint() -> None:
+    svid = JwtSvid(
+        spiffe_id=SpiffeId(TEST_SPIFFE_ID),
+        audience=TEST_AUDIENCE,
+        expiry=TEST_EXPIRY,
+        claims={},
+        token='token',
+        hint='internal',
+    )
+
+    assert svid.hint == 'internal'
+
+
+def test_create_jwt_svid_hint_is_keyword_only() -> None:
+    spiffe_id = SpiffeId(TEST_SPIFFE_ID)
+    with pytest.raises(TypeError):
+        JwtSvid(spiffe_id, TEST_AUDIENCE, TEST_EXPIRY, {}, 'token', 'internal')  # type: ignore[misc]
 
 
 """

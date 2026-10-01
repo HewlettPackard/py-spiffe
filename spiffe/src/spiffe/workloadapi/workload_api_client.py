@@ -19,7 +19,19 @@ from __future__ import annotations
 import logging
 import os
 import threading
-from typing import Optional, List, Mapping, Callable, Dict, Set, Iterator, Protocol, TypeVar
+from typing import (
+    Optional,
+    List,
+    Mapping,
+    Callable,
+    Dict,
+    Set,
+    Iterable,
+    Iterator,
+    Protocol,
+    Tuple,
+    TypeVar,
+)
 
 import grpc
 from grpc import StatusCode
@@ -29,7 +41,7 @@ from spiffe.bundle.jwt_bundle.jwt_bundle_set import JwtBundleSet
 from spiffe.bundle.x509_bundle.x509_bundle import X509Bundle
 from spiffe.bundle.x509_bundle.x509_bundle_set import X509BundleSet
 from spiffe.config import ConfigSetter
-from spiffe.errors import ArgumentError
+from spiffe.errors import ArgumentError, PySpiffeError
 from spiffe._proto import (
     workload_pb2,
 )
@@ -77,6 +89,33 @@ class _CancelableIterator(Protocol[_T_co]):
     def __next__(self) -> _T_co: ...
 
     def cancel(self) -> bool: ...
+
+
+_SvidMessage = TypeVar('_SvidMessage', workload_pb2.X509SVID, workload_pb2.JWTSVID)
+
+
+def _select_first_svid_per_hint(
+    svids: Iterable[_SvidMessage],
+) -> Iterator[Tuple[_SvidMessage, bool]]:
+    """Yields each SVID message paired with whether it is selected.
+
+    Per the SPIFFE Workload API spec, when more than one SVID message has the same hint,
+    the first one SHOULD be selected. SVID messages without a hint are always selected.
+    """
+    seen_hints: Set[str] = set()
+    for svid in svids:
+        selected = True
+        if svid.hint:
+            if svid.hint in seen_hints:
+                selected = False
+                _logger.debug('Ignoring SVID with duplicate hint %r', svid.hint)
+            else:
+                seen_hints.add(svid.hint)
+        yield svid, selected
+
+
+def _first_svid_per_hint(svids: Iterable[_SvidMessage]) -> List[_SvidMessage]:
+    return [svid for svid, selected in _select_first_svid_per_hint(svids) if selected]
 
 
 class _WorkloadApiStub(Protocol):
@@ -258,6 +297,8 @@ class WorkloadApiClient:
     def fetch_x509_svids(self, timeout: Optional[float] = None) -> List[X509Svid]:
         """Fetches all X509-SVIDs.
 
+        If more than one SVID has the same non-empty hint, only the first one is returned.
+
         Args:
             timeout: Deadline in seconds for this call. Overrides the client default.
 
@@ -271,7 +312,7 @@ class WorkloadApiClient:
         response = self._call_fetch_x509_svid(self._resolve_timeout(timeout))
 
         result = []
-        for svid in response.svids:
+        for svid in _first_svid_per_hint(response.svids):
             result.append(self._create_x509_svid(svid))
 
         return result
@@ -279,6 +320,10 @@ class WorkloadApiClient:
     @handle_error(error_cls=FetchX509SvidError)
     def fetch_x509_context(self, timeout: Optional[float] = None) -> X509Context:
         """Fetches an X.509 context (X.509 SVIDs and X.509 Bundles keyed by TrustDomain).
+
+        If more than one SVID has the same non-empty hint, only the first one is included in the
+        context. The trust bundles of all SVIDs, including ignored duplicates, are added to the
+        bundle set.
 
         Args:
             timeout: Deadline in seconds for this call. Overrides the client default.
@@ -348,8 +393,8 @@ class WorkloadApiClient:
         if len(response.svids) == 0:
             raise FetchJwtSvidError('JWT SVID response is empty')
 
-        svid = response.svids[0].svid
-        return JwtSvid.parse_insecure(svid, audience)
+        svid_message = response.svids[0]
+        return JwtSvid.parse_insecure(svid_message.svid, audience, hint=svid_message.hint)
 
     @handle_error(error_cls=FetchJwtSvidError)
     def fetch_jwt_svids(
@@ -359,6 +404,8 @@ class WorkloadApiClient:
         timeout: Optional[float] = None,
     ) -> List[JwtSvid]:
         """Fetches all SPIFFE JWT-SVIDs.
+
+        If more than one SVID has the same non-empty hint, only the first one is returned.
 
         Args:
             audience: List of audiences for the JWT SVID.
@@ -385,8 +432,8 @@ class WorkloadApiClient:
             raise FetchJwtSvidError('JWT SVID response is empty')
 
         svids = []
-        for s in response.svids:
-            svids.append(JwtSvid.parse_insecure(s.svid, audience))
+        for s in _first_svid_per_hint(response.svids):
+            svids.append(JwtSvid.parse_insecure(s.svid, audience, hint=s.hint))
 
         return svids
 
@@ -663,12 +710,24 @@ class WorkloadApiClient:
     ) -> X509Context:
         svids = []
         bundle_set = self._create_x509_bundle_set(x509_svid_response.federated_bundles)
-        for svid in x509_svid_response.svids:
-            x509_svid = self._create_x509_svid(svid)
-            svids.append(x509_svid)
+        for svid, selected in _select_first_svid_per_hint(x509_svid_response.svids):
+            # An SVID ignored for a duplicate hint still carries the bundle of its trust domain,
+            # so the bundle is kept. It is keyed by the trust domain of the validated leaf, hence
+            # an ignored SVID that cannot be parsed contributes nothing.
+            try:
+                x509_svid = self._create_x509_svid(svid)
+                bundle = X509Bundle.parse_raw(x509_svid.spiffe_id.trust_domain, svid.bundle)
+            except PySpiffeError as err:
+                if selected:
+                    raise
+                _logger.debug(
+                    'Ignoring trust bundle of SVID with duplicate hint %r: %s', svid.hint, err
+                )
+                continue
 
-            trust_domain = x509_svid.spiffe_id.trust_domain
-            bundle_set.put(X509Bundle.parse_raw(trust_domain, svid.bundle))
+            if selected:
+                svids.append(x509_svid)
+            bundle_set.put(bundle)
 
         return X509Context(svids, bundle_set)
 
@@ -768,7 +827,7 @@ class WorkloadApiClient:
     def _create_x509_svid(svid: workload_pb2.X509SVID) -> X509Svid:
         cert = svid.x509_svid
         key = svid.x509_svid_key
-        return X509Svid.parse_raw(cert, key)
+        return X509Svid.parse_raw(cert, key, hint=svid.hint)
 
     @staticmethod
     def _create_td_jwt_bundle_dict(

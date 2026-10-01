@@ -79,6 +79,23 @@ def test_create_x509_svid(mocker: MockerFixture) -> None:
     assert res.spiffe_id == fake_spiffe_id
     assert len(res.cert_chain) == len(fake_cert_chain)
     assert res.private_key == fake_private_key
+    assert res.hint == ''
+
+
+def test_create_x509_svid_with_hint(mocker: MockerFixture) -> None:
+    res = X509Svid(
+        spiffe_id=mocker.Mock(),
+        cert_chain=[mocker.Mock()],
+        private_key=mocker.Mock(),
+        hint='internal',
+    )
+
+    assert res.hint == 'internal'
+
+
+def test_create_x509_svid_hint_is_keyword_only(mocker: MockerFixture) -> None:
+    with pytest.raises(TypeError):
+        X509Svid(mocker.Mock(), [mocker.Mock()], mocker.Mock(), 'internal')  # type: ignore[misc]
 
 
 def test_create_x509_svid_no_cert_chain(mocker: MockerFixture) -> None:
@@ -100,6 +117,17 @@ def test_parse_raw_chain_and_ec_key() -> None:
     assert isinstance(x509_svid.leaf, Certificate)
     assert isinstance(x509_svid.private_key, ec.EllipticCurvePrivateKey)
     assert _extract_spiffe_id(x509_svid.leaf) == expected_spiffe_id
+    assert x509_svid.hint == ''
+
+
+def test_parse_raw_with_hint() -> None:
+    chain_bytes = read_bytes('1-chain.der')
+    key_bytes = read_bytes('1-key.der')
+
+    x509_svid = X509Svid.parse_raw(chain_bytes, key_bytes, hint='external')
+
+    assert x509_svid.hint == 'external'
+    assert x509_svid.spiffe_id == SpiffeId('spiffe://example.org/service')
 
 
 def test_parse_chain_and_ec_key() -> None:
