@@ -145,6 +145,14 @@ def test_spiffe_id_valid(id_str: str) -> None:
             "spiffe://example.org/foo bar",
             "Invalid SPIFFE ID 'spiffe://example.org/foo bar': invalid character in path segment",
         ),
+        (
+            "spiffe://example.org/service\n",
+            "Invalid SPIFFE ID 'spiffe://example.org/service\n': invalid character in path segment",
+        ),
+        (
+            "spiffe://example.org\n",
+            "Invalid SPIFFE ID 'spiffe://example.org\n': Invalid trust domain 'example.org\n': contains disallowed characters",
+        ),
     ],
 )
 def test_spiffe_id_invalid(id_str: str, expected_error: str) -> None:
