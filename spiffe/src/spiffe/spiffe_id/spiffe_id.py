@@ -196,7 +196,7 @@ class SpiffeId:
                 raise ValueError("path cannot contain empty segments")
             if segment in [".", ".."]:
                 raise ValueError("path segments '.' and '..' are not allowed")
-            if not re.match(r"^[a-zA-Z0-9._-]+$", segment):
+            if not re.fullmatch(r"[a-zA-Z0-9._-]+", segment):
                 raise ValueError("invalid character in path segment")
 
 
@@ -220,7 +220,7 @@ def extract_and_validate_trust_domain(id_or_name: str) -> str:
         raise TrustDomainError("cannot be empty")
 
     # Validate against the SPIFFE trust-domain character set.
-    if not re.match(r"^[a-z0-9._-]+$", trust_domain):
+    if not re.fullmatch(r"[a-z0-9._-]+", trust_domain):
         raise TrustDomainError("contains disallowed characters", id_or_name)
 
     return trust_domain

@@ -88,6 +88,14 @@ def test_valid_trust_domain(input: str, expected: str) -> None:
             "example$org",
             "Invalid trust domain 'example$org': contains disallowed characters",
         ),
+        (
+            "example.org\n",
+            "Invalid trust domain 'example.org\n': contains disallowed characters",
+        ),
+        (
+            "spiffe://example.org\n",
+            "Invalid trust domain 'spiffe://example.org\n': contains disallowed characters",
+        ),
     ],
 )
 def test_invalid_trust_domain(input: str, expected_error: str) -> None:
