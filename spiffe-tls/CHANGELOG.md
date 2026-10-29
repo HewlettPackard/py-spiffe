@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1] - 2026-10-29
+
+### Changed
+
+- **Dependencies:** Allow `spiffe>=0.3.0,<0.5.0`, adding support for the `spiffe` `0.4.x` release line while retaining support for `0.3.x`.
+
 ## [0.4.0] - 2026-06-15
 
 ### Changed
