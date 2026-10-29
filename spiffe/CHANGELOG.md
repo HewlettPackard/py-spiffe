@@ -1,12 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-10-29
 
 ### Added
-- **SVIDs:** Added `X509Svid.hint` and `JwtSvid.hint`, populated from the Workload API, to distinguish between multiple SVIDs (e.g. in an `X509Source` `svid_picker`). Empty when unset. ([#452](https://github.com/HewlettPackard/py-spiffe/issues/452))
+- **SVIDs:** Added `X509Svid.hint` and `JwtSvid.hint`, populated from the Workload API, to help select among multiple identities (e.g. in an `X509Source` `svid_picker`). Hints are empty when unset. As part of this support, Workload API responses now retain only the first SVID for each non-empty hint; previously, all were returned. Trust bundles from skipped X.509-SVIDs are still included in the X.509 context. ([#452](https://github.com/HewlettPackard/py-spiffe/issues/452))
 
-### Changed
-- **Workload API:** When multiple SVIDs share the same non-empty hint, only the first is kept, per the SPIFFE Workload API spec. Trust bundles of skipped X.509-SVIDs are still added to the X.509 context.
+### Fixed
+- **SPIFFE ID:** Reject trailing newlines in trust domains and path segments when parsing `SpiffeId` and `TrustDomain`. Previously, validation could accept and retain a trailing newline because of regular-expression end-anchor behavior.
 
 ## [0.3.2] - 2026-10-01
 
