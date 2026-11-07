@@ -58,10 +58,11 @@ jobs:
         run: ./dev test
 
       - name: Start SPIRE
-        run: .github/workflows/scripts/run-spire.sh &
+        run: .github/workflows/scripts/run-spire.sh
 
       - name: Run Integration Tests
         run: ./dev integration
 
       - name: Clean up SPIRE
+        if: always()
         run: .github/workflows/scripts/cleanup-spire.sh

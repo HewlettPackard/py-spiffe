@@ -3,10 +3,11 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Constants
-spire_version="1.9.2"
+spire_version="1.16.0"
 spire_folder="spire-${spire_version}"
 spire_server_log_file="/tmp/spire-server/server.log"
 spire_agent_log_file="/tmp/spire-agent/agent.log"
+# Join-token alias used as the parent of workload entries, not the attested agent ID.
 agent_id="spiffe://example.org/myagent"
 
 # Helper function to wait for a service to be available
@@ -37,8 +38,7 @@ mkdir -p /tmp/spire-server
 bin/spire-server run -config conf/server/server.conf > "${spire_server_log_file}" 2>&1 &
 wait_for_service "bin/spire-server healthcheck" "SPIRE Server" "${spire_server_log_file}"
 
-export STRIPPED_SPIRE_ADMIN_ENDPOINT_SOCKET=$(echo $SPIRE_ADMIN_ENDPOINT_SOCKET| cut -c6-)
-cat $SCRIPT_DIR/agent.conf | envsubst > "conf/agent/agent.conf"
+cp "${SCRIPT_DIR}/agent.conf" "conf/agent/agent.conf"
 
 # Run the SPIRE agent with the joint token
 bin/spire-server token generate -spiffeID ${agent_id} > token
@@ -52,7 +52,7 @@ for service_hint in "myservice:internal" "myservice2:external"; do
   service="${service_hint%%:*}"
   hint="${service_hint#*:}"
   echo "Creating entry for '${service}' with hint '${hint}'"
-  bin/spire-server entry create -parentID ${agent_id} -spiffeID spiffe://example.org/${service} -selector unix:uid:$(id -u) -ttl 5 -hint "${hint}"
+  bin/spire-server entry create -parentID ${agent_id} -spiffeID spiffe://example.org/${service} -selector unix:uid:$(id -u) -x509SVIDTTL 5 -hint "${hint}"
 done
 
 uid=$(id -u)
