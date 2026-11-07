@@ -7,7 +7,7 @@ license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [{ name = "Max Lambrecht", email = "maxlambrecht@gmail.com" }]
 dependencies = [
-  "grpcio>=1.78.0,<2",
+  "grpcio>=1.84.1,<2",
   "cryptography>=46",
   "pyjwt[crypto]>=2,<3",
   "pyasn1>=0.6.0,<0.7.0",
